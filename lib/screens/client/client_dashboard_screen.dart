@@ -6,7 +6,8 @@ import 'bookings_screen.dart';
 import 'profile_screen.dart';
 import '../../../widgets/app_footer.dart';
 import '../../../services/api_service.dart';
-import '../../../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/user_provider.dart';
 import '../select_role_screen.dart';
 import 'client_chat_screen.dart';
 import '../../../services/push_notification_service.dart';
@@ -72,13 +73,12 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   }
 
   Future<void> _switchToBusiness() async {
-    await AuthService.saveLastRole('business');
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => SelectRoleScreen()),
-      );
-    }
+    await context.read<UserProvider>().setRole('business');
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => SelectRoleScreen()),
+    );
   }
 
   @override

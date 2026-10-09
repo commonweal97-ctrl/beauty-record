@@ -1,9 +1,10 @@
 // lib/screens/auth/otp_screen.dart
 import 'package:flutter/material.dart';
 import '../../core/analytics_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
 import '../select_role_screen.dart';
 import '../auth/pin_setup_screen.dart';
 import '../auth/register_screen.dart';
@@ -127,7 +128,12 @@ class _OtpScreenState extends State<OtpScreen> {
         } else {
           final methods = result['data']['methods'] ?? {};
           if (methods['pin'] == true) {
-            await AuthService.saveLogin(widget.userId, hasPin: true, userEmail: widget.email);
+            if (!mounted) return;
+            await context.read<UserProvider>().setUser(
+              id: widget.userId,
+              email: widget.email,
+              hasPin: true,
+            );
             if (!mounted) return;
             Navigator.pushAndRemoveUntil(
               context,

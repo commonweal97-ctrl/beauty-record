@@ -14,6 +14,8 @@ import 'screens/auth/biometric_setup_screen.dart';
 import 'services/push_notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'utils/app_logger.dart';
+import 'core/app_colors.dart';
+import 'core/app_typography.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -80,6 +82,25 @@ class BeautyRecordApp extends StatelessWidget {
           primary: Color(0xFFDD1847),
           secondary: Color(0xFFDD1847),
           surface: Colors.white,
+        ),
+        extensions: const [
+          AppColors.light,
+        ],
+        textTheme: const TextTheme(
+          // Заголовки
+          displayLarge: AppTypography.h0,
+          displayMedium: AppTypography.h1,
+          displaySmall: AppTypography.h2,
+          headlineMedium: AppTypography.h3,
+          headlineSmall: AppTypography.h4,
+          // Тело
+          bodyLarge: AppTypography.bodyLarge,
+          bodyMedium: AppTypography.bodyMedium,
+          bodySmall: AppTypography.bodySmall,
+          // Подписи
+          labelLarge: AppTypography.buttonMedium,
+          labelMedium: AppTypography.caption,
+          labelSmall: AppTypography.label,
         ),
         useMaterial3: false,
       ),

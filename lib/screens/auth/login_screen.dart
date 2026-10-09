@@ -1,5 +1,6 @@
 // lib/screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
+import '../../core/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -303,10 +304,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isAutoLoginChecking) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.white,
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFFDD1847)),
+          child: CircularProgressIndicator(color: context.colors.brand),
         ),
       );
     }
@@ -432,7 +433,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 54,
                     child: ElevatedButton(
                       onPressed: (_isFormValid && !_isLoading) ? _validateAndContinue : null,
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDD1847), disabledBackgroundColor: const Color(0xFFDD1847), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+                      style: ElevatedButton.styleFrom(backgroundColor: context.colors.brand, disabledBackgroundColor: context.colors.brand, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
                       child: _isLoading
                           ? const Row(mainAxisAlignment: MainAxisAlignment.center, children: [SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)), SizedBox(width: 12), Text('Проверка...', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white))])
                           : const Text('Продолжить', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),

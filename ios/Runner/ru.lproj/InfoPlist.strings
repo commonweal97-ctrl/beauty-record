@@ -1,0 +1,5 @@
+"CFBundleDisplayName" = "Б-Запись";
+"NSFaceIDUsageDescription" = "Используйте Face ID для быстрого входа в приложение";
+"NSCameraUsageDescription" = "Доступ к камере необходим для загрузки фотографий";
+"NSPhotoLibraryUsageDescription" = "Доступ к фото необходим для загрузки изображений";
+"NSLocationWhenInUseUsageDescription" = "Доступ к геолокации необходим для определения вашего города";

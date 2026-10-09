@@ -1,0 +1,103 @@
+name: beauty_record
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+21
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  flutter_svg: ^2.0.9
+  cupertino_icons: ^1.0.8
+  http: ^1.6.0
+  url_launcher: ^6.3.1
+  local_auth: ^2.3.0
+  shared_preferences: ^2.5.5
+  image_picker: ^1.2.2
+  intl: ^0.20.2
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  fl_chart: ^1.2.0
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  flutter_local_notifications: ^17.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: lib/fonts/Inter_18pt-Regular.ttf
+          weight: 400
+        - asset: lib/fonts/Inter_18pt-Medium.ttf
+          weight: 500
+        - asset: lib/fonts/Inter_18pt-SemiBold.ttf
+          weight: 600
+        - asset: lib/fonts/Inter_18pt-Bold.ttf
+          weight: 700
+  
+  assets:
+    - assets/analytics.svg
+    - assets/schedule.svg
+    - assets/clients.svg
+    - assets/reviews.svg
+    - assets/salon.svg
+    - assets/employees.svg
+    - assets/services.svg
+    - assets/access.svg
+    - assets/online.svg
+    - assets/notifications.svg
+    - assets/logout.svg
+    - assets/eye.svg
+    - assets/eye-slash.svg
+    - assets/user.svg
+    - assets/home.svg
+    - assets/LogoZapis.svg
+    - assets/layers.svg
+    - assets/beauty.svg
+    - assets/health.svg
+    - assets/sport.svg
+    - assets/auto.svg
+    - assets/education.svg
+    - assets/pets.svg
+    - assets/holiday.svg
+    - assets/law.svg
+    - assets/photo-camera.svg
+    - assets/searching-for-an-apartment.svg
+    - assets/food.svg
+    - assets/dots.svg
+    - assets/calendar.svg
+    - assets/chat.svg
+    - assets/telegram-nf.svg
+    - assets/vk-nt.svg
+    - assets/whatsapp.svg
+    - assets/whatsapp-business.svg
+    - assets/link.svg
+    - assets/photo-none.svg
+    - assets/slider.svg
+    - assets/schedule.svg
+    - assets/people.svg
+    - assets/star.svg
+    - assets/copy.svg
+    - assets/telegram.svg
+    - assets/vk-outline.svg
+    - assets/web-link.svg
+    - assets/beauty-salon-chair.svg
+    - assets/android.svg
+    - assets/apple.svg
+    - assets/device-desktop.svg
+    - assets/check-manual.svg
+    - assets/checkmark-double.svg
+    - assets/b-logotip.png

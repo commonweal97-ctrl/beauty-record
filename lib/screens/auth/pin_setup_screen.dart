@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import '../auth/biometric_setup_screen.dart';
 
 class PinSetupScreen extends StatefulWidget {
@@ -69,7 +70,11 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
   void _savePin() async {
     try {
       await ApiService.savePin(widget.userId, _pin);
-      await AuthService.saveLogin(widget.userId, hasPin: true);
+      if (!mounted) return;
+      await context.read<UserProvider>().setUser(
+        id: widget.userId,
+        hasPin: true,
+      );
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,

@@ -1,6 +1,8 @@
 // lib/screens/auth/biometric_setup_screen.dart
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../widgets/toast.dart';
 import '../select_role_screen.dart';
@@ -51,7 +53,11 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
 
       if (mounted) {
         if (authenticated) {
-          await AuthService.saveLogin(widget.userId, hasPin: true);
+          if (!mounted) return;
+      await context.read<UserProvider>().setUser(
+        id: widget.userId,
+        hasPin: true,
+      );
           if (!mounted) return;
           
           showToast(context, 'Вход по биометрии успешно настроен!');

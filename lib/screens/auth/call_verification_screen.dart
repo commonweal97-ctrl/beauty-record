@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import '../select_role_screen.dart';
 import '../auth/pin_setup_screen.dart';
 
@@ -143,7 +144,12 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
       final token = result['remember_token'] ?? '';
 
       if (token.isNotEmpty) {
-        await AuthService.saveLogin(widget.userId, hasPin: true, userEmail: widget.email);
+        if (!mounted) return;
+      await context.read<UserProvider>().setUser(
+        id: widget.userId,
+        hasPin: true,
+        email: widget.email,
+      );
       }
 
       if (mounted) {
@@ -174,7 +180,12 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
         final token = result['remember_token'] ?? '';
 
         if (token.isNotEmpty) {
-          await AuthService.saveLogin(userId, hasPin: false, userEmail: widget.email);
+          if (!mounted) return;
+      await context.read<UserProvider>().setUser(
+        id: userId,
+        hasPin: false,
+        email: widget.email,
+      );
         }
 
         if (mounted && userId > 0) {

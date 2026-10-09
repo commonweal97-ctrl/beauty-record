@@ -5,7 +5,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
-import '../../../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/user_provider.dart';
 import '../auth/quick_setup_screen.dart';
 import '../select_role_screen.dart';
 import 'business_profile_screen.dart';
@@ -80,7 +81,7 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
 
   Future<void> _openJournal(int projectId) async {
     // Сохраняем последний выбранный проект
-    await AuthService.saveLastProjectId(projectId);
+    await context.read<UserProvider>().setProjectId(projectId);
     
     if (!mounted) return;
     
@@ -115,7 +116,9 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
     } catch (_) {}
     
     await ApiService.clearSession();
-    await AuthService.fullLogout();
+    if (!mounted) return;
+    await context.read<UserProvider>().logout();
+    if (!mounted) return;
     
     if (mounted) {
       Navigator.pushAndRemoveUntil(
@@ -127,7 +130,7 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
   }
 
   Future<void> _switchToClient() async {
-    await AuthService.saveLastRole('client');
+    await context.read<UserProvider>().setRole('client');
     if (mounted) {
       Navigator.pushReplacement(
         context,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import '../../../services/api_service.dart';
-import '../../../services/auth_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
@@ -175,7 +176,8 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                 TextButton(
                   onPressed: () async { 
     await ApiService.clearSession();
-    await AuthService.clearLogin(); 
+    if (!context.mounted) return;
+    await context.read<UserProvider>().logout(); 
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => LoginScreen()), (_) => false); 
 },

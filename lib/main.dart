@@ -20,6 +20,8 @@ import 'core/app_typography.dart';
 import 'core/crashlytics_service.dart';
 import 'core/analytics_service.dart';
 import 'core/connectivity_service.dart';
+import 'providers/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -93,7 +95,12 @@ void main() async {
     AppLogger.debug('Push tap: project=$projectId, count=$count');
   };
   await ApiService.init();
-  runApp(const BeautyRecordApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => UserProvider()..load(),
+      child: const BeautyRecordApp(),
+    ),
+  );
 }
 
 class BeautyRecordApp extends StatelessWidget {

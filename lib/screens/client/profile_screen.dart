@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
-import '../../../services/auth_service.dart';
 import 'consents_screen.dart';
 import 'discounts_screen.dart';
 import '../auth/quick_setup_screen.dart';
@@ -292,7 +293,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
     onPressed: () async {
       await ApiService.clearSession();
-      await AuthService.clearLogin();
+      if (!context.mounted) return;
+      await context.read<UserProvider>().logout();
       if (context.mounted) Navigator.pushReplacementNamed(context, '/');
     },
     child: const Text('Выйти из аккаунта', style: TextStyle(color: Color(0xFF999999))),

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import '../select_role_screen.dart';
 import '../../services/push_notification_service.dart';
 import '../../widgets/toast.dart';
@@ -60,7 +61,12 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
         final result = await ApiService.post('/api/auth/biometric-login', {'user_id': widget.userId});
         AppLogger.debug('🔐 biometric-login result: $result');
         
-        await AuthService.saveLogin(widget.userId, hasPin: true, userEmail: widget.userEmail);
+        if (!mounted) return;
+      await context.read<UserProvider>().setUser(
+        id: widget.userId,
+        hasPin: true,
+        email: widget.userEmail,
+      );
         
         PushNotificationService().registerTokenAfterLogin();
         
@@ -134,7 +140,12 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
       
       if (result['success'] == true) {
         AppLogger.debug('🔐 PIN verified successfully');
-        await AuthService.saveLogin(widget.userId, hasPin: true, userEmail: widget.userEmail);
+        if (!mounted) return;
+      await context.read<UserProvider>().setUser(
+        id: widget.userId,
+        hasPin: true,
+        email: widget.userEmail,
+      );
         
         PushNotificationService().registerTokenAfterLogin();
         

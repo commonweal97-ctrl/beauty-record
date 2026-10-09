@@ -158,7 +158,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                             ]
                           : null,
                     ),
-                    transform: isFilled ? Matrix4.identity().scaled(1.1) : Matrix4.identity(),
+                    transform: isFilled ? Matrix4.identity().scaledByDouble(1.1, 1.1, 1.1, 1.0) : Matrix4.identity(),
                   );
                 }),
               ),

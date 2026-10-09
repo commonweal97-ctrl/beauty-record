@@ -22,7 +22,6 @@ class BusinessProjectProfileScreen extends StatefulWidget {
 }
 
 class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScreen> {
-  Map<String, dynamic>? _data;
   bool _loading = true;
   bool _hasChanges = false;
 
@@ -33,7 +32,6 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
   File? _profilePhoto;
   String? _profilePhotoUrl;
   List<Map<String, dynamic>> _interiorPhotos = [];
-  int _originalInteriorCount = 0;
 
   List<Map<String, String>> _phones = [{'dial': '+7', 'number': ''}];
   static const int _maxPhones = 5;
@@ -359,7 +357,6 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
 AppLogger.debug('📸 Profile photo from server: ${d['profile_photo']}');
 AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_photos'].runtimeType})');
         setState(() {
-          _data = d;
           _nameCtrl.text = d['name'] ?? '';
           _descCtrl.text = d['description'] ?? '';
           _addressCtrl.text = d['address_raw'] ?? '';
@@ -379,7 +376,6 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
               _interiorPhotos = List<Map<String, dynamic>>.from(raw);
             }
           } catch (_) {}
-          _originalInteriorCount = _interiorPhotos.length;
           _loading = false;
         });
       }
@@ -409,26 +405,6 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
     }
   }
 
-  String _formatPhoneNumberForDisplay(String dial, String number) {
-    final digits = number.replaceAll(RegExp(r'[^\d]'), '');
-    
-    if (digits.isEmpty) return '';
-    
-    if (dial == '+7' && digits.length == 10) {
-      return '+7 (${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6, 8)}-${digits.substring(8, 10)}';
-    }
-    
-    if (dial == '+375' && digits.length >= 9) {
-      return '+375 (${digits.substring(0, 2)}) ${digits.substring(2, 5)}-${digits.substring(5, 7)}-${digits.substring(7, 9)}';
-    }
-    
-    if (dial == '+380' && digits.length >= 9) {
-      return '+380 (${digits.substring(0, 2)}) ${digits.substring(2, 5)}-${digits.substring(5, 7)}-${digits.substring(7, 9)}';
-    }
-    
-    // Для частичного ввода показываем цифры как есть
-    return digits;
-  }
 
   Future<void> _save() async {
     try {
@@ -455,7 +431,6 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
       final result = await ApiService.post('/api/project-profile/save', body);
       if (result['success'] == true && mounted) {
         setState(() => _hasChanges = false);
-        _originalInteriorCount = _interiorPhotos.length;
         showToast(context, 'Профиль сохранён!');
       }
     } catch (e) {

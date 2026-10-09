@@ -14,7 +14,6 @@ class MonthViewScreen extends StatefulWidget {
 
 class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderStateMixin {
   List<Map<String, dynamic>> _employees = [];
-  List<Map<String, dynamic>> _bookings = [];
   List<DateTime> _dates = [];
   DateTime _currentMonth = DateTime.now();
   bool _loading = true;
@@ -106,7 +105,6 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
               'loads': loads,
             };
           }).toList();
-          _bookings = bookings;
           _loading = false;
         });
       }
@@ -805,11 +803,4 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
     );
   }
 
-  String _getMonthName(int index) {
-    const names = [
-      'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-    ];
-    return names[index];
-  }
 }

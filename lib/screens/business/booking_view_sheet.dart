@@ -30,15 +30,6 @@ class _BookingViewSheetState extends State<BookingViewSheet> {
 
   static const _colors = ['#DD1847', '#E91E63', '#9C27B0', '#2196F3', '#4CAF50', '#FF9800', '#607D8B'];
 
-  static const _reminderOptions = [
-    {'value': 'none', 'label': 'Нет'},
-    {'value': '1h', 'label': 'За час'},
-    {'value': '3h', 'label': 'За 3 часа'},
-    {'value': '6h', 'label': 'За 6 часов'},
-    {'value': '12h', 'label': 'За 12 часов'},
-    {'value': '1d', 'label': 'За день'},
-    {'value': '3d', 'label': 'За 3 дня'},
-  ];
 
   static const _reviewOptions = [
     {'value': 'none', 'label': 'Нет'},

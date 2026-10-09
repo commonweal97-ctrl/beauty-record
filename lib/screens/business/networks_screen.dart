@@ -571,12 +571,6 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
     );
   }
 
-  Widget _field(TextEditingController c, String hint, {TextInputType? keyboardType}) {
-    return Container(
-      decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE0E0E0))),
-      child: TextField(controller: c, keyboardType: keyboardType, style: const TextStyle(fontSize: 15), decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(color: Colors.grey), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14))),
-    );
-  }
 
   Widget _miniField(TextEditingController c, String hint, {bool bold = false, ValueChanged<String>? onChanged}) {
     return Container(

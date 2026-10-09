@@ -27,7 +27,6 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
   final ScrollController _scrollController = ScrollController();
 
   DateTime _currentMonth = DateTime.now();
-  final bool _loading = false;
   bool _showMonthPicker = false;
   bool _initialScrollDone = false;
 
@@ -283,7 +282,6 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 768;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToCurrentMonth();

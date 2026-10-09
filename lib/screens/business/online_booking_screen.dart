@@ -25,7 +25,6 @@ class _OnlineBookingScreenState extends State<OnlineBookingScreen> {
   bool _hasServices = false;
   bool _hasSchedule = false;
   bool _hasEmployeesWithServices = false;
-  bool _hasBookings = false;
   bool _onlineEnabled = false;
   String? _bookingUrl;
 
@@ -73,7 +72,6 @@ AppLogger.debug('_canActivate: $_canActivate');
         _hasServices = services.isNotEmpty;
         _hasSchedule = (project['schedule_json']?.toString().isNotEmpty ?? false);
         _hasEmployeesWithServices = employees.any((e) => e['provides_services'] == true);
-        _hasBookings = false;
         _onlineEnabled = project['online_booking_enabled'] == true;
         _bookingUrl = _onlineEnabled ? 'https://запись.бьютироща.рф/book/${widget.projectId}' : null;
 

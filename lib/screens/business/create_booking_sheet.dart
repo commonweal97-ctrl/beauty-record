@@ -53,6 +53,7 @@ class _CreateBookingSheetState extends State<CreateBookingSheet> {
 
   // Персональные цены сотрудника
   Map<int, Map<String, dynamic>> _employeePrices = {};
+  // ignore: unused_field
   bool _loadingPrices = false;
 
   @override

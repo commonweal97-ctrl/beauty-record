@@ -556,6 +556,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
   
   int _workDays = 5;
   int _offDays = 2;
+  // ignore: unused_field
   String _cyclicType = '';
   
   bool _loading = false;

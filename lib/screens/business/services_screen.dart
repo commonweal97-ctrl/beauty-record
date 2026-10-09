@@ -64,22 +64,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
     return '0 мин';
   }
 
-  void _onReorder(int oldIndex, int newIndex) async {
-    if (newIndex > oldIndex) newIndex--;
-    final item = _services.removeAt(oldIndex);
-    _services.insert(newIndex, item);
-    setState(() {});
-    
-    final orders = _services.asMap().entries.map((e) => {
-      'id': e.value['id'],
-      'sort_order': e.key,
-    }).toList();
-    
-    await ApiService.post('/api/service/update-order', {
-      'project_id': widget.projectId,
-      'orders': orders,
-    });
-  }
 
     @override
   Widget build(BuildContext context) {
@@ -152,8 +136,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             child: ReorderableListView.builder(
                               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                               itemCount: displayServices.length,
-                              onReorder: (oldIndex, newIndex) {
-                                if (newIndex > oldIndex) newIndex--;
+                              onReorderItem: (oldIndex, newIndex) {
                                 final item = displayServices.removeAt(oldIndex);
                                 displayServices.insert(newIndex, item);
                                 setState(() {});

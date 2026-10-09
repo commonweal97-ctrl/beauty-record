@@ -35,7 +35,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _countryDial = '+7';
   String _countryFlag = '🇷🇺';
 
-  static const String _consentText = 'Настоящим в соответствии с Федеральным законом № 152-ФЗ «О персональных данных» от 27.07.2006 года свободно, своей волей и в своём интересе выражаю своё безусловное согласие на обработку моих персональных данных ИП Рощин Александр Александрович, зарегистрированным в соответствии с законодательством РФ по адресу: Брянская область, Почепский район, г. Почеп, ул. Стародубская, д. 17, кв. 14 (далее — Оператор).\n\nПерсональные данные — любая информация, относящаяся к определённому или определяемому на основании такой информации физическому лицу.\n\nНастоящее Согласие выдано мною на обработку следующих персональных данных:\n\nфамилия, имя Клиента;\nадрес электронной почты (e-mail) Клиента;\nномер телефона Клиента;\n\nСогласие дано Оператору для совершения следующих действий с моими персональными данными с использованием средств автоматизации и/или без использования таких средств: сбор, систематизация, накопление, хранение, уточнение (обновление, изменение), использование для указанных ниже целей, а также осуществление любых иных действий, предусмотренных действующим законодательством РФ как неавтоматизированными, так и автоматизированными способами.\n\nДанное согласие даётся Оператору для обработки моих персональных данных в целях продажи товаров, а также сбора информации для дальнейшего осуществления услуг (продвижение товаров, работ, услуг на рынке).\n\nНастоящее согласие действует до момента его отзыва путём направления соответствующего обращения. Либо срок хранения составляет 10 лет.\n\nВ случае отзыва согласия на обработку персональных данных Оператор вправе продолжить обработку персональных данных без моего согласия при наличии оснований, указанных в пунктах 2 – 11 части 1 статьи 6, части 2 статьи 10 и части 2 статьи 11 Федерального закона №152-ФЗ «О персональных данных» от 26.06.2006 г.';
 
   final List<Map<String, dynamic>> _countries = [
     {'code': 'ru', 'dial_code': '7', 'flag': '🇷🇺', 'name': 'Россия', 'max_digits': 10},
@@ -199,47 +198,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  String _extractCountryInfo(String phone) {
-    if (phone.startsWith('375') || phone.startsWith('+375')) return '375|🇧🇾|+375';
-    if (phone.startsWith('380') || phone.startsWith('+380')) return '380|🇺🇦|+380';
-    if (phone.startsWith('7') || phone.startsWith('+7')) return '7|🇷🇺|+7';
-    return '7|🇷🇺|+7';
-  }
 
-  void _showConsentPopup() {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Согласие на обработку персональных данных', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                  IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close, color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Text(_consentText, style: const TextStyle(fontSize: 13, height: 1.7, color: Color(0xFF333333))),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    final isPhone = widget.type == 'phone';
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(

@@ -20,7 +20,6 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   Map<String, dynamic>? _activeChat;
   List<Map<String, dynamic>> _messages = [];
   bool _loadingChats = true;
-  final bool _loadingMessages = false;
   final _messageCtrl = TextEditingController();
   final _scrollController = ScrollController();
   Timer? _refreshTimer;
@@ -30,9 +29,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   String _newChatType = 'client';
   String _contactSearch = '';
   bool _loadingContacts = false;
-  bool _showGroupSettings = false;
   final String _groupName = '';
-  int? _groupChatId;
 
   static const String _baseUrl = 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai';
 
@@ -248,11 +245,9 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
               child: const Icon(Icons.edit, size: 18, color: Color(0xFFDD1847)),
             ),
           ),
+        // TODO: настройки группы не реализованы
         if (_activeChat != null && _activeChat!['type'] == 'group')
-          GestureDetector(
-            onTap: () => setState(() => _showGroupSettings = true),
-            child: const Icon(Icons.settings, color: Color(0xFF666666)),
-          ),
+          const Icon(Icons.settings, color: Color(0xFF666666)),
         const SizedBox(width: 8),
         GestureDetector(
           onTap: () => Navigator.pop(context),

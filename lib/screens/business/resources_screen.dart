@@ -97,7 +97,6 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                         itemCount: _resources.length,
                         itemBuilder: (_, i) {
                           final r = _resources[i];
-                          final id = r['id'] is int ? r['id'] as int : int.tryParse(r['id'].toString()) ?? 0;
                           final servicesCount = r['services_count'] as int? ?? 0;
                           return GestureDetector(
                             onTap: () => _openResourceEditor(resource: r),

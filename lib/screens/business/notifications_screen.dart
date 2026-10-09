@@ -19,7 +19,6 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _loading = true;
 
   @override
   void initState() {
@@ -36,7 +35,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   Future<void> _load() async {
-    setState(() => _loading = false);
   }
 
   @override
@@ -882,12 +880,6 @@ class _HistoryTabState extends State<_HistoryTab> {
     'birthday': 'День рождения',
     'review_request': 'Запрос отзыва',
   };
-  static const _statusLabels = {
-    'sent': 'Отправлено',
-    'pending': 'Ожидает отправки',
-    'skipped': 'Не отправлено',
-    'postponed': 'Отложено',
-  };
   static const _channelLabels = {
     'manual': 'Ручная',
     'telegram': 'Telegram',
@@ -1664,158 +1656,6 @@ class _NotificationDetailPopup extends StatelessWidget {
 }
 
 // ==================== ДЕТАЛЬНЫЙ ПРОСМОТР УВЕДОМЛЕНИЯ ====================
-class _NotificationDetailSheet extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const _NotificationDetailSheet({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    const typeLabels = {
-      'new_booking': 'Создание записи',
-      'transfer': 'Перенос записи',
-      'cancel': 'Отмена записи',
-      'reminder': 'Напоминание',
-      'return_visit': 'Повторный визит',
-      'after_cancel': 'После отмены',
-      'birthday': 'День рождения',
-      'review_request': 'Запрос отзыва',
-    };
-    const statusLabels = {
-      'sent': 'Отправлено',
-      'pending': 'Ожидает',
-      'skipped': 'Не отправлено',
-      'postponed': 'Отложено'
-    };
-    const channelLabels = {
-      'manual': 'Ручная',
-      'telegram': 'Telegram',
-      'internal': 'Внутренние',
-      'whatsapp': 'WhatsApp',
-      'whatsapp_business': 'WhatsApp Business'
-    };
-
-    final status = item['status'] ?? 'pending';
-    final statusColor = status == 'sent'
-        ? const Color(0xFF2E7D32)
-        : status == 'skipped'
-            ? const Color(0xFFC62828)
-            : status == 'postponed'
-                ? const Color(0xFF7B1FA2)
-                : const Color(0xFFF57C00);
-
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              border: Border(
-                  bottom:
-                      BorderSide(color: Color(0xFFF0F0F0))),
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text('Детали уведомления',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                _detailRow('Клиент',
-                    item['client_name'] ?? 'Неизвестно'),
-                _detailRow('Телефон',
-                    item['client_phone'] ?? '—'),
-                _detailRow('Тип',
-                    typeLabels[item['type']] ?? item['type']),
-                _detailRow('Канал',
-                    channelLabels[item['channel']] ??
-                        item['channel'] ??
-                        '—'),
-                _detailRow(
-                  'Статус',
-                  statusLabels[status] ?? status,
-                  valueColor: statusColor,
-                ),
-                _detailRow('Дата создания',
-                    item['created_at'] ?? '—'),
-                _detailRow('Время отправки',
-                    item['send_at'] ?? '—'),
-                if (item['error_message'] != null &&
-                    item['error_message'].toString().isNotEmpty)
-                  _detailRow('Ошибка',
-                      item['error_message'].toString(),
-                      valueColor: const Color(0xFFC62828)),
-                if (item['message_text'] != null &&
-                    item['message_text'].toString().isNotEmpty)
-                  ...[
-                    const SizedBox(height: 16),
-                    const Text('Текст сообщения',
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F8F8),
-                        borderRadius:
-                            BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        item['message_text'].toString(),
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _detailRow(String label, String value,
-      {Color? valueColor}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(label,
-                style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF999999))),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: valueColor ?? const Color(0xFF1A1A1A),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ==================== КАНАЛЫ ОТПРАВКИ ====================
 class _ChannelsTab extends StatefulWidget {
@@ -2070,50 +1910,6 @@ class _ChannelsTabState extends State<_ChannelsTab> {
   );
 }
 
-  Widget _buildInternalTypesList(StateSetter setModalState) {
-    const types = [
-      {'key': 'new_booking', 'label': 'Создание записи'},
-      {'key': 'transfer', 'label': 'Перенос записи'},
-      {'key': 'cancel', 'label': 'Отмена записи'},
-      {'key': 'reminder', 'label': 'Напоминание'},
-      {'key': 'return_visit', 'label': 'Повторный визит'},
-      {'key': 'after_cancel', 'label': 'После отмены'},
-      {'key': 'birthday', 'label': 'День рождения'},
-      {'key': 'review_request', 'label': 'Запрос отзыва'},
-    ];
-
-    return Column(
-      children: types.map((t) {
-        final key = t['key']!;
-        final enabled = _internalTypes[key] != false;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F8F8),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(t['label']!, style: const TextStyle(fontSize: 14)),
-              ),
-              const SizedBox(width: 12),
-              Switch(
-                value: enabled,
-                onChanged: (v) {
-                  setModalState(() => _internalTypes[key] = v);
-                  setState(() => _internalTypes[key] = v);
-                  _saveInternal(types: _internalTypes);
-                },
-                activeThumbColor: const Color(0xFFDD1847),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
 
   
 
@@ -2138,56 +1934,6 @@ class _ChannelsTabState extends State<_ChannelsTab> {
   );
 }
 
-  Widget _buildTelegramTypesList(
-      StateSetter setModalState) {
-    const types = [
-      {'key': 'new_booking', 'label': 'Создание записи'},
-      {'key': 'transfer', 'label': 'Перенос записи'},
-      {'key': 'cancel', 'label': 'Отмена записи'},
-      {'key': 'reminder', 'label': 'Напоминание'},
-      {'key': 'return_visit', 'label': 'Повторный визит'},
-      {'key': 'after_cancel', 'label': 'После отмены'},
-      {'key': 'birthday', 'label': 'День рождения'},
-      {'key': 'review_request', 'label': 'Запрос отзыва'},
-    ];
-
-    return Column(
-      children: types.map((t) {
-        final key = t['key']!;
-        final enabled = _telegramTypes[key] != false;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(
-              horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F8F8),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-            children: [
-              Text(t['label']!,
-                  style: const TextStyle(fontSize: 14)),
-              Switch(
-                value: enabled,
-                onChanged: (v) {
-                  setModalState(() =>
-                      _telegramTypes[key] = v);
-                  setState(
-                      () => _telegramTypes[key] = v);
-                  _saveTelegram(
-                      types: _telegramTypes);
-                },
-                activeThumbColor:
-                    const Color(0xFFDD1847),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
 
   void _showManualSettings() {
     Navigator.push(
@@ -3516,7 +3262,6 @@ class _NotificationTypeSettingsScreenState
   }
 
   Widget _buildTemplateCard() {
-    final template = _templates[_activeChannel] ?? '';
 
     return GestureDetector(
       onTap: () => _showTemplateModal(),
@@ -4340,21 +4085,27 @@ class _NotificationTypeSettingsScreenState
       const Text('Дата отправки',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
       const SizedBox(height: 12),
-      ...options.entries.map((e) => Container(
+      RadioGroup<String>(
+        groupValue: sendDate,
+        onChanged: (v) {
+          if (v != null) {
+            setState(() => _settings['send_date'] = v);
+            _autoSave();
+          }
+        },
+        child: Column(
+          children: options.entries.map((e) => Container(
             margin: const EdgeInsets.only(bottom: 8),
             child: RadioListTile<String>(
               value: e.key,
-              groupValue: sendDate,
-              onChanged: (v) {
-                setState(() => _settings['send_date'] = v);
-                _autoSave();
-              },
               title: Text(e.value),
               activeColor: const Color(0xFFDD1847),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               tileColor: Colors.white,
             ),
-          )),
+          )).toList(),
+        ),
+      ),
       const SizedBox(height: 24),
       const Text('Время отправки',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),

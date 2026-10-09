@@ -294,11 +294,8 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   bool _optimalTimeEnabled = true;
   bool _fixedTimeEnabled = false;
   Map<String, dynamic> _minBookingTime = {'enabled': false, 'value': 1, 'unit': 'hours'};
-  List<Map<String, dynamic>> _optimalIntervals = [];
-  Map<String, dynamic>? _optimalStats;
 
   List<Map<String, dynamic>> _photos = [];
-  final List<int> _deletedPhotoIds = [];
 
   String _accessStatus = 'Настроить';
   String _scheduleStatus = 'Настроить';
@@ -527,8 +524,6 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       final result = await ApiService.get('/api/calculate-optimal-intervals?employee_id=${widget.employee!['id']}&project_id=${widget.projectId}');
       if (result['success'] == true) {
         setState(() {
-          _optimalIntervals = List<Map<String, dynamic>>.from(result['data']['intervals'] ?? []);
-          _optimalStats = result['data'];
         });
       }
     } catch (_) {}

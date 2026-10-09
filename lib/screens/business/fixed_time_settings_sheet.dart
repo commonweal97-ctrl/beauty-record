@@ -35,8 +35,6 @@ class _FixedTimeSettingsSheetState extends State<FixedTimeSettingsSheet> {
   bool _loading = true;
   bool _saving = false;
 
-  static const _weekdayNames = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  static const _weekdayFull = ['', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
   static const _months = ['', 'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
   @override

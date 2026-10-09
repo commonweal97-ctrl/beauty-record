@@ -30,7 +30,9 @@ class ApiService {
     await _loadCookies();
     try {
       await get('/api/auth/check-session');
-    } catch (e) {}
+    } catch (e) {
+      AppLogger.debug('api_service: caught error: $e');
+    }
   }
 
   static Future<void> clearSession() async {
@@ -503,7 +505,9 @@ class ApiService {
         }
         return cities;
       }
-    } catch (e) {}
+    } catch (e) {
+      AppLogger.debug('api_service: caught error: $e');
+    }
     return null;
   }
 

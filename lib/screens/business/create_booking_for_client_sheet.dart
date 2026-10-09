@@ -295,6 +295,7 @@ class _CreateBookingForClientSheetState extends State<CreateBookingForClientShee
   }
 
   void _findNearestAvailableDate() {
+    // ignore: unused_local_variable
     final totalDuration = _getTotalDuration();
     final today = DateTime.now();
     final clean = DateTime(today.year, today.month, today.day);
@@ -410,6 +411,7 @@ class _CreateBookingForClientSheetState extends State<CreateBookingForClientShee
   void _updateTimeSlots() {
     if (_selectedDate == null) return;
     final dateStr = '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
+    // ignore: unused_local_variable
     final totalDuration = _getTotalDuration();
 
     final mastersToShow = <Map<String, dynamic>>[];
@@ -1085,6 +1087,7 @@ Widget _buildStartOption({required String iconPath, required String title, requi
   }
 
   Widget _buildSingleDateTimeContent(List<Map<String, dynamic>> selectedServices) {
+    // ignore: unused_local_variable
     final totalDuration = _getTotalDuration();
     return Column(children: [
       SizedBox(

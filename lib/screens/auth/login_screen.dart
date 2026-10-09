@@ -74,6 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (check['success'] == true && mounted) {
         // Пользователь в сессии — проверяем последний выбор
         final lastRole = await AuthService.getLastRole();
+        if (!mounted) return;
         
         if (lastRole == 'client') {
           // Сразу в ЛК клиента
@@ -90,6 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
         
         if (lastRole == 'business') {
           final lastProjectId = await AuthService.getLastProjectId();
+          if (!mounted) return;
           
           if (lastProjectId != null && lastProjectId > 0) {
             // Сразу в журнал проекта
@@ -130,6 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
     
     // Если сессии нет — проверяем сохраненные данные
     final saved = await AuthService.getSavedLogin();
+    if (!mounted) return;
     
     if (saved == null) {
       setState(() => _isAutoLoginChecking = false);
@@ -230,6 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final userEmail = result['data']['user_email'] ?? '';
         
         await AuthService.saveLogin(userId, hasPin: hasPin, userEmail: userEmail);
+        if (!mounted) return;
         
         if (hasPin) {
           Navigator.push(context, PageRouteBuilder(
@@ -239,6 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ));
         } else {
           await ApiService.sendOtp(userId, identifier, type);
+          if (!mounted) return;
           Navigator.push(context, PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 250),
             pageBuilder: (_, _, _) => OtpScreen(

@@ -640,19 +640,21 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      if (response.statusCode == 200 && mounted) {
+      if (!mounted) return;
+      if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
         if (result['success'] == true) {
-          Navigator.pop(ctx);
+          Navigator.pop(context);
           _loadReviews();
           showToast(context, 'Ответ отправлен!');
         } else {
-          showToast(ctx, result['message'] ?? 'Ошибка', isError: true);
+          showToast(context, result['message'] ?? 'Ошибка', isError: true);
         }
       }
     } catch (e) {
       debugPrint('Ошибка отправки ответа: $e');
-      showToast(ctx, 'Ошибка соединения', isError: true);
+      if (!mounted) return;
+      showToast(context, 'Ошибка соединения', isError: true);
     }
   },
                   style: ElevatedButton.styleFrom(

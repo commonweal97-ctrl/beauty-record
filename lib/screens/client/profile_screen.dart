@@ -255,6 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Быстрый вход
           _buildSettingsRow('Быстрый вход', '', () {
             _getUserId().then((id) {
+              if (!context.mounted) return;
               Navigator.push(context, MaterialPageRoute(builder: (_) => QuickSetupScreen(userId: id)));
             });
           }, trailing: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -292,7 +293,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     onPressed: () async {
       await ApiService.clearSession();
       await AuthService.clearLogin();
-      if (mounted) Navigator.pushReplacementNamed(context, '/');
+      if (context.mounted) Navigator.pushReplacementNamed(context, '/');
     },
     child: const Text('Выйти из аккаунта', style: TextStyle(color: Color(0xFF999999))),
 ),

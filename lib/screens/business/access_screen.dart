@@ -416,6 +416,7 @@ class _AccessFormSheetState extends State<AccessFormSheet> {
         showToast(context, 'Доступ сохранён');  // Вместо SnackBar
       }
     } catch (_) {
+      if (!mounted) return;
       showToast(context, 'Ошибка сохранения', isError: true);  // Добавлено
     }
     if (mounted) setState(() => _saving = false);

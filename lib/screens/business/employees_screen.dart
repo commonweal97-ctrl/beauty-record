@@ -648,6 +648,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       if (result['success'] == true && mounted) {
         final empId = result['employee_id'] ?? widget.employee?['id'];
         if (_avatarFile != null && empId != null) await _uploadAvatar(empId);
+        if (!mounted) return;
         Navigator.pop(context);
         widget.onSaved();
         showToast(context, _isEdit ? 'Сотрудник обновлён' : 'Сотрудник добавлен');
@@ -832,8 +833,9 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       allMbt[widget.employee!['id'].toString()] = _minBookingTime;
       await ApiService.post('/api/project-profile/save-online-setting', {'project_id': widget.projectId, 'min_booking_time': allMbt});
       await ApiService.post('/api/employee/toggle-optimal-time', {'employee_id': widget.employee!['id'], 'project_id': widget.projectId, 'enabled': _optimalTimeEnabled});
+      if (!mounted) return;
       setState(() {});
-      Navigator.pop(ctx);
+      Navigator.pop(context);
       showToast(context, 'Настройки сохранены');
     } catch (_) {}
   }

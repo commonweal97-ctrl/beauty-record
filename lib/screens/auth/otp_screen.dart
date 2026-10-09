@@ -125,6 +125,7 @@ class _OtpScreenState extends State<OtpScreen> {
           final methods = result['data']['methods'] ?? {};
           if (methods['pin'] == true) {
             await AuthService.saveLogin(widget.userId, hasPin: true, userEmail: widget.email);
+            if (!mounted) return;
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (_) => SelectRoleScreen()),

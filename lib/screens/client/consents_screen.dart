@@ -67,6 +67,7 @@ class _ConsentsScreenState extends State<ConsentsScreen> {
     try {
       final uri = Uri.parse('${ApiService.baseUrl}/api/client/consent/save');
       await http.post(uri, headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'client_id=$userId&project_id=$projectId&$field=$newValue');
+      if (!mounted) return;
       showToast(context, 'Сохранено');
     } catch (e) {
       // Откат
@@ -80,6 +81,7 @@ class _ConsentsScreenState extends State<ConsentsScreen> {
           }
         }
       });
+      if (!mounted) return;
       showToast(context, 'Ошибка сохранения', isError: true);
     }
   }

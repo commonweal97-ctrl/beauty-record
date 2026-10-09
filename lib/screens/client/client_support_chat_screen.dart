@@ -194,6 +194,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
       _currentStatus = 'open';
     }
 
+    if (!mounted) return;
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,

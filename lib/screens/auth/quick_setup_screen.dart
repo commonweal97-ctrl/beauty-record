@@ -220,6 +220,7 @@ class _PinQuickSetupState extends State<_PinQuickSetup> {
     } else {
       if (_pin == _firstPin) {
         ApiService.savePin(widget.userId, _pin).then((_) {
+          if (!mounted) return;
           Navigator.pop(context, true);
         });
       } else {

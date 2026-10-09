@@ -89,7 +89,7 @@ class _RateBookingScreenState extends State<RateBookingScreen> {
               Text('Ваш отзыв будет опубликован после проверки', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
             ]),
           ),
-        ).then((_) => Navigator.pop(context));
+        ).then((_) { if (mounted) Navigator.pop(context); });
       }
     } catch (_) {}
     setState(() => _submitting = false);

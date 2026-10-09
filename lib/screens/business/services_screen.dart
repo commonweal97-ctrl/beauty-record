@@ -619,6 +619,7 @@ for (final entry in _employeePrices.entries) {
           }
         }
 
+        if (!mounted) return;
         Navigator.pop(context);
         widget.onSaved();
       } else if (mounted) {
@@ -1238,7 +1239,7 @@ for (final entry in _employeePrices.entries) {
                         ]));
                         if (c == true) {
                           await ApiService.post('/api/service/delete', {'service_id': widget.service!['id'], 'project_id': widget.projectId});
-                          if (mounted) { Navigator.pop(context); widget.onSaved(); }
+                          if (context.mounted) { Navigator.pop(context); widget.onSaved(); }
                         }
                       },
                       icon: const Icon(Icons.delete_outline, size: 18),

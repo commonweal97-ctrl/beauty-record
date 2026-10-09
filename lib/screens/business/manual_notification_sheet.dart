@@ -206,6 +206,7 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
 
   Future<void> _sendCopy(Map<String, dynamic> item) async {
     await Clipboard.setData(ClipboardData(text: item['message'] ?? ''));
+    if (!mounted) return;
     showToast(context, 'Скопировано в буфер обмена');
     _showConfirmScreen();
   }

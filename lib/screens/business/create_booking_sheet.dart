@@ -201,6 +201,7 @@ class _CreateBookingSheetState extends State<CreateBookingSheet> {
         showToast(context, result['message'] ?? 'Ошибка', isError: true);
       }
     } catch (_) {
+      if (!mounted) return;
       showToast(context, 'Ошибка соединения', isError: true);
     }
   }

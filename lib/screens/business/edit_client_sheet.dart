@@ -183,6 +183,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
         showToast(context, 'Клиент удалён');
       }
     } catch (e) {
+      if (!mounted) return;
       showToast(context, 'Ошибка удаления', isError: true);
     }
   }

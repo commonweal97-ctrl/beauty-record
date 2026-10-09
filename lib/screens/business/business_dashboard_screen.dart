@@ -276,6 +276,7 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                         onTap: () async {
                           Navigator.of(context).pop();
                           final result = await ApiService.get('/api/profile');
+                          if (!mounted) return;
                           final userId = result['data']?['id'] ?? 0;
                           if (userId > 0) {
                             Navigator.push(context, MaterialPageRoute(builder: (_) => QuickSetupScreen(userId: userId)));

@@ -176,6 +176,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                   onPressed: () async { 
     await ApiService.clearSession();
     await AuthService.clearLogin(); 
+    if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => LoginScreen()), (_) => false); 
 },
                   child: const Text('Выйти из аккаунта', style: TextStyle(color: Color(0xFF999999))),

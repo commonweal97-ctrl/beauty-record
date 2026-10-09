@@ -216,6 +216,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
                             });
 
                             if (result['success'] == true) {
+                              if (!ctx.mounted) return;
                               Navigator.pop(ctx);
                               _loadTickets();
                             } else {

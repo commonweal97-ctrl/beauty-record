@@ -52,6 +52,7 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
       if (mounted) {
         if (authenticated) {
           await AuthService.saveLogin(widget.userId, hasPin: true);
+          if (!mounted) return;
           
           showToast(context, 'Вход по биометрии успешно настроен!');
           

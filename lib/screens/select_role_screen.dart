@@ -1,8 +1,9 @@
 // lib/screens/select_role_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
-import '../services/auth_service.dart';
+import '../providers/user_provider.dart';
 import 'client/client_dashboard_screen.dart';
 import 'business/business_dashboard_screen.dart';
 import 'auth/login_screen.dart';
@@ -54,13 +55,15 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> with SingleTickerPr
   }
 
   Future<void> _goToClient() async {
-    await AuthService.saveLastRole('client');
-    _navigate(ClientDashboardScreen());
+    await context.read<UserProvider>().setRole('client');
+    if (!mounted) return;
+    _navigate(const ClientDashboardScreen());
   }
 
   Future<void> _goToBusiness() async {
-    await AuthService.saveLastRole('business');
-    _navigate(BusinessDashboardScreen());
+    await context.read<UserProvider>().setRole('business');
+    if (!mounted) return;
+    _navigate(const BusinessDashboardScreen());
   }
 
   Future<void> _logout() async {
@@ -77,8 +80,10 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> with SingleTickerPr
       // 2. Очищаем локальные куки
       await ApiService.clearSession();
       
-      // 3. Полная очистка данных авторизации
-      await AuthService.fullLogout();
+      // 3. Полная очистка данных авторизации (через UserProvider)
+      if (mounted) {
+        await context.read<UserProvider>().logout();
+      }
       
       // 4. Переходим на экран входа
       if (mounted) {

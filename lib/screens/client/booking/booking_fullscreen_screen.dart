@@ -10,7 +10,7 @@ import 'steps/booking_master_services_step.dart';
 import 'steps/booking_contact_step.dart';
 import 'steps/booking_confirm_step.dart';
 import 'steps/booking_success_step.dart';
-import '../../../utils/app_logger.dart';
+import '../../../core/app_logger.dart';
 
 class BookingFullscreenScreen extends StatefulWidget {
   final int projectId;

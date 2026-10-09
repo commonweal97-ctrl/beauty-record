@@ -7,7 +7,7 @@ import 'contact_screen.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
-import '../../utils/app_logger.dart';
+import '../../core/app_logger.dart';
 
 class BookingsScreen extends StatefulWidget {
   const BookingsScreen({super.key});

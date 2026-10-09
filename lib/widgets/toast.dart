@@ -1,6 +1,6 @@
 // lib/widgets/toast.dart
 import 'package:flutter/material.dart';
-import '../utils/app_logger.dart';
+import '../core/app_logger.dart';
 
 void showToast(BuildContext context, String message, {bool isError = false}) {
   // Откладываем показ toast до следующего кадра,

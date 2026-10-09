@@ -14,7 +14,7 @@ import 'widgets/master_card.dart';
 import 'widgets/service_card.dart';
 import 'widgets/review_card.dart';
 import 'widgets/bottom_booking_bar.dart';
-import '../../../utils/app_logger.dart';
+import '../../../core/app_logger.dart';
 
 class BookingScreen extends StatefulWidget {
   final int projectId;

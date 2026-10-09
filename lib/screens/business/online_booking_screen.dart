@@ -6,7 +6,7 @@ import '../../../widgets/skeletons.dart';
 import 'fixed_time_settings_sheet.dart';
 import 'booking_rules_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../utils/app_logger.dart';
+import '../../core/app_logger.dart';
 
 class OnlineBookingScreen extends StatefulWidget {
   final int projectId;

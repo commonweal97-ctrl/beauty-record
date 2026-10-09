@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/app_logger.dart';
+import '../core/app_logger.dart';
 
 class ApiService {
   static const String baseUrl = 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai';

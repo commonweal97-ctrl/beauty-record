@@ -7,7 +7,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../utils/app_logger.dart';
+import '../../core/app_logger.dart';
 
 class ServicesScreen extends StatefulWidget {
   final int projectId;

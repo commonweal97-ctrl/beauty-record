@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,9 +14,10 @@ import 'screens/auth/pin_setup_screen.dart';
 import 'screens/auth/biometric_setup_screen.dart';
 import 'services/push_notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'utils/app_logger.dart';
+import 'core/app_logger.dart';
 import 'core/app_colors.dart';
 import 'core/app_typography.dart';
+import 'core/crashlytics_service.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -46,6 +48,32 @@ void main() async {
         measurementId: "G-Z2N51YVMLH",
       ),
     );
+
+    // ========== CRASHLYTICS ==========
+    // 1. Перехват ошибок Flutter framework
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      // Логируем в Crashlytics (в release)
+      CrashlyticsService.recordError(
+        details.exception,
+        details.stack ?? StackTrace.current,
+        reason: 'FlutterError: ${details.context}',
+        fatal: true,
+      );
+    };
+
+    // 2. Перехват асинхронных ошибок (вне Flutter zone)
+    PlatformDispatcher.instance.onError = (error, stack) {
+      CrashlyticsService.recordError(
+        error,
+        stack,
+        reason: 'PlatformDispatcher.onError',
+        fatal: true,
+      );
+      return true;
+    };
+
+    AppLogger.info('Crashlytics подключён');
   } catch (e) {
     AppLogger.debug('Firebase error: $e');
   }

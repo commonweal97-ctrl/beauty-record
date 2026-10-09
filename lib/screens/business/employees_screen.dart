@@ -12,7 +12,7 @@ import 'fixed_time_settings_sheet.dart';
 import 'access_screen.dart';
 import 'employee_schedule_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../utils/app_logger.dart';
+import '../../core/app_logger.dart';
 
 // ==================== ОТДЕЛЬНЫЙ ВИДЖЕТ ДЛЯ ПОЛЯ ЦЕНЫ ====================
 class _PriceField extends StatefulWidget {

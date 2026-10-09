@@ -6,7 +6,7 @@ import '../services/auth_service.dart';
 import 'client/client_dashboard_screen.dart';
 import 'business/business_dashboard_screen.dart';
 import 'auth/login_screen.dart';
-import '../utils/app_logger.dart';
+import '../core/app_logger.dart';
 
 class SelectRoleScreen extends StatefulWidget {
   const SelectRoleScreen({super.key});

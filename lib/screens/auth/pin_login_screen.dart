@@ -9,7 +9,7 @@ import '../../services/push_notification_service.dart';
 import '../../widgets/toast.dart';
 import 'login_screen.dart';
 import 'otp_screen.dart';
-import '../../utils/app_logger.dart';
+import '../../core/app_logger.dart';
 
 class PinLoginScreen extends StatefulWidget {
   final int userId;

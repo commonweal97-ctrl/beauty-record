@@ -6,7 +6,7 @@ import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
 import '../client/client_profile_sheet.dart';
 import 'edit_client_sheet.dart';
-import '../../utils/app_logger.dart';
+import '../../core/app_logger.dart';
 
 class ClientsScreen extends StatefulWidget {
   final int projectId;

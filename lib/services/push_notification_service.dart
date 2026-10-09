@@ -26,7 +26,7 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   );
 
   await localNotifications.initialize(
-    const InitializationSettings(
+    settings: const InitializationSettings(
       android: androidInit,
       iOS: iosInit,
     ),
@@ -52,10 +52,10 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   );
 
   await localNotifications.show(
-    DateTime.now().millisecondsSinceEpoch % 100000,
-    title,
-    body,
-    NotificationDetails(
+    id: DateTime.now().millisecondsSinceEpoch % 100000,
+    title: title,
+    body: body,
+    notificationDetails: NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     ),
@@ -91,7 +91,7 @@ class PushNotificationService {
     );
 
     await _localNotifications.initialize(
-      const InitializationSettings(
+      settings: const InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
       ),
@@ -219,10 +219,10 @@ class PushNotificationService {
     );
 
     await _localNotifications.show(
-      id,
-      title,
-      body,
-      NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
       ),

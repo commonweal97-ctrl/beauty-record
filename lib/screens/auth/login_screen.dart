@@ -1,6 +1,7 @@
 // lib/screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
+import '../../core/analytics_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -234,6 +235,8 @@ class _LoginScreenState extends State<LoginScreen> {
         final userEmail = result['data']['user_email'] ?? '';
         
         await AuthService.saveLogin(userId, hasPin: hasPin, userEmail: userEmail);
+        await AnalyticsService.logLogin(hasPin ? 'pin' : 'otp');
+        await AnalyticsService.setUserId(userId);
         if (!mounted) return;
         
         if (hasPin) {

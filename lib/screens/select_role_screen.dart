@@ -7,6 +7,7 @@ import 'client/client_dashboard_screen.dart';
 import 'business/business_dashboard_screen.dart';
 import 'auth/login_screen.dart';
 import '../core/app_logger.dart';
+import '../core/analytics_service.dart';
 
 class SelectRoleScreen extends StatefulWidget {
   const SelectRoleScreen({super.key});
@@ -23,6 +24,7 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
+    AnalyticsService.logScreen('select_role');
     _controller = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,

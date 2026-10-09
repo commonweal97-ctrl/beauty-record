@@ -1,5 +1,6 @@
 // lib/screens/auth/otp_screen.dart
 import 'package:flutter/material.dart';
+import '../../core/analytics_service.dart';
 import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
@@ -116,6 +117,8 @@ class _OtpScreenState extends State<OtpScreen> {
 
       if (result['success'] == true) {
         if (widget.isRegistration) {
+          await AnalyticsService.logRegistration('otp');
+          if (!mounted) return;
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => PinSetupScreen(userId: result['data']['user_id'] ?? widget.userId)),

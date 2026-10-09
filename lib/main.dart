@@ -18,6 +18,7 @@ import 'core/app_logger.dart';
 import 'core/app_colors.dart';
 import 'core/app_typography.dart';
 import 'core/crashlytics_service.dart';
+import 'core/analytics_service.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -74,6 +75,10 @@ void main() async {
     };
 
     AppLogger.info('Crashlytics подключён');
+
+    // ========== ANALYTICS ==========
+    await AnalyticsService.logAppOpen();
+    AppLogger.info('Analytics подключён');
   } catch (e) {
     AppLogger.debug('Firebase error: $e');
   }

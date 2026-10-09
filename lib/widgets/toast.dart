@@ -1,5 +1,6 @@
 // lib/widgets/toast.dart
 import 'package:flutter/material.dart';
+import '../utils/app_logger.dart';
 
 void showToast(BuildContext context, String message, {bool isError = false}) {
   // Откладываем показ toast до следующего кадра,
@@ -15,7 +16,6 @@ void _showToastInternal(BuildContext context, String message, {bool isError = fa
     if (!context.mounted) return;
     
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
     
     late OverlayEntry entry;
     
@@ -49,7 +49,7 @@ void _showToastInternal(BuildContext context, String message, {bool isError = fa
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: (isError ? const Color(0xFFC62828) : const Color(0xFF1A1A1A)).withOpacity(0.3),
+                          color: (isError ? const Color(0xFFC62828) : const Color(0xFF1A1A1A)).withValues(alpha: 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, -8),
                         ),
@@ -101,6 +101,6 @@ void _showToastInternal(BuildContext context, String message, {bool isError = fa
     });
   } catch (e) {
     // Логируем ошибку, но не крашим приложение
-    print('Toast error: $e');
+    AppLogger.debug('Toast error: $e');
   }
 }

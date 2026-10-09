@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,6 +7,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../utils/app_logger.dart';
 
 class ServicesScreen extends StatefulWidget {
   final int projectId;
@@ -261,7 +261,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
         child: Row(children: [
           Container(
             width: 52, height: 52,
@@ -333,11 +333,11 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   
   Set<int> _employeeIds = {};
   Map<int, Map<String, dynamic>> _employeePrices = {};
-  Map<int, bool> _expandedEmployees = {};
+  final Map<int, bool> _expandedEmployees = {};
 
   List<Map<String, dynamic>> _resources = [];
   Map<int, bool> _resourceStates = {};
-  List<File> _workPhotos = [];
+  final List<File> _workPhotos = [];
   List<Map<String, dynamic>> _existingWorkPhotos = [];
   static const _maxWorkPhotos = 6;
 
@@ -375,28 +375,28 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   (s['employee_ids'] as List?)?.map((e) => int.tryParse(e.toString()) ?? 0).where((e) => e > 0) ?? []
 );
 
-print('=== DEBUG employee_prices ===');
-print('Service keys: ${s.keys}');
-print('Has employee_prices key: ${s.containsKey('employee_prices')}');
-print('RAW employee_prices: ${s['employee_prices']}');
-print('Type: ${s['employee_prices']?.runtimeType}');
+AppLogger.debug('=== DEBUG employee_prices ===');
+AppLogger.debug('Service keys: ${s.keys}');
+AppLogger.debug('Has employee_prices key: ${s.containsKey('employee_prices')}');
+AppLogger.debug('RAW employee_prices: ${s['employee_prices']}');
+AppLogger.debug('Type: ${s['employee_prices']?.runtimeType}');
 
 _employeePrices = {};
 if (s['employee_prices'] != null) {
   final raw = s['employee_prices'];
   if (raw is Map) {
     raw.forEach((k, v) {
-      print('  Key: $k (${k.runtimeType}), Value: $v (${v.runtimeType})');
+      AppLogger.debug('  Key: $k (${k.runtimeType}), Value: $v (${v.runtimeType})');
       final empId = int.tryParse(k.toString()) ?? 0;
       if (empId > 0 && v is Map) {
         _employeePrices[empId] = Map<String, dynamic>.from(v);
-        print('  -> Added empId=$empId: ${_employeePrices[empId]}');
+        AppLogger.debug('  -> Added empId=$empId: ${_employeePrices[empId]}');
       } else {
-        print('  -> SKIPPED: empId=$empId, v is Map=${v is Map}');
+        AppLogger.debug('  -> SKIPPED: empId=$empId, v is Map=${v is Map}');
       }
     });
   } else {
-    print('raw is NOT a Map, it is ${raw.runtimeType}');
+    AppLogger.debug('raw is NOT a Map, it is ${raw.runtimeType}');
   }
   for (final empId in _employeePrices.keys) {
     if (!_employeeIds.contains(empId)) {
@@ -404,11 +404,11 @@ if (s['employee_prices'] != null) {
     }
   }
 } else {
-  print('employee_prices is NULL');
+  AppLogger.debug('employee_prices is NULL');
 }
-print('PARSED _employeePrices: $_employeePrices');
-print('_employeeIds: $_employeeIds');
-print('=== END DEBUG ===');
+AppLogger.debug('PARSED _employeePrices: $_employeePrices');
+AppLogger.debug('_employeeIds: $_employeeIds');
+AppLogger.debug('=== END DEBUG ===');
         }
     _loadResources();
     _loadEmployees();
@@ -479,12 +479,12 @@ print('=== END DEBUG ===');
   Future<void> _loadEmployeePrices() async {
   try {
     final result = await ApiService.get('/api/service/get?id=${widget.service!['id']}&project_id=${widget.projectId}');
-    print('=== _loadEmployeePrices ===');
-    print('Result success: ${result['success']}');
+    AppLogger.debug('=== _loadEmployeePrices ===');
+    AppLogger.debug('Result success: ${result['success']}');
     if (result['success'] == true) {
       final data = result['data'];
-      print('Has employee_prices: ${data['employee_prices'] != null}');
-      print('RAW: ${data['employee_prices']}');
+      AppLogger.debug('Has employee_prices: ${data['employee_prices'] != null}');
+      AppLogger.debug('RAW: ${data['employee_prices']}');
       if (data['employee_prices'] != null && mounted) {
         setState(() {
           _employeePrices = {};
@@ -499,13 +499,13 @@ print('=== END DEBUG ===');
               _employeeIds.add(empId);
             }
           }
-          print('PARSED: $_employeePrices');
+          AppLogger.debug('PARSED: $_employeePrices');
         });
       }
     }
-    print('=== END _loadEmployeePrices ===');
+    AppLogger.debug('=== END _loadEmployeePrices ===');
   } catch (e) {
-    print('_loadEmployeePrices ERROR: $e');
+    AppLogger.debug('_loadEmployeePrices ERROR: $e');
   }
 }
 
@@ -524,9 +524,6 @@ print('=== END DEBUG ===');
     });
   }
 
-  void _expandEmployee(int empId) {
-    setState(() => _expandedEmployees[empId] = true);
-  }
 
   void _updateEmployeePrice(int empId, String value) {
     _employeePrices[empId] ??= {};
@@ -561,12 +558,6 @@ print('=== END DEBUG ===');
     setState(() {});
   }
 
-  void _pickEmployeeDuration(int empId) {
-    final currentDuration = (_employeePrices[empId]?['duration'] as int?) ?? _duration;
-    _showTimePicker('Длительность для сотрудника', currentDuration, (m) {
-      _updateEmployeeDuration(empId, m);
-    });
-  }
 
   // ========== СОХРАНЕНИЕ ==========
   
@@ -756,7 +747,7 @@ for (final entry in _employeePrices.entries) {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => GestureDetector(
           onTap: () => FocusScope.of(ctx).unfocus(),
-          child: Container(
+          child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.85,
             child: Column(children: [
               Container(
@@ -971,7 +962,7 @@ for (final entry in _employeePrices.entries) {
               _updateEmployeeOnlineBooking(empId, v);
               setModalState(() {});
             },
-            activeColor: const Color(0xFFDD1847),
+            activeThumbColor: const Color(0xFFDD1847),
           ),
         ]),
       ),
@@ -992,7 +983,7 @@ for (final entry in _employeePrices.entries) {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => GestureDetector(
           onTap: () => FocusScope.of(ctx).unfocus(),
-          child: Container(
+          child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.7,
             child: Column(children: [
               Container(
@@ -1021,7 +1012,7 @@ for (final entry in _employeePrices.entries) {
                               ])),
                               Switch(
                                 value: isActive,
-                                activeColor: const Color(0xFFDD1847),
+                                activeThumbColor: const Color(0xFFDD1847),
                                 onChanged: (v) => setModalState(() => localStates[rid] = v),
                               ),
                             ]),
@@ -1137,7 +1128,7 @@ for (final entry in _employeePrices.entries) {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
-      child: Container(
+      child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.9,
         child: Column(children: [
           Container(
@@ -1203,7 +1194,7 @@ for (final entry in _employeePrices.entries) {
                 const SizedBox(height: 20),
                 
                 _block('Стоимость', [
-                  Row(children: [const Text('Бесплатно'), const Spacer(), Switch(value: _isFree, onChanged: (v) => setState(() => _isFree = v), activeColor: const Color(0xFFDD1847))]),
+                  Row(children: [const Text('Бесплатно'), const Spacer(), Switch(value: _isFree, onChanged: (v) => setState(() => _isFree = v), activeThumbColor: const Color(0xFFDD1847))]),
                   if (!_isFree) ...[
                     const SizedBox(height: 12),
                     Row(children: [
@@ -1246,7 +1237,7 @@ for (final entry in _employeePrices.entries) {
                 ]),
                 const SizedBox(height: 20),
                 _block('Онлайн-запись', [
-                  Row(children: [const Text('Онлайн-запись'), const Spacer(), Switch(value: _onlineBooking, onChanged: (v) => setState(() => _onlineBooking = v), activeColor: const Color(0xFFDD1847))]),
+                  Row(children: [const Text('Онлайн-запись'), const Spacer(), Switch(value: _onlineBooking, onChanged: (v) => setState(() => _onlineBooking = v), activeThumbColor: const Color(0xFFDD1847))]),
                 ]),
                 const SizedBox(height: 20),
                 _block('Примеры работ', [_buildWorkPhotos()]),

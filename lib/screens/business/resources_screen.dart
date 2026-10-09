@@ -56,7 +56,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: _loading
-          ? ListView.builder(padding: const EdgeInsets.all(24), itemCount: 3, itemBuilder: (_, __) => Container(
+          ? ListView.builder(padding: const EdgeInsets.all(24), itemCount: 3, itemBuilder: (_, _) => Container(
               margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0))),
               child: Row(children: [
@@ -203,7 +203,7 @@ class _ResourceEditSheetState extends State<_ResourceEditSheet> {
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Container(
+        builder: (ctx, setModalState) => SizedBox(
           height: MediaQuery.of(context).size.height * 0.7,
           child: Column(children: [
             Container(
@@ -257,7 +257,7 @@ class _ResourceEditSheetState extends State<_ResourceEditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Column(children: [
         Container(
@@ -281,7 +281,7 @@ class _ResourceEditSheetState extends State<_ResourceEditSheet> {
                       TextField(controller: _nameCtrl, decoration: InputDecoration(hintText: 'Например: Лампа для сушки', filled: true, fillColor: const Color(0xFFF8F8F8), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E0E0))), contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12))),
                     ]),
                     const SizedBox(height: 20),
-                    Row(children: [const Text('Активен', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)), const Spacer(), Switch(value: _isActive, onChanged: (v) => setState(() => _isActive = v), activeColor: const Color(0xFFDD1847))]),
+                    Row(children: [const Text('Активен', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)), const Spacer(), Switch(value: _isActive, onChanged: (v) => setState(() => _isActive = v), activeThumbColor: const Color(0xFFDD1847))]),
                     const SizedBox(height: 20),
                     GestureDetector(onTap: _showServicePicker, child: Container(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)), child: Row(children: [Expanded(child: Text(_serviceIds.isEmpty ? 'Связанные услуги' : 'Выбрано: ${_serviceIds.length}', style: TextStyle(fontSize: 14, color: _serviceIds.isEmpty ? const Color(0xFF888888) : const Color(0xFF1A1A1A)))), const Icon(Icons.chevron_right, size: 20, color: Color(0xFFCCCCCC))]))),
                     if (_isEdit) ...[const SizedBox(height: 20), SizedBox(width: double.infinity, child: OutlinedButton(onPressed: _delete, style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFF44336), side: const BorderSide(color: Color(0xFFF44336)), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Удалить ресурс')))],

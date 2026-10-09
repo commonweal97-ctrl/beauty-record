@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../services/api_service.dart';
 import '../../../widgets/cached_image.dart';
 
 class ServiceDetailModal extends StatefulWidget {
@@ -50,7 +49,6 @@ class _ServiceDetailModalState extends State<ServiceDetailModal> {
   Widget build(BuildContext context) {
     final service = widget.service;
     final masters = _serviceMasters;
-    final price = (service['price'] as num?)?.toInt() ?? 0;
     final duration = (service['duration'] as num?)?.toInt() ?? 0;
     
     return Scaffold(
@@ -72,7 +70,7 @@ class _ServiceDetailModalState extends State<ServiceDetailModal> {
                     child: Container(
                       width: 40, height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -132,7 +130,7 @@ class _ServiceDetailModalState extends State<ServiceDetailModal> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Длительность', style: TextStyle(fontSize: 13, color: Color(0xFF888))),
+                                  const Text('Длительность', style: TextStyle(fontSize: 13, color: Color(0x000ff888))),
                                   Text(_formatDuration(duration), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                                 ],
                               ),
@@ -157,7 +155,7 @@ class _ServiceDetailModalState extends State<ServiceDetailModal> {
                         children: [
                           const Text('Описание услуги', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 12),
-                          Text(service['description'], style: const TextStyle(fontSize: 14, color: Color(0xFF555), height: 1.6)),
+                          Text(service['description'], style: const TextStyle(fontSize: 14, color: Color(0x000ff555), height: 1.6)),
                         ],
                       ),
                     ),
@@ -171,7 +169,7 @@ class _ServiceDetailModalState extends State<ServiceDetailModal> {
                   if (masters.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(20),
-                      child: Text('Нет доступных специалистов', style: TextStyle(color: Color(0xFF999))),
+                      child: Text('Нет доступных специалистов', style: TextStyle(color: Color(0x000ff999))),
                     )
                   else
                     ...masters.map((master) => Container(
@@ -201,7 +199,7 @@ class _ServiceDetailModalState extends State<ServiceDetailModal> {
                               children: [
                                 Text(master['name'] ?? '', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                                 if (master['position'] != null && master['position'].toString().isNotEmpty)
-                                  Text(master['position'], style: const TextStyle(fontSize: 13, color: Color(0xFF888))),
+                                  Text(master['position'], style: const TextStyle(fontSize: 13, color: Color(0x000ff888))),
                               ],
                             ),
                           ),
@@ -219,7 +217,7 @@ class _ServiceDetailModalState extends State<ServiceDetailModal> {
                           ),
                         ],
                       ),
-                    )).toList(),
+                    )),
                   
                   const SizedBox(height: 40),
                 ],

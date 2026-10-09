@@ -24,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _phoneCtrl = TextEditingController();
   String? _avatar;
   String? _birthDate;
-  String _countryCode = '7';
   String _countryDial = '+7';
   String _countryFlag = '🇷🇺';
   bool _loading = true;
@@ -280,7 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(15)),
             padding: const EdgeInsets.all(6),
             child: Row(children: [
-              Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)]), child: const Text('Клиент', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFFDD1847))))),
+              Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8)]), child: const Text('Клиент', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFFDD1847))))),
               Expanded(child: GestureDetector(
                 onTap: () => Navigator.pushReplacementNamed(context, '/business'),
                 child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(12)), child: const Text('Бизнес', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF666666)))),
@@ -348,7 +347,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           leading: Text(c['flag'] as String, style: const TextStyle(fontSize: 28)),
           title: Text(c['name'] as String, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           trailing: Text('+${c['dial_code']}', style: const TextStyle(fontSize: 16, color: Color(0xFF666666))),
-          onTap: () { setState(() { _countryCode = c['dial_code'] as String; _countryDial = '+${c['dial_code']}'; _countryFlag = c['flag'] as String; }); Navigator.pop(ctx); },
+          onTap: () { setState(() { _countryDial = '+${c['dial_code']}'; _countryFlag = c['flag'] as String; }); Navigator.pop(ctx); },
         )),
       ]))),
     );
@@ -418,8 +417,6 @@ class _CustomDatePickerState extends State<_CustomDatePicker> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    final daysInMonth = _daysInMonth(_selectedYear, _selectedMonth);
-    final firstDayOfWeek = DateTime(_selectedYear, _selectedMonth, 1).weekday % 7;
     
     return Container(
       padding: const EdgeInsets.all(20),

@@ -30,7 +30,7 @@ class _FixedTimeSettingsSheetState extends State<FixedTimeSettingsSheet> {
 
   Map<String, Map<String, dynamic>> _specificDays = {};
   DateTime _calendarMonth = DateTime.now();
-  Set<DateTime> _selectedDates = {};
+  final Set<DateTime> _selectedDates = {};
 
   bool _loading = true;
   bool _saving = false;
@@ -150,7 +150,8 @@ class _FixedTimeSettingsSheetState extends State<FixedTimeSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return Container(
+    if (_loading) {
+      return SizedBox(
       height: MediaQuery.of(context).size.height * 0.8,
       child: const Center(
         child: Column(
@@ -165,8 +166,9 @@ class _FixedTimeSettingsSheetState extends State<FixedTimeSettingsSheet> {
         ),
       ),
     );
+    }
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.9,
       child: Column(children: [
         Container(
@@ -212,7 +214,7 @@ class _FixedTimeSettingsSheetState extends State<FixedTimeSettingsSheet> {
                 Container(
                   margin: const EdgeInsets.only(top: 12),
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, -4))]),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4))]),
                   child: Row(children: [
                     Expanded(child: Text('Выбрано дней: ${_selectedDates.length}', style: const TextStyle(fontSize: 13, color: Color(0xFF666666)))),
                     TextButton(onPressed: _resetSpecificDays, child: const Text('Сбросить', style: TextStyle(fontSize: 12))),
@@ -259,7 +261,7 @@ class _FixedTimeSettingsSheetState extends State<FixedTimeSettingsSheet> {
           const SizedBox(height: 4),
           Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF999999), height: 1.3)),
         ])),
-        Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFDD1847)),
+        Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFDD1847)),
       ]),
     );
   }
@@ -475,7 +477,7 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
     final afternoon = allSlots.where((s) { final h = int.parse(s.split(':')[0]); return h >= 12 && h < 18; }).toList();
     final evening = allSlots.where((s) => int.parse(s.split(':')[0]) >= 18).toList();
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.8,
       child: Column(children: [
         Container(

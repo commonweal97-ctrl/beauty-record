@@ -50,7 +50,7 @@ class BookingStartStep extends StatelessWidget {
           const Spacer(),
           const Text(
             'Онлайн-запись предоставлена сервисом',
-            style: TextStyle(fontSize: 13, color: Color(0xFFAAA)),
+            style: TextStyle(fontSize: 13, color: Color(0x000ffaaa)),
           ),
         ],
       ),

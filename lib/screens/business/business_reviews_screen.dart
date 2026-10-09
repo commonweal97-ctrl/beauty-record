@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
-import '../../../widgets/cached_image.dart';
 import '../client/client_profile_sheet.dart';
 import '../../../widgets/toast.dart';
 
@@ -340,8 +339,8 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                       child: CachedNetworkImage(
                         imageUrl: BusinessReviewsScreen.buildImageUrl(clientAvatar),
                         width: 44, height: 44, fit: BoxFit.cover,
-                        placeholder: (_, __) => const SkeletonCircle(size: 44),
-                        errorWidget: (_, __, ___) => Text(initials, style: const TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w700, fontSize: 14)),
+                        placeholder: (_, _) => const SkeletonCircle(size: 44),
+                        errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w700, fontSize: 14)),
                       ),
                     )
                   : Text(initials, style: const TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w700, fontSize: 14)),
@@ -365,8 +364,8 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                     child: CachedNetworkImage(
                       imageUrl: BusinessReviewsScreen.buildImageUrl(employeeAvatar),
                       width: 24, height: 24, fit: BoxFit.cover,
-                      placeholder: (_, __) => const SkeletonCircle(size: 24),
-                      errorWidget: (_, __, ___) => const Icon(Icons.person, size: 14),
+                      placeholder: (_, _) => const SkeletonCircle(size: 24),
+                      errorWidget: (_, _, _) => const Icon(Icons.person, size: 14),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -393,8 +392,8 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                 child: CachedNetworkImage(
                   imageUrl: BusinessReviewsScreen.buildImageUrl(img),
                   width: 80, height: 80, fit: BoxFit.cover,
-                  placeholder: (_, __) => const SkeletonBox(width: 80, height: 80, radius: 8),
-                  errorWidget: (_, __, ___) => Container(
+                  placeholder: (_, _) => const SkeletonBox(width: 80, height: 80, radius: 8),
+                  errorWidget: (_, _, _) => Container(
                     width: 80, height: 80,
                     decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
                     child: const Icon(Icons.broken_image, color: Colors.grey),
@@ -445,8 +444,8 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
-        barrierColor: Colors.black.withOpacity(0.9),
-        pageBuilder: (_, __, ___) => Scaffold(
+        barrierColor: Colors.black.withValues(alpha: 0.9),
+        pageBuilder: (_, _, _) => Scaffold(
           backgroundColor: Colors.transparent,
           body: Stack(
             children: [
@@ -455,7 +454,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                   imageUrl: url,
                   fit: BoxFit.contain,
                   width: MediaQuery.of(context).size.width,
-                  placeholder: (_, __) => const Center(
+                  placeholder: (_, _) => const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -465,7 +464,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                       ],
                     ),
                   ),
-                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 48),
+                  errorWidget: (_, _, _) => const Icon(Icons.broken_image, color: Colors.white54, size: 48),
                 ),
               ),
               Positioned(
@@ -477,7 +476,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.close, color: Colors.white, size: 24),
@@ -487,14 +486,14 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
             ],
           ),
         ),
-        transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+        transitionsBuilder: (_, anim, _, child) => FadeTransition(opacity: anim, child: child),
       ),
     );
   }
 
   void _openReplyModal(int reviewId) {
-    final _replyCtrl = TextEditingController();
-    final List<File> _replyImages = [];
+    final replyCtrl = TextEditingController();
+    final List<File> replyImages = [];
 
     showModalBottomSheet(
       context: context,
@@ -520,7 +519,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                 ),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: TextField(
-                  controller: _replyCtrl,
+                  controller: replyCtrl,
                   maxLines: 4,
                   maxLength: 400,
                   decoration: const InputDecoration(
@@ -538,7 +537,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  ..._replyImages.asMap().entries.map((entry) => Stack(
+                  ...replyImages.asMap().entries.map((entry) => Stack(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
@@ -554,7 +553,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                         right: -6,
                         child: GestureDetector(
                           onTap: () {
-                            setModalState(() => _replyImages.removeAt(entry.key));
+                            setModalState(() => replyImages.removeAt(entry.key));
                           },
                           child: Container(
                             width: 22,
@@ -571,7 +570,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                     ],
                   )),
 
-                  if (_replyImages.length < 3)
+                  if (replyImages.length < 3)
                     GestureDetector(
                       onTap: () async {
                         final picker = ImagePicker();
@@ -581,7 +580,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                           maxHeight: 1200,
                         );
                         if (picked != null) {
-                          setModalState(() => _replyImages.add(File(picked.path)));
+                          setModalState(() => replyImages.add(File(picked.path)));
                         }
                       },
                       child: Container(
@@ -604,7 +603,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                 ],
               ),
 
-              if (_replyImages.length < 3)
+              if (replyImages.length < 3)
                 const Padding(
                   padding: EdgeInsets.only(top: 4, left: 2),
                   child: Text(
@@ -620,7 +619,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () async {
-    if (_replyCtrl.text.trim().isEmpty) {
+    if (replyCtrl.text.trim().isEmpty) {
       showToast(ctx, 'Введите текст ответа', isError: true);
       return;
     }
@@ -630,9 +629,9 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
       final request = http.MultipartRequest('POST', uri);
 
       request.fields['review_id'] = reviewId.toString();
-      request.fields['content'] = _replyCtrl.text.trim();
+      request.fields['content'] = replyCtrl.text.trim();
 
-      for (final img in _replyImages) {
+      for (final img in replyImages) {
         request.files.add(
           await http.MultipartFile.fromPath('images[]', img.path),
         );
@@ -747,7 +746,7 @@ class _FilterSheetState extends State<_FilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Column(children: [
         Padding(
@@ -773,8 +772,8 @@ class _FilterSheetState extends State<_FilterSheet> {
                           child: CachedNetworkImage(
                             imageUrl: BusinessReviewsScreen.buildImageUrl(avatarUrl),
                             width: 36, height: 36, fit: BoxFit.cover,
-                            placeholder: (_, __) => const SkeletonCircle(size: 36),
-                            errorWidget: (_, __, ___) => Text(
+                            placeholder: (_, _) => const SkeletonCircle(size: 36),
+                            errorWidget: (_, _, _) => Text(
                               widget.getTitle(item).isNotEmpty ? widget.getTitle(item)[0] : '?',
                               style: const TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w700),
                             ),

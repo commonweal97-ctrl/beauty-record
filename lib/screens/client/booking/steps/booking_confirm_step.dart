@@ -1,6 +1,5 @@
 // lib/screens/client/booking/steps/booking_confirm_step.dart
 import 'package:flutter/material.dart';
-import '../../../../widgets/cached_image.dart';
 
 class BookingConfirmStep extends StatelessWidget {
   final Map<String, dynamic>? contactData;
@@ -76,7 +75,7 @@ class BookingConfirmStep extends StatelessWidget {
                     Text(formatPrice(s), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black)),
                   ],
                 ),
-              )).toList(),
+              )),
               const Divider(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -158,7 +157,7 @@ class BookingConfirmStep extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
         
         Container(
           padding: const EdgeInsets.all(14),

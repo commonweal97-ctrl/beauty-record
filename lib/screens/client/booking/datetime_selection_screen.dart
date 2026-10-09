@@ -1,5 +1,4 @@
 // lib/screens/client/booking/datetime_selection_screen.dart
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../services/api_service.dart';
@@ -312,7 +311,7 @@ class _DateTimeSelectionScreenState extends State<DateTimeSelectionScreen> {
                 child: Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -400,7 +399,7 @@ class _DateTimeSelectionScreenState extends State<DateTimeSelectionScreen> {
           child: Container(
             width: 44, height: 44,
             decoration: BoxDecoration(
-              color: widget.primaryColor.withOpacity(0.1),
+              color: widget.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(Icons.calendar_today, color: widget.primaryColor, size: 20),
@@ -583,7 +582,7 @@ class _DateTimeSelectionScreenState extends State<DateTimeSelectionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: SafeArea(
         top: false,

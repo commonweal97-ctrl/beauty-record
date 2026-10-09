@@ -30,7 +30,7 @@ class _ScheduleBlockState extends State<ScheduleBlock> {
           color: const Color(0xFFF8F8F8),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _expanded ? widget.primaryColor.withOpacity(0.3) : const Color(0xFFE8E8E8),
+            color: _expanded ? widget.primaryColor.withValues(alpha: 0.3) : const Color(0xFFE8E8E8),
           ),
         ),
         child: Column(
@@ -51,7 +51,7 @@ class _ScheduleBlockState extends State<ScheduleBlock> {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: widget.primaryColor.withOpacity(0.08),
+                    color: widget.primaryColor.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -90,7 +90,7 @@ class _ScheduleBlockState extends State<ScheduleBlock> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      const Color(0xFFF8F8F8).withOpacity(0),
+                      const Color(0xFFF8F8F8).withValues(alpha: 0),
                       const Color(0xFFF8F8F8),
                     ],
                   ),

@@ -32,7 +32,7 @@ class BookingServicesStep extends StatefulWidget {
 
 class _BookingServicesStepState extends State<BookingServicesStep> {
   String _searchQuery = '';
-  List<String> _activeCategories = [];
+  final List<String> _activeCategories = [];
   
   List<Map<String, dynamic>> get _filteredServices {
     var filtered = widget.services;
@@ -55,10 +55,10 @@ class _BookingServicesStepState extends State<BookingServicesStep> {
   
   List<String> get _categories {
     final categories = <String>[];
-    widget.services.forEach((s) {
+    for (var s in widget.services) {
       final cat = s['category']?.toString() ?? 'Без категории';
       if (!categories.contains(cat)) categories.add(cat);
-    });
+    }
     return categories;
   }
   
@@ -206,7 +206,7 @@ class _BookingServicesStepState extends State<BookingServicesStep> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: selected ? widget.primaryColor : Colors.white, width: 2),
-                      color: selected ? widget.primaryColor : Colors.black.withOpacity(0.3),
+                      color: selected ? widget.primaryColor : Colors.black.withValues(alpha: 0.3),
                     ),
                     child: selected ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
                   ),

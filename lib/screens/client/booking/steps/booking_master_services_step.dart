@@ -138,7 +138,7 @@ class BookingMasterServicesStep extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: selected ? primaryColor : Colors.white, width: 2),
-                      color: selected ? primaryColor : Colors.black.withOpacity(0.3),
+                      color: selected ? primaryColor : Colors.black.withValues(alpha: 0.3),
                     ),
                     child: selected ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
                   ),

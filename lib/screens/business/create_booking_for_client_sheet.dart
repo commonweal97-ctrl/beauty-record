@@ -628,7 +628,7 @@ class _CreateBookingForClientSheetState extends State<CreateBookingForClientShee
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-  return Container(
+  return SizedBox(
     height: MediaQuery.of(context).size.height * 0.8,
     child: const Center(
       child: Column(
@@ -1046,7 +1046,7 @@ Widget _buildStartOption({required String iconPath, required String title, requi
                     decoration: BoxDecoration(
                       color: _dateTimeMode == 'sequential' ? Colors.white : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: _dateTimeMode == 'sequential' ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))] : null,
+                      boxShadow: _dateTimeMode == 'sequential' ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))] : null,
                     ),
                     child: Text('Последовательно', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _dateTimeMode == 'sequential' ? const Color(0xFF1A1A1A) : const Color(0xFF888888))),
                   ),
@@ -1060,7 +1060,7 @@ Widget _buildStartOption({required String iconPath, required String title, requi
                     decoration: BoxDecoration(
                       color: _dateTimeMode == 'separate' ? Colors.white : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: _dateTimeMode == 'separate' ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))] : null,
+                      boxShadow: _dateTimeMode == 'separate' ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))] : null,
                     ),
                     child: Text('Разное время', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _dateTimeMode == 'separate' ? const Color(0xFF1A1A1A) : const Color(0xFF888888))),
                   ),
@@ -1118,11 +1118,11 @@ Widget _buildStartOption({required String iconPath, required String title, requi
                     decoration: BoxDecoration(
                       color: sel ? const Color(0xFFDD1847) : isToday ? const Color(0xFFFDF2F5) : Colors.white,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: sel ? const Color(0xFFDD1847) : isToday ? const Color(0xFFDD1847).withOpacity(0.5) : const Color(0xFFE8E8E8), width: 2),
+                      border: Border.all(color: sel ? const Color(0xFFDD1847) : isToday ? const Color(0xFFDD1847).withValues(alpha: 0.5) : const Color(0xFFE8E8E8), width: 2),
                     ),
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Text('${d.day}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: sel ? Colors.white : (isPast ? const Color(0xFFCCCCCC) : const Color(0xFF1A1A1A)))),
-                      Text('${_weekdays[d.weekday]} ${_months[d.month]}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sel ? Colors.white.withOpacity(0.8) : (isPast ? const Color(0xFFCCCCCC) : const Color(0xFF888888)))),
+                      Text('${_weekdays[d.weekday]} ${_months[d.month]}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sel ? Colors.white.withValues(alpha: 0.8) : (isPast ? const Color(0xFFCCCCCC) : const Color(0xFF888888)))),
                     ]),
                   ),
                 );
@@ -1252,11 +1252,11 @@ Widget _buildStartOption({required String iconPath, required String title, requi
                       decoration: BoxDecoration(
                         color: sel ? const Color(0xFFDD1847) : isToday ? const Color(0xFFFDF2F5) : Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: sel ? const Color(0xFFDD1847) : isToday ? const Color(0xFFDD1847).withOpacity(0.5) : const Color(0xFFE8E8E8), width: 2),
+                        border: Border.all(color: sel ? const Color(0xFFDD1847) : isToday ? const Color(0xFFDD1847).withValues(alpha: 0.5) : const Color(0xFFE8E8E8), width: 2),
                       ),
                       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                         Text('${d.day}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: sel ? Colors.white : (isPast ? const Color(0xFFCCCCCC) : const Color(0xFF1A1A1A)))),
-                        Text('${_weekdays[d.weekday]} ${_months[d.month]}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sel ? Colors.white.withOpacity(0.8) : (isPast ? const Color(0xFFCCCCCC) : const Color(0xFF888888)))),
+                        Text('${_weekdays[d.weekday]} ${_months[d.month]}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: sel ? Colors.white.withValues(alpha: 0.8) : (isPast ? const Color(0xFFCCCCCC) : const Color(0xFF888888)))),
                       ]),
                     ),
                   );
@@ -1543,7 +1543,7 @@ class _CalendarPickerState extends State<_CalendarPicker> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    return Container(
+    return SizedBox(
       height: 500,
       child: Column(children: [
         Container(width: 40, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 8), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),

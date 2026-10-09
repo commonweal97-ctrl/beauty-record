@@ -1,6 +1,5 @@
 // booking_rules_sheet.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
@@ -62,7 +61,7 @@ class _BookingRulesSheetState extends State<BookingRulesSheet> {
   @override
   Widget build(BuildContext context) {
     final typeLabels = {'cancel': 'Отмена или перенос', 'no_show': 'Неявка', 'warning': 'Предупреждение'};
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.8,
       child: Column(
         children: [
@@ -442,7 +441,7 @@ class _RuleEditorScreenState extends State<RuleEditorScreen> {
                       title: const Text('Всегда'),
                       value: _banAlways,
                       onChanged: (v) => setState(() => _banAlways = v),
-                      activeColor: const Color(0xFFDD1847),
+                      activeThumbColor: const Color(0xFFDD1847),
                     ),
                     if (!_banAlways)
                       Row(
@@ -763,7 +762,7 @@ class _ConditionBlockState extends State<_ConditionBlock> {
           Row(
             children: [
               Expanded(child: Text(widget.label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
-              Switch(value: _all, onChanged: _toggleAll, activeColor: const Color(0xFFDD1847)),
+              Switch(value: _all, onChanged: _toggleAll, activeThumbColor: const Color(0xFFDD1847)),
             ],
           ),
           if (!_all) ...[
@@ -954,7 +953,7 @@ class _PeriodBlockState extends State<_PeriodBlock> {
                   setState(() => _cond['noLimit'] = v);
                   widget.onChanged();
                 },
-                activeColor: const Color(0xFFDD1847),
+                activeThumbColor: const Color(0xFFDD1847),
               ),
             ],
           ),

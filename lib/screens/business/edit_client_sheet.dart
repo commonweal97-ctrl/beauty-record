@@ -344,7 +344,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return Container(
+      return SizedBox(
         height: MediaQuery.of(context).size.height * 0.85,
         child: const Center(child: CircularProgressIndicator()),
       );
@@ -352,7 +352,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.9,
       child: Column(
         children: [
@@ -519,7 +519,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
                           Switch(
                             value: _blocked,
                             onChanged: (v) => setState(() => _blocked = v),
-                            activeColor: const Color(0xFFDD1847),
+                            activeThumbColor: const Color(0xFFDD1847),
                           ),
                         ],
                       ),
@@ -650,7 +650,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
           children: [
             Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             const Spacer(),
-            if (trailing != null) trailing,
+            ?trailing,
             if (value.isNotEmpty) Text(value, style: const TextStyle(fontSize: 14, color: Color(0xFF888888))),
             if (onTap != null) ...[
               const SizedBox(width: 8),

@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
-import '../../main.dart';
 import '../auth/quick_setup_screen.dart';
 import '../select_role_screen.dart';
 import 'business_profile_screen.dart';
@@ -152,7 +151,7 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Container(
               height: 88,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)]),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12)]),
               child: Row(children: [
                 const SizedBox(width: 20),
                 GestureDetector(
@@ -187,7 +186,7 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
         children: [
           Expanded(
             child: _loading
-                ? ListView.builder(padding: const EdgeInsets.all(16), itemCount: 3, itemBuilder: (_, __) => _buildSkeletonCard())
+                ? ListView.builder(padding: const EdgeInsets.all(16), itemCount: 3, itemBuilder: (_, _) => _buildSkeletonCard())
                 : _projects.isEmpty
                     ? _buildEmpty()
                     : RefreshIndicator(
@@ -213,8 +212,8 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
       context: context,
       barrierColor: Colors.black54,
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (_, __, ___) => _buildDrawerContent(),
-      transitionBuilder: (_, anim, __, child) => SlideTransition(
+      pageBuilder: (_, _, _) => _buildDrawerContent(),
+      transitionBuilder: (_, anim, _, child) => SlideTransition(
         position: Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
         child: child,
       ),
@@ -343,12 +342,12 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
             color: active ? const Color(0xFFFEF2F4) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: active ? const Color(0xFFDD1847).withOpacity(0.2) : const Color(0xFFF0F0F0),
+              color: active ? const Color(0xFFDD1847).withValues(alpha: 0.2) : const Color(0xFFF0F0F0),
               width: active ? 1.5 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(active ? 0.04 : 0.02),
+                color: Colors.black.withValues(alpha: active ? 0.04 : 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),

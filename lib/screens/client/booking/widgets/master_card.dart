@@ -56,7 +56,7 @@ class MasterCard extends StatelessWidget {
             if (master['position'] != null && master['position'].toString().isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(master['position'], style: const TextStyle(fontSize: 12, color: Color(0xFF888)), textAlign: TextAlign.center),
+                child: Text(master['position'], style: const TextStyle(fontSize: 12, color: Color(0x000ff888)), textAlign: TextAlign.center),
               ),
             const SizedBox(height: 8),
             Text('★ $rating · $reviewsCount', style: const TextStyle(fontSize: 12, color: Color(0xFFF5A623))),

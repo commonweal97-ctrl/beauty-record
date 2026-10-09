@@ -198,7 +198,7 @@ class _PushSettingsScreenState extends State<PushSettingsScreen> {
               ],
             ),
           ),
-          Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFDD1847)),
+          Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFDD1847)),
         ],
       ),
     );

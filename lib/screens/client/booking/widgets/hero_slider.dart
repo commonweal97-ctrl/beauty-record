@@ -77,7 +77,7 @@ class _HeroSliderState extends State<HeroSlider> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text('${_currentSlide + 1}/${widget.photos.length}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
@@ -94,7 +94,7 @@ class _HeroSliderState extends State<HeroSlider> {
                     width: 24, height: 3,
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
-                      color: _currentSlide == i ? Colors.white.withOpacity(0.9) : Colors.white.withOpacity(0.4),
+                      color: _currentSlide == i ? Colors.white.withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),

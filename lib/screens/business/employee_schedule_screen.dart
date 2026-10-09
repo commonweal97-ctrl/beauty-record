@@ -1,6 +1,5 @@
 // employee_schedule_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
@@ -28,7 +27,7 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
   final ScrollController _scrollController = ScrollController();
 
   DateTime _currentMonth = DateTime.now();
-  bool _loading = false;
+  final bool _loading = false;
   bool _showMonthPicker = false;
   bool _initialScrollDone = false;
 
@@ -330,7 +329,7 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
           if (_selectedDays.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, -4))]),
+              decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4))]),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -452,14 +451,14 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
         Row(children: [
           const Text('Рабочий день'),
           const Spacer(),
-          Switch(value: _isWorking, onChanged: (v) => setState(() => _isWorking = v), activeColor: const Color(0xFFDD1847)),
+          Switch(value: _isWorking, onChanged: (v) => setState(() => _isWorking = v), activeThumbColor: const Color(0xFFDD1847)),
         ]),
         if (_isWorking) ...[
           const SizedBox(height: 16),
           Row(children: [
             const Text('Весь день'),
             const Spacer(),
-            Switch(value: _isAllDay, onChanged: (v) => setState(() => _isAllDay = v), activeColor: const Color(0xFFDD1847)),
+            Switch(value: _isAllDay, onChanged: (v) => setState(() => _isAllDay = v), activeThumbColor: const Color(0xFFDD1847)),
           ]),
           if (!_isAllDay) ...[
             const SizedBox(height: 16),

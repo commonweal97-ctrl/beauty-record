@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
@@ -473,7 +472,7 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
               child: GestureDetector(
                 onTap: _closeMonthPicker,
                 child: Container(
-                  color: Colors.black.withOpacity(0.5 * _popupOpacityAnimation.value),
+                  color: Colors.black.withValues(alpha: 0.5 * _popupOpacityAnimation.value),
                 ),
               ),
             ),
@@ -490,7 +489,7 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 60,
                           offset: const Offset(0, 20),
                         ),

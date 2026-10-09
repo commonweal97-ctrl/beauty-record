@@ -629,8 +629,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  const Color(0xFFDD1847).withOpacity(0.15),
-                  const Color(0xFFDD1847).withOpacity(0.0),
+                  const Color(0xFFDD1847).withValues(alpha: 0.15),
+                  const Color(0xFFDD1847).withValues(alpha: 0.0),
                 ],
               ),
             ),
@@ -792,7 +792,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
               style: const TextStyle(
                   fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
-          if (child != null) child,
+          ?child,
         ],
       ),
     );

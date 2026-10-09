@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/toast.dart';
@@ -82,8 +81,8 @@ class _LoginScreenState extends State<LoginScreen> {
             context,
             PageRouteBuilder(
               transitionDuration: const Duration(milliseconds: 200),
-              pageBuilder: (_, __, ___) => ClientDashboardScreen(),
-              transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+              pageBuilder: (_, _, _) => ClientDashboardScreen(),
+              transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
             ),
           );
           return;
@@ -98,8 +97,8 @@ class _LoginScreenState extends State<LoginScreen> {
               context,
               PageRouteBuilder(
                 transitionDuration: const Duration(milliseconds: 200),
-                pageBuilder: (_, __, ___) => BusinessDashboardScreen(initialProjectId: lastProjectId),
-                transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                pageBuilder: (_, _, _) => BusinessDashboardScreen(initialProjectId: lastProjectId),
+                transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
               ),
             );
           } else {
@@ -108,8 +107,8 @@ class _LoginScreenState extends State<LoginScreen> {
               context,
               PageRouteBuilder(
                 transitionDuration: const Duration(milliseconds: 200),
-                pageBuilder: (_, __, ___) => BusinessDashboardScreen(),
-                transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+                pageBuilder: (_, _, _) => BusinessDashboardScreen(),
+                transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
               ),
             );
           }
@@ -121,8 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 200),
-            pageBuilder: (_, __, ___) => SelectRoleScreen(),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+            pageBuilder: (_, _, _) => SelectRoleScreen(),
+            transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
           ),
         );
         return;
@@ -142,8 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 200),
-          pageBuilder: (_, __, ___) => PinLoginScreen(userId: saved['user_id'] ?? 0, userEmail: saved['user_email'] ?? ''),
-          transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+          pageBuilder: (_, _, _) => PinLoginScreen(userId: saved['user_id'] ?? 0, userEmail: saved['user_email'] ?? ''),
+          transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
         ),
       );
     } else {
@@ -152,8 +151,8 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 200),
-          pageBuilder: (_, __, ___) => SelectRoleScreen(),
-          transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+          pageBuilder: (_, _, _) => SelectRoleScreen(),
+          transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
         ),
       );
     }
@@ -235,26 +234,26 @@ class _LoginScreenState extends State<LoginScreen> {
         if (hasPin) {
           Navigator.push(context, PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 250),
-            pageBuilder: (_, __, ___) => PinLoginScreen(userId: userId, userEmail: userEmail),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+            pageBuilder: (_, _, _) => PinLoginScreen(userId: userId, userEmail: userEmail),
+            transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
           ));
         } else {
           await ApiService.sendOtp(userId, identifier, type);
           Navigator.push(context, PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 250),
-            pageBuilder: (_, __, ___) => OtpScreen(
+            pageBuilder: (_, _, _) => OtpScreen(
               userId: userId, 
               email: userEmail,
               phone: _isPhone ? _cleanPhone() : '',
             ),
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut), child: child),
+            transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut), child: child),
           ));
         }
       } else {
         Navigator.push(context, PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 250),
-          pageBuilder: (_, __, ___) => RegisterScreen(identifier: identifier, type: type),
-          transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+          pageBuilder: (_, _, _) => RegisterScreen(identifier: identifier, type: type),
+          transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
         ));
       }
     } catch (e) {
@@ -344,7 +343,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               bottom: 0,
                               width: tabWidth,
                               child: Container(
-                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2))]),
+                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))]),
                               ),
                             ),
                             Row(

@@ -429,7 +429,7 @@ Widget build(BuildContext context) {
                     decoration: BoxDecoration(
                       color: _mode == 'booking' ? Colors.white : Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: _mode == 'booking' ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 1))] : null,
+                      boxShadow: _mode == 'booking' ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 1))] : null,
                     ),
                     child: Text(
                       'Создать запись',
@@ -451,7 +451,7 @@ Widget build(BuildContext context) {
                     decoration: BoxDecoration(
                       color: _mode == 'occupy' ? Colors.white : Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: _mode == 'occupy' ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 1))] : null,
+                      boxShadow: _mode == 'occupy' ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 1))] : null,
                     ),
                     child: Text(
                       'Занять время',
@@ -642,7 +642,7 @@ Widget build(BuildContext context) {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 5,
-      itemBuilder: (_, __) => Padding(
+      itemBuilder: (_, _) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Row(children: [
           const SkeletonBox(width: 48, height: 48, radius: 10),
@@ -718,7 +718,7 @@ Widget build(BuildContext context) {
         : (s['price'] ?? 0).toString();
     final showPriceFrom = empPrice['price_from'] == true || empPrice['price_from'] == 'true' || empPrice['price_from'] == 1 || empPrice['price_from'] == '1';
     final priceText = isFree ? 'Бесплатно' : '${showPriceFrom ? 'от ' : ''}$showPrice ₽';
-    final durationText = '${hours > 0 ? '${hours}ч ' : ''}${mins > 0 ? '$mins мин' : ''}'.trim();
+    final durationText = '${hours > 0 ? '$hoursч ' : ''}${mins > 0 ? '$mins мин' : ''}'.trim();
 
     return GestureDetector(
       onTap: () {
@@ -800,7 +800,7 @@ Widget build(BuildContext context) {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 4,
-      itemBuilder: (_, __) => Padding(
+      itemBuilder: (_, _) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Row(children: [
           const SkeletonCircle(size: 44),

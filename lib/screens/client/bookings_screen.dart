@@ -7,6 +7,7 @@ import 'contact_screen.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
+import '../../utils/app_logger.dart';
 
 class BookingsScreen extends StatefulWidget {
   const BookingsScreen({super.key});
@@ -30,7 +31,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
   void _loadBookings() async {
     try {
       final result = await ApiService.get('/api/client/bookings');
-      print('Bookings result: $result');
+      AppLogger.debug('Bookings result: $result');
       if (result['success'] == true && mounted) {
         setState(() {
           _upcoming = List<Map<String, dynamic>>.from(result['data']['upcoming'] ?? []);
@@ -59,9 +60,9 @@ class _BookingsScreenState extends State<BookingsScreen> {
   String _formatDuration(int minutes) {
     final h = minutes ~/ 60;
     final m = minutes % 60;
-    if (h > 0 && m > 0) return '${h}ч ${m}мин';
-    if (h > 0) return '${h}ч';
-    return '${m}мин';
+    if (h > 0 && m > 0) return '$hч $mмин';
+    if (h > 0) return '$hч';
+    return '$mмин';
   }
 
   Widget _photoPlaceholder({double size = 48}) {
@@ -100,7 +101,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
                       left: _isUpcoming ? 0 : tabWidth,
                       top: 0, bottom: 0, width: tabWidth,
                       child: Container(
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)]),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8)]),
                       ),
                     ),
                     Row(
@@ -137,7 +138,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
               ? ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: 3,
-                  itemBuilder: (_, __) => const SkeletonBookingCard(),
+                  itemBuilder: (_, _) => const SkeletonBookingCard(),
                 )
               : _isUpcoming
                   ? _upcoming.isEmpty

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
@@ -219,7 +218,7 @@ class _ListViewScreenState extends State<ListViewScreen> {
             color: active ? const Color(0xFFDD1847) : const Color(0xFFF5F5F5),
             borderRadius: BorderRadius.circular(20),
             boxShadow: active ? [
-              BoxShadow(color: const Color(0xFFDD1847).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))
+              BoxShadow(color: const Color(0xFFDD1847).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))
             ] : null,
           ),
           child: Text(
@@ -255,7 +254,7 @@ class _ListViewScreenState extends State<ListViewScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
+          color: color.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border(left: BorderSide(color: color, width: 4)),
         ),

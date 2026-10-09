@@ -10,6 +10,7 @@ import 'steps/booking_master_services_step.dart';
 import 'steps/booking_contact_step.dart';
 import 'steps/booking_confirm_step.dart';
 import 'steps/booking_success_step.dart';
+import '../../../utils/app_logger.dart';
 
 class BookingFullscreenScreen extends StatefulWidget {
   final int projectId;
@@ -46,13 +47,12 @@ class BookingFullscreenScreen extends StatefulWidget {
 class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
   List<Map<String, dynamic>> _services = [];
   List<Map<String, dynamic>> _employees = [];
-  List<Map<String, dynamic>> _employeeServiceLinks = [];
-  List<Map<String, dynamic>> _selectedServices = [];
+  final List<Map<String, dynamic>> _employeeServiceLinks = [];
+  final List<Map<String, dynamic>> _selectedServices = [];
   Map<String, dynamic>? _selectedMaster;
-  Map<int, int> _serviceMasters = {};
+  final Map<int, int> _serviceMasters = {};
   DateTime? _selectedDate;
   String? _selectedTime;
-  int? _selectedMasterId;
   
   final _commentController = TextEditingController();
   final _promoController = TextEditingController();
@@ -161,7 +161,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
         }
       }
     } catch (e) {
-      print('Error loading booking data: $e');
+      AppLogger.debug('Error loading booking data: $e');
     }
     
     setState(() => _loading = false);
@@ -211,10 +211,6 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
   
   Future<void> _goToMasters() async {
     await _navigateTo(_buildMastersScreen());
-  }
-  
-  Future<void> _goToContact() async {
-    await _navigateTo(_buildContactScreen());
   }
   
   Future<void> _goToConfirm() async {
@@ -536,7 +532,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
                 child: Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -588,7 +584,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: SafeArea(
         top: false,

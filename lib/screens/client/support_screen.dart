@@ -306,7 +306,7 @@ class _ClientSupportScreenState extends State<ClientSupportScreen> {
                                                 color: Colors.white,
                                                 borderRadius: BorderRadius.circular(24),
                                                 boxShadow: [
-                                                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4)),
+                                                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
                                                 ],
                                               ),
                                               child: const Icon(Icons.support_agent, size: 40, color: Color(0xFFDD1847)),
@@ -407,7 +407,7 @@ class _TicketCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Material(

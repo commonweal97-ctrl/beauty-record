@@ -403,8 +403,8 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
                       ? ClipOval(
                           child: CachedNetworkImage(
                             imageUrl: avatarUrl, width: 52, height: 52, fit: BoxFit.cover,
-                            placeholder: (_, __) => const SkeletonCircle(size: 52),
-                            errorWidget: (_, __, ___) => Center(
+                            placeholder: (_, _) => const SkeletonCircle(size: 52),
+                            errorWidget: (_, _, _) => Center(
                               child: Text(initials, style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFDD1847), fontSize: 20)),
                             ),
                           ),
@@ -587,7 +587,7 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
     ];
 
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F0)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))]),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Padding(
           padding: const EdgeInsets.all(20),

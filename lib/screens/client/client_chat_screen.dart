@@ -22,7 +22,6 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
   final _messageCtrl = TextEditingController();
   final _scrollController = ScrollController();
   Timer? _refreshTimer;
-  String? _supportChatId;
   bool _isSupport = false;
   Map<String, dynamic>? _currentChatData;
   int _currentUserId = 0;
@@ -64,10 +63,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
     if (!mounted) return;
     setState(() => _loadingChats = true);
     
-    await Future.wait([
-      _loadOrgChats(),
-      _loadSupportChatId(),
-    ]);
+    await _loadOrgChats();
     
     if (mounted) setState(() => _loadingChats = false);
   }
@@ -83,17 +79,6 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
     } catch (_) {}
   }
 
-  Future<void> _loadSupportChatId() async {
-    try {
-      final result = await ApiService.get('/api/chat/list?project_id=0&type=support');
-      if (result['success'] == true && mounted) {
-        final chats = List<Map<String, dynamic>>.from(result['data'] ?? []);
-        if (chats.isNotEmpty) {
-          _supportChatId = chats.first['id'].toString();
-        }
-      }
-    } catch (_) {}
-  }
 
   Future<void> _loadMessages() async {
     if (_activeChat == null || !mounted) return;
@@ -300,8 +285,8 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
                     child: CachedNetworkImage(
                       imageUrl: '$_baseUrl/assets/img/b-logotip.png',
                       width: 44, height: 44, fit: BoxFit.cover,
-                      placeholder: (_, __) => const SkeletonCircle(size: 44),
-                      errorWidget: (_, __, ___) => const Icon(Icons.support_agent, color: Color(0xFFDD1847)),
+                      placeholder: (_, _) => const SkeletonCircle(size: 44),
+                      errorWidget: (_, _, _) => const Icon(Icons.support_agent, color: Color(0xFFDD1847)),
                     ),
                   )
                 : avatar != null && avatar.isNotEmpty
@@ -309,8 +294,8 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
                         child: CachedNetworkImage(
                           imageUrl: '$_baseUrl$avatar',
                           width: 44, height: 44, fit: BoxFit.cover,
-                          placeholder: (_, __) => const SkeletonCircle(size: 44),
-                          errorWidget: (_, __, ___) => Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
+                          placeholder: (_, _) => const SkeletonCircle(size: 44),
+                          errorWidget: (_, _, _) => Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
                         ),
                       )
                     : Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
@@ -414,7 +399,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
             bottomLeft: isMine ? const Radius.circular(16) : const Radius.circular(4),
             bottomRight: isMine ? const Radius.circular(4) : const Radius.circular(16),
           ),
-          boxShadow: isMine ? null : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(0, 1))],
+          boxShadow: isMine ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (!isMine && msg['user_name'] != null)

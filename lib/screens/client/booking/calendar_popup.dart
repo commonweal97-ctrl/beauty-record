@@ -238,7 +238,7 @@ class _CalendarPopupState extends State<CalendarPopup> {
                                 color: day.isSelected 
                                     ? widget.primaryColor 
                                     : day.isToday && canSelect
-                                        ? widget.primaryColor.withOpacity(0.1) 
+                                        ? widget.primaryColor.withValues(alpha: 0.1) 
                                         : Colors.transparent,
                                 border: day.isToday && !day.isSelected
                                     ? Border.all(color: widget.primaryColor, width: 1)

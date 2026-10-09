@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
-import '../../../widgets/cached_image.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../widgets/toast.dart';
 
@@ -190,7 +189,7 @@ class _AccessScreenState extends State<AccessScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFF0F0F0)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Row(children: [
           CircleAvatar(
@@ -201,8 +200,8 @@ class _AccessScreenState extends State<AccessScreen> {
                     child: CachedNetworkImage(
                       imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
                       width: 48, height: 48, fit: BoxFit.cover,
-                      placeholder: (_, __) => const SkeletonCircle(size: 48),
-                      errorWidget: (_, __, ___) => Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600, fontSize: 14)),
+                      placeholder: (_, _) => const SkeletonCircle(size: 48),
+                      errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600, fontSize: 14)),
                     ),
                   )
                 : Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600, fontSize: 14)),
@@ -307,7 +306,7 @@ class _AccessLoaderState extends State<_AccessLoader> {
   @override
   Widget build(BuildContext context) {
     if (_data == null) {
-      return Container(
+      return SizedBox(
         height: MediaQuery.of(context).size.height * 0.8,
         child: const Center(
           child: Column(
@@ -436,7 +435,7 @@ class _AccessFormSheetState extends State<AccessFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.9,
       child: Column(children: [
         Container(
@@ -544,7 +543,7 @@ class _AccessFormSheetState extends State<AccessFormSheet> {
   }
 
   Widget _buildToggleRow(String label, bool value, ValueChanged<bool> onChanged) {
-    return Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))), child: Row(children: [Expanded(child: Text(label, style: const TextStyle(fontSize: 14))), Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFDD1847))]));
+    return Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))), child: Row(children: [Expanded(child: Text(label, style: const TextStyle(fontSize: 14))), Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFDD1847))]));
   }
 
   void _showPicker(String key, Map<String, String> options) {

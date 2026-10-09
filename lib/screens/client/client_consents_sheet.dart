@@ -22,7 +22,6 @@ class ClientConsentsSheet extends StatefulWidget {
 class _ClientConsentsSheetState extends State<ClientConsentsSheet> {
   Map<String, dynamic>? _consentData;
   bool _loading = true;
-  bool _saving = false;
 
   @override
   void initState() {

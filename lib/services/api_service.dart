@@ -1,10 +1,10 @@
 // lib/services/api_service.dart
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/app_logger.dart';
 
 class ApiService {
   static const String baseUrl = 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai';
@@ -21,7 +21,7 @@ class ApiService {
     
     if (savedToken != null && savedToken.isNotEmpty) {
       if (_cookies == null || !_cookies!.contains('remember_token=')) {
-        _cookies = (_cookies != null ? '$_cookies; ' : '') + 'remember_token=$savedToken';
+        _cookies = '${_cookies != null ? '$_cookies; ' : ''}remember_token=$savedToken';
       }
     }
   }
@@ -55,7 +55,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('Error persisting cookies: $e');
+      AppLogger.debug('Error persisting cookies: $e');
     }
   }
 
@@ -465,8 +465,8 @@ class ApiService {
     return _post('/api/chat/send', {
       'chat_id': chatId,
       'message': message,
-      if (fileUrl != null) 'file_url': fileUrl,
-      if (fileType != null) 'file_type': fileType,
+      'file_url': ?fileUrl,
+      'file_type': ?fileType,
     });
   }
 

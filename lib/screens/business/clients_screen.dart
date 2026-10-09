@@ -6,6 +6,7 @@ import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
 import '../client/client_profile_sheet.dart';
 import 'edit_client_sheet.dart';
+import '../../utils/app_logger.dart';
 
 class ClientsScreen extends StatefulWidget {
   final int projectId;
@@ -294,7 +295,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
       onTap: () => _openClientProfile(c['id']),
       child: Container(
         padding: const EdgeInsets.all(16), 
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]), 
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]), 
         child: Row(children: [
           Container(
             width: 56, height: 56, 
@@ -356,7 +357,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
     setState(() => _loading = true);
     try {
       final result = await ApiService.saveClient(widget.projectId, _nameCtrl.text.trim(), _phoneCtrl.text.trim(), _emailCtrl.text.trim());
-      print('📤 Save client result: $result');
+      AppLogger.debug('📤 Save client result: $result');
       if (result['success'] == true && mounted) { 
         Navigator.pop(context); 
         widget.onSaved();
@@ -365,7 +366,7 @@ class _AddClientSheetState extends State<AddClientSheet> {
         showToast(context, result['message'] ?? 'Ошибка сохранения', isError: true);
       }
     } catch (e) {
-      print('❌ Save client error: $e');
+      AppLogger.debug('❌ Save client error: $e');
       if (mounted) {
         showToast(context, 'Ошибка сохранения клиента', isError: true);
       }

@@ -5,11 +5,11 @@ import 'package:local_auth/local_auth.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../select_role_screen.dart';
-import '../../main.dart';
 import '../../services/push_notification_service.dart';
 import '../../widgets/toast.dart';
 import 'login_screen.dart';
 import 'otp_screen.dart';
+import '../../utils/app_logger.dart';
 
 class PinLoginScreen extends StatefulWidget {
   final int userId;
@@ -30,35 +30,35 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
   @override
   void initState() {
     super.initState();
-    print('🔐 PinLoginScreen initState');
-    print('🔐 userId: ${widget.userId}');
-    print('🔐 userEmail: ${widget.userEmail}');
+    AppLogger.debug('🔐 PinLoginScreen initState');
+    AppLogger.debug('🔐 userId: ${widget.userId}');
+    AppLogger.debug('🔐 userEmail: ${widget.userEmail}');
     _tryBiometric();
   }
 
   Future<void> _tryBiometric() async {
-    print('🔐 _tryBiometric called');
+    AppLogger.debug('🔐 _tryBiometric called');
     try {
       final bool canCheck = await _localAuth.canCheckBiometrics;
-      print('🔐 canCheckBiometrics: $canCheck');
+      AppLogger.debug('🔐 canCheckBiometrics: $canCheck');
       
       if (!canCheck) return;
       
       final List<BiometricType> availableBiometrics = 
           await _localAuth.getAvailableBiometrics();
-      print('🔐 availableBiometrics: $availableBiometrics');
+      AppLogger.debug('🔐 availableBiometrics: $availableBiometrics');
       
       if (availableBiometrics.isEmpty) return;
       
       final bool authenticated = await _localAuth.authenticate(
         localizedReason: 'Войдите в приложение по биометрии',
       );
-      print('🔐 biometric authenticated: $authenticated');
+      AppLogger.debug('🔐 biometric authenticated: $authenticated');
       
       if (authenticated && mounted) {
-        print('🔐 Sending biometric-login request');
+        AppLogger.debug('🔐 Sending biometric-login request');
         final result = await ApiService.post('/api/auth/biometric-login', {'user_id': widget.userId});
-        print('🔐 biometric-login result: $result');
+        AppLogger.debug('🔐 biometric-login result: $result');
         
         await AuthService.saveLogin(widget.userId, hasPin: true, userEmail: widget.userEmail);
         
@@ -73,7 +73,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
         }
       }
     } catch (e) {
-      print('🔐 Biometric error: $e');
+      AppLogger.debug('🔐 Biometric error: $e');
     }
   }
 
@@ -81,8 +81,8 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
     HapticFeedback.lightImpact();
     if (_pin.length >= 4) return;
     
-    print('🔐 Key pressed: $key');
-    print('🔐 Current pin length before: ${_pin.length}');
+    AppLogger.debug('🔐 Key pressed: $key');
+    AppLogger.debug('🔐 Current pin length before: ${_pin.length}');
     
     setState(() { 
       _pin += key; 
@@ -90,14 +90,14 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
       _pressedKey = key; 
     });
     
-    print('🔐 Current pin length after: ${_pin.length}');
+    AppLogger.debug('🔐 Current pin length after: ${_pin.length}');
     
     Future.delayed(const Duration(milliseconds: 150), () {
       if (mounted) setState(() => _pressedKey = null);
     });
     
     if (_pin.length == 4) {
-      print('🔐 PIN entered: $_pin');
+      AppLogger.debug('🔐 PIN entered: $_pin');
       Future.delayed(const Duration(milliseconds: 200), () => _verifyPin());
     }
   }
@@ -106,40 +106,40 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
     HapticFeedback.lightImpact();
     if (_pin.isEmpty) return;
     
-    print('🔐 Backspace pressed');
-    print('🔐 Current pin before: $_pin');
+    AppLogger.debug('🔐 Backspace pressed');
+    AppLogger.debug('🔐 Current pin before: $_pin');
     
     setState(() { 
       _pin = _pin.substring(0, _pin.length - 1); 
       _error = null; 
     });
     
-    print('🔐 Current pin after: $_pin');
+    AppLogger.debug('🔐 Current pin after: $_pin');
   }
 
   Future<void> _verifyPin() async {
-    print('🔐 _verifyPin called');
-    print('🔐 userId: ${widget.userId}');
-    print('🔐 PIN to verify: $_pin');
+    AppLogger.debug('🔐 _verifyPin called');
+    AppLogger.debug('🔐 userId: ${widget.userId}');
+    AppLogger.debug('🔐 PIN to verify: $_pin');
     
     try {
-      print('🔐 Sending verify-pin request...');
+      AppLogger.debug('🔐 Sending verify-pin request...');
       final result = await ApiService.verifyPin(widget.userId, _pin);
-      print('🔐 verify-pin result: $result');
+      AppLogger.debug('🔐 verify-pin result: $result');
       
       if (!mounted) {
-        print('🔐 Widget not mounted after verify');
+        AppLogger.debug('🔐 Widget not mounted after verify');
         return;
       }
       
       if (result['success'] == true) {
-        print('🔐 PIN verified successfully');
+        AppLogger.debug('🔐 PIN verified successfully');
         await AuthService.saveLogin(widget.userId, hasPin: true, userEmail: widget.userEmail);
         
         PushNotificationService().registerTokenAfterLogin();
         
         if (mounted) {
-          print('🔐 Navigating to SelectRoleScreen');
+          AppLogger.debug('🔐 Navigating to SelectRoleScreen');
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => SelectRoleScreen()),
@@ -147,12 +147,12 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
           );
         }
       } else {
-        print('🔐 PIN verification failed');
-        print('🔐 Error message: ${result['message']}');
+        AppLogger.debug('🔐 PIN verification failed');
+        AppLogger.debug('🔐 Error message: ${result['message']}');
         
         _attempts++;
         if (_attempts >= 3) {
-          print('🔐 Too many attempts, returning to login');
+          AppLogger.debug('🔐 Too many attempts, returning to login');
           if (mounted) {
             showToast(context, 'Превышено количество попыток', isError: true);
             Navigator.pushAndRemoveUntil(
@@ -162,7 +162,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
             );
           }
         } else {
-          print('🔐 Attempt $_attempts of 3');
+          AppLogger.debug('🔐 Attempt $_attempts of 3');
           setState(() { 
             _error = 'Неверный PIN-код. Осталось ${3 - _attempts} попытки'; 
             _pin = ''; 
@@ -170,8 +170,8 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
         }
       }
     } catch (e) {
-      print('🔐 Error in _verifyPin: $e');
-      print('🔐 Error type: ${e.runtimeType}');
+      AppLogger.debug('🔐 Error in _verifyPin: $e');
+      AppLogger.debug('🔐 Error type: ${e.runtimeType}');
       if (mounted) {
         setState(() { 
           _error = 'Ошибка соединения'; 
@@ -182,11 +182,11 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
   }
 
   void _forgotPin() async {
-    print('🔐 _forgotPin called');
+    AppLogger.debug('🔐 _forgotPin called');
     try {
       await ApiService.sendOtp(widget.userId, widget.userEmail, 'email');
     } catch (e) {
-      print('🔐 Error sending OTP: $e');
+      AppLogger.debug('🔐 Error sending OTP: $e');
     }
     
     if (!mounted) return;

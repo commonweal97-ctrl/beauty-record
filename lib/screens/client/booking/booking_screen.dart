@@ -14,6 +14,7 @@ import 'widgets/master_card.dart';
 import 'widgets/service_card.dart';
 import 'widgets/review_card.dart';
 import 'widgets/bottom_booking_bar.dart';
+import '../../../utils/app_logger.dart';
 
 class BookingScreen extends StatefulWidget {
   final int projectId;
@@ -29,8 +30,8 @@ class _BookingScreenState extends State<BookingScreen> {
   Map<String, dynamic>? _onlineDesign;
   List<Map<String, dynamic>> _employees = [];
   List<Map<String, dynamic>> _services = [];
-  List<Map<String, dynamic>> _employeeServiceLinks = [];
-  List<Map<String, dynamic>> _workPhotos = [];
+  final List<Map<String, dynamic>> _employeeServiceLinks = [];
+  final List<Map<String, dynamic>> _workPhotos = [];
   List<String> _interiorPhotos = [];
   List<String> _phones = [];
   List<Map<String, dynamic>> _socialLinks = [];
@@ -51,7 +52,7 @@ class _BookingScreenState extends State<BookingScreen> {
   
   double _projectRating = 0;
   int _projectReviewsCount = 0;
-  Map<int, Map<String, dynamic>> _employeeStats = {};
+  final Map<int, Map<String, dynamic>> _employeeStats = {};
   
   final ScrollController _scrollController = ScrollController();
   
@@ -318,7 +319,7 @@ class _BookingScreenState extends State<BookingScreen> {
         }
       }
     } catch (e) {
-      print('Error loading additional data: $e');
+      AppLogger.debug('Error loading additional data: $e');
     }
   }
   
@@ -388,7 +389,7 @@ class _BookingScreenState extends State<BookingScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFFF5F5F5),
         appBar: AppBar(backgroundColor: Colors.white, title: const Text('Запись')),
-        body: Center(child: Text(_error, style: const TextStyle(fontSize: 16, color: Color(0xFF888)))),
+        body: Center(child: Text(_error, style: const TextStyle(fontSize: 16, color: Color(0x000ff888)))),
       );
     }
     
@@ -396,7 +397,7 @@ class _BookingScreenState extends State<BookingScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFFF5F5F5),
         appBar: AppBar(backgroundColor: Colors.white, title: const Text('Запись')),
-        body: const Center(child: Text('Проект не найден', style: TextStyle(fontSize: 16, color: Color(0xFF888)))),
+        body: const Center(child: Text('Проект не найден', style: TextStyle(fontSize: 16, color: Color(0x000ff888)))),
       );
     }
     
@@ -430,7 +431,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       if (_reviews.isNotEmpty) ...[
                         const SizedBox(height: 24),
                         _buildSectionTitle('Отзывы'),
-                        ..._reviews.map((r) => ReviewCard(review: r, primaryColor: _primaryColor)).toList(),
+                        ..._reviews.map((r) => ReviewCard(review: r, primaryColor: _primaryColor)),
                       ],
                       const SizedBox(height: 100),
                     ],
@@ -467,12 +468,12 @@ class _BookingScreenState extends State<BookingScreen> {
     
     return Container(
       decoration: BoxDecoration(
-        color: _primaryColor.withOpacity(_headerOpacity),
+        color: _primaryColor.withValues(alpha: _headerOpacity),
         borderRadius: BorderRadius.vertical(
           bottom: Radius.circular(20 * (1 - _headerOpacity)),
         ),
         boxShadow: _headerOpacity > 0
-            ? [BoxShadow(color: Colors.black.withOpacity(0.1 * _headerOpacity), blurRadius: 20, offset: const Offset(0, 4))]
+            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1 * _headerOpacity), blurRadius: 20, offset: const Offset(0, 4))]
             : null,
       ),
       child: SafeArea(
@@ -486,7 +487,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 child: Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15 + _headerOpacity * 0.1),
+                    color: Colors.white.withValues(alpha: 0.15 + _headerOpacity * 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -497,10 +498,10 @@ class _BookingScreenState extends State<BookingScreen> {
               Container(
                 width: 52, height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15 + _headerOpacity * 0.1),
+                  color: Colors.white.withValues(alpha: 0.15 + _headerOpacity * 0.1),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.25 + _headerOpacity * 0.05),
+                    color: Colors.white.withValues(alpha: 0.25 + _headerOpacity * 0.05),
                     width: 2,
                   ),
                 ),
@@ -508,7 +509,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   borderRadius: BorderRadius.circular(12),
                   child: projectPhoto != null && projectPhoto.toString().isNotEmpty
                       ? CachedAvatar(url: projectPhoto.toString(), size: 52, radius: 12)
-                      : Icon(Icons.photo, color: Colors.white.withOpacity(0.7), size: 24),
+                      : Icon(Icons.photo, color: Colors.white.withValues(alpha: 0.7), size: 24),
                 ),
               ),
               
@@ -533,7 +534,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           projectAddress,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -570,7 +571,7 @@ class _BookingScreenState extends State<BookingScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,7 +601,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ],
           ),
           const SizedBox(height: 4),
-          Text(_project!['address_raw'] ?? '', style: const TextStyle(fontSize: 14, color: Color(0xFF666))),
+          Text(_project!['address_raw'] ?? '', style: const TextStyle(fontSize: 14, color: Color(0x000ff666))),
           const SizedBox(height: 4),
 
 if (_scheduleData.isNotEmpty) ...[
@@ -625,7 +626,7 @@ if (_scheduleData.isNotEmpty) ...[
             Container(
               width: 32, height: 32,
               decoration: BoxDecoration(
-                color: _primaryColor.withOpacity(0.1),
+                color: _primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -674,7 +675,7 @@ if (_scheduleData.isNotEmpty) ...[
                       children: [
                         Icon(Icons.link, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 6),
-                        Text(names[type] ?? type, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF666))),
+                        Text(names[type] ?? type, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0x000ff666))),
                       ],
                     ),
                   ),
@@ -698,7 +699,7 @@ if (_scheduleData.isNotEmpty) ...[
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(20),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
     ),
     child: Text(
       description,
@@ -750,7 +751,7 @@ if (_scheduleData.isNotEmpty) ...[
     if (_employees.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(20),
-        child: Text('Нет доступных специалистов', style: TextStyle(color: Color(0xFF999))),
+        child: Text('Нет доступных специалистов', style: TextStyle(color: Color(0x000ff999))),
       );
     }
     
@@ -804,7 +805,7 @@ if (_scheduleData.isNotEmpty) ...[
     if (_services.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(20),
-        child: Text('Нет услуг', style: TextStyle(color: Color(0xFF999))),
+        child: Text('Нет услуг', style: TextStyle(color: Color(0x000ff999))),
       );
     }
     

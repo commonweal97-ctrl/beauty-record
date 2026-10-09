@@ -31,7 +31,7 @@ class BottomBookingBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
-                shadowColor: buttonBg.withOpacity(0.4),
+                shadowColor: buttonBg.withValues(alpha: 0.4),
               ),
               child: const Text(
                 'Записаться',

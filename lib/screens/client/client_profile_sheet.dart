@@ -300,7 +300,8 @@ class _ClientProfileSheetState extends State<ClientProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return Container(
+    if (_loading) {
+      return SizedBox(
       height: MediaQuery.of(context).size.height * 0.8,
       child: const Center(
         child: Column(
@@ -321,11 +322,14 @@ class _ClientProfileSheetState extends State<ClientProfileSheet> {
         ),
       ),
     );
+    }
     
-    if (_data == null) return Container(
+    if (_data == null) {
+      return SizedBox(
       height: MediaQuery.of(context).size.height * 0.8,
       child: const Center(child: Text('Клиент не найден')),
     );
+    }
 
     final c = _data!;
     final name = (c['name'] ?? '').toString();
@@ -334,7 +338,7 @@ class _ClientProfileSheetState extends State<ClientProfileSheet> {
     final avgPrice = bookings.isEmpty ? 0 : bookings.fold<double>(0, (s, b) => s + (double.tryParse(b['total_price']?.toString() ?? '0') ?? 0)) ~/ bookings.length;
     final avatarUrl = c['avatar']?.toString() ?? '';
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.8,
       child: Column(children: [
         Padding(

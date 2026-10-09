@@ -222,7 +222,7 @@ class _MainScreenState extends State<MainScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: _spheres.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (_, i) {
               final s = _spheres[i];
               final active = _activeSphere == s['key'];
@@ -251,7 +251,7 @@ class _MainScreenState extends State<MainScreen> {
               ? ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: 4,
-                  itemBuilder: (_, __) => const SkeletonProjectCard(),
+                  itemBuilder: (_, _) => const SkeletonProjectCard(),
                 )
               : _projects.isEmpty
                   ? const Center(child: Text('Ничего не найдено', style: TextStyle(color: Colors.grey)))

@@ -213,7 +213,7 @@ class _ClientNotificationSettingsSheetState
                             Switch(
                               value: enabled,
                               onChanged: (v) => _toggle(key, v),
-                              activeColor: const Color(0xFFDD1847),
+                              activeThumbColor: const Color(0xFFDD1847),
                             ),
                           ],
                         ),

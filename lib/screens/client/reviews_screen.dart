@@ -103,7 +103,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: 4,
-      itemBuilder: (_, __) => Container(
+      itemBuilder: (_, _) => Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -142,7 +142,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: 3,
-      itemBuilder: (_, __) => Container(
+      itemBuilder: (_, _) => Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -235,8 +235,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                       child: CachedNetworkImage(
                         imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai${img.toString()}',
                         width: 70, height: 70, fit: BoxFit.cover,
-                        placeholder: (_, __) => const SkeletonBox(width: 70, height: 70, radius: 10),
-                        errorWidget: (_, __, ___) => _photoPlaceholder(size: 70),
+                        placeholder: (_, _) => const SkeletonBox(width: 70, height: 70, radius: 10),
+                        errorWidget: (_, _, _) => _photoPlaceholder(size: 70),
                       ),
                     ),
                   )).toList()),
@@ -261,7 +261,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
 
   void _openLightbox(String url) {
     Navigator.of(context).push(PageRouteBuilder(
-      pageBuilder: (_, __, ___) => Scaffold(
+      pageBuilder: (_, _, _) => Scaffold(
         backgroundColor: Colors.black,
         body: GestureDetector(
           onTap: () => Navigator.pop(context),
@@ -269,8 +269,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
             child: CachedNetworkImage(
               imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$url',
               fit: BoxFit.contain,
-              placeholder: (_, __) => const Center(child: CircularProgressIndicator(color: Colors.white)),
-              errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 48),
+              placeholder: (_, _) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+              errorWidget: (_, _, _) => const Icon(Icons.broken_image, color: Colors.white54, size: 48),
             ),
           ),
         ),

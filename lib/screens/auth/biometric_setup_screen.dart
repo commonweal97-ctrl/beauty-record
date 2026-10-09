@@ -1,7 +1,6 @@
 // lib/screens/auth/biometric_setup_screen.dart
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import '../../services/api_service.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../widgets/toast.dart';
 import '../select_role_screen.dart';
@@ -143,7 +142,7 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

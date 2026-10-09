@@ -1,11 +1,7 @@
 // lib/chat_screen.dart
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../client/support_screen.dart';
@@ -24,7 +20,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   Map<String, dynamic>? _activeChat;
   List<Map<String, dynamic>> _messages = [];
   bool _loadingChats = true;
-  bool _loadingMessages = false;
+  final bool _loadingMessages = false;
   final _messageCtrl = TextEditingController();
   final _scrollController = ScrollController();
   Timer? _refreshTimer;
@@ -35,7 +31,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   String _contactSearch = '';
   bool _loadingContacts = false;
   bool _showGroupSettings = false;
-  String _groupName = '';
+  final String _groupName = '';
   int? _groupChatId;
 
   static const String _baseUrl = 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai';
@@ -292,7 +288,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
             width: 44,
             height: 44,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               width: 44,
               height: 44,
               color: Colors.grey[200],
@@ -377,8 +373,8 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                     child: CachedNetworkImage(
                       imageUrl: '$_baseUrl$avatar',
                       width: 44, height: 44, fit: BoxFit.cover,
-                      placeholder: (_, __) => const SkeletonCircle(size: 44),
-                      errorWidget: (_, __, ___) => Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
+                      placeholder: (_, _) => const SkeletonCircle(size: 44),
+                      errorWidget: (_, _, _) => Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
                     ),
                   )
                 : Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
@@ -430,7 +426,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
             bottomLeft: isMine ? const Radius.circular(16) : const Radius.circular(4),
             bottomRight: isMine ? const Radius.circular(4) : const Radius.circular(16),
           ),
-          boxShadow: isMine ? null : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(0, 1))],
+          boxShadow: isMine ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(msg['message'] ?? '', style: TextStyle(fontSize: 14, color: isMine ? Colors.white : const Color(0xFF1A1A1A))),
@@ -477,7 +473,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20)]),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Row(children: [
           const Text('Новый чат', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),

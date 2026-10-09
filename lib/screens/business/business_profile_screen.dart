@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
 import '../../../services/auth_service.dart';
-import '../../main.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
@@ -24,8 +22,8 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
   final _confirmPassCtrl = TextEditingController();
   String? _avatar;
   bool _loading = true;
-  String _countryDial = '+7';
-  String _countryFlag = '🇷🇺';
+  final String _countryDial = '+7';
+  final String _countryFlag = '🇷🇺';
 
   @override
   void initState() {
@@ -170,7 +168,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                   decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(15)), padding: const EdgeInsets.all(6),
                   child: Row(children: [
                     Expanded(child: GestureDetector(onTap: () => Navigator.pushReplacementNamed(context, '/home'), child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(12)), child: const Text('Клиент', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF666666)))))),
-                    Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)]), child: const Text('Бизнес', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFFDD1847))))),
+                    Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8)]), child: const Text('Бизнес', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFFDD1847))))),
                   ]),
                 ),
                 const SizedBox(height: 16),

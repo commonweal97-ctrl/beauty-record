@@ -6,6 +6,7 @@ import '../../../widgets/skeletons.dart';
 import 'fixed_time_settings_sheet.dart';
 import 'booking_rules_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../utils/app_logger.dart';
 
 class OnlineBookingScreen extends StatefulWidget {
   final int projectId;
@@ -58,15 +59,15 @@ final modStatus = results[1]['success'] == true ? results[1]['data'] : {};
 final services = results[2]['success'] == true ? List<Map<String, dynamic>>.from(results[2]['data'] ?? []) : [];
 final employees = results[3]['success'] == true ? List<Map<String, dynamic>>.from(results[3]['data'] ?? []) : [];
 
-print('=== PROJECT DATA ===');
-print('schedule_json: ${project['schedule_json']}');
-print('schedule_json type: ${project['schedule_json']?.runtimeType}');
-print('schedule_json isEmpty: ${project['schedule_json']?.toString().isEmpty}');
-print('hasSchedule: ${(project['schedule_json']?.toString().isNotEmpty ?? false)}');
-print('employees count: ${employees.length}');
-print('employees with services: ${employees.where((e) => e['provides_services'] == true).length}');
-print('hasEmployeesWithServices: ${employees.any((e) => e['provides_services'] == true)}');
-print('_canActivate: $_canActivate');
+AppLogger.debug('=== PROJECT DATA ===');
+AppLogger.debug('schedule_json: ${project['schedule_json']}');
+AppLogger.debug('schedule_json type: ${project['schedule_json']?.runtimeType}');
+AppLogger.debug('schedule_json isEmpty: ${project['schedule_json']?.toString().isEmpty}');
+AppLogger.debug('hasSchedule: ${(project['schedule_json']?.toString().isNotEmpty ?? false)}');
+AppLogger.debug('employees count: ${employees.length}');
+AppLogger.debug('employees with services: ${employees.where((e) => e['provides_services'] == true).length}');
+AppLogger.debug('hasEmployeesWithServices: ${employees.any((e) => e['provides_services'] == true)}');
+AppLogger.debug('_canActivate: $_canActivate');
             setState(() {
         _hasProfile = (project['profile_photo']?.toString().isNotEmpty ?? false) && (project['address_raw']?.toString().isNotEmpty ?? false);
         _hasServices = services.isNotEmpty;
@@ -80,12 +81,12 @@ print('_canActivate: $_canActivate');
         _moderationComment = modStatus['moderation_comment']?.toString();
         _loadingStatus = false;
       });
-print('_hasProfile: $_hasProfile');
-print('_hasServices: $_hasServices');
-print('_hasSchedule: $_hasSchedule');
-print('_hasEmployeesWithServices: $_hasEmployeesWithServices');
-print('_canActivate: $_canActivate');
-print('_moderationStatus: $_moderationStatus');
+AppLogger.debug('_hasProfile: $_hasProfile');
+AppLogger.debug('_hasServices: $_hasServices');
+AppLogger.debug('_hasSchedule: $_hasSchedule');
+AppLogger.debug('_hasEmployeesWithServices: $_hasEmployeesWithServices');
+AppLogger.debug('_canActivate: $_canActivate');
+AppLogger.debug('_moderationStatus: $_moderationStatus');
     } catch (e) {
       if (mounted) setState(() => _loadingStatus = false);
     }
@@ -419,7 +420,7 @@ _conditionItem(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)],
         ),
         child: Row(
           children: [
@@ -649,7 +650,7 @@ _conditionItem(
               ],
             ),
           ),
-          Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFDD1847)),
+          Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFDD1847)),
         ],
       ),
     );
@@ -722,7 +723,7 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
       return _buildEmployeeSettings();
     }
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Column(
         children: [
@@ -789,8 +790,8 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
                                       child: CachedNetworkImage(
                                         imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
                                         width: 40, height: 40, fit: BoxFit.cover,
-                                        placeholder: (_, __) => const SkeletonCircle(size: 40),
-                                        errorWidget: (_, __, ___) => Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600)),
+                                        placeholder: (_, _) => const SkeletonCircle(size: 40),
+                                        errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600)),
                                       ),
                                     )
                                   : Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600)),
@@ -834,7 +835,7 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
     final setting = _mbtData[empId] ?? {'enabled': false, 'value': 1, 'unit': 'hours'};
     bool noLimit = setting['enabled'] != true;
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Column(
         children: [
@@ -881,7 +882,7 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
                           _mbtData[empId]!['enabled'] = !v;
                           noLimit = v;
                         }),
-                        activeColor: const Color(0xFFDD1847),
+                        activeThumbColor: const Color(0xFFDD1847),
                       ),
                     ],
                   ),
@@ -967,8 +968,9 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
   Widget _buildMbtPreview(int value, String unit) {
     final now = DateTime.now();
     DateTime future = now;
-    if (unit == 'minutes') future = now.add(Duration(minutes: value));
-    else if (unit == 'hours') future = now.add(Duration(hours: value));
+    if (unit == 'minutes') {
+      future = now.add(Duration(minutes: value));
+    } else if (unit == 'hours') future = now.add(Duration(hours: value));
     else if (unit == 'days') future = now.add(Duration(days: value));
 
     final nowStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
@@ -1048,7 +1050,7 @@ class _FixedTimeEmployeesSheetState extends State<_FixedTimeEmployeesSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Column(
         children: [
@@ -1126,8 +1128,8 @@ class _FixedTimeEmployeesSheetState extends State<_FixedTimeEmployeesSheet> {
                                               child: CachedNetworkImage(
                                                 imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
                                                 width: 40, height: 40, fit: BoxFit.cover,
-                                                placeholder: (_, __) => const SkeletonCircle(size: 40),
-                                                errorWidget: (_, __, ___) => Text(initials, style: const TextStyle(color: Color(0xFF666666))),
+                                                placeholder: (_, _) => const SkeletonCircle(size: 40),
+                                                errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFF666666))),
                                               ),
                                             )
                                           : Text(initials, style: const TextStyle(color: Color(0xFF666666))),
@@ -1270,7 +1272,7 @@ class _ConsentSettingsSheetState extends State<_ConsentSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.85,
       child: Column(
         children: [
@@ -1324,7 +1326,7 @@ class _ConsentSettingsSheetState extends State<_ConsentSettingsSheet> {
                                 ],
                               ),
                             ),
-                            Switch(value: _enabled, onChanged: (v) => setState(() => _enabled = v), activeColor: const Color(0xFFDD1847)),
+                            Switch(value: _enabled, onChanged: (v) => setState(() => _enabled = v), activeThumbColor: const Color(0xFFDD1847)),
                           ],
                         ),
                       ),
@@ -1509,7 +1511,7 @@ class _OnlineDesignSheetState extends State<_OnlineDesignSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.85,
       child: Column(
         children: [
@@ -1643,8 +1645,7 @@ class _OnlineDesignSheetState extends State<_OnlineDesignSheet> {
                       child: ColorPicker(
                         initialColor: color,
                         onColorSelected: (c) {
-                          ctrl.text = '#${c.value.toRadixString(16).substring(2).toUpperCase()}';
-                          ctrl.notifyListeners();
+                          ctrl.text = '#${c.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
                           Navigator.pop(ctx);
                         },
                       ),
@@ -1729,7 +1730,7 @@ class _ColorPickerState extends State<ColorPicker> {
                       color: Color(c),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: widget.initialColor.value == c ? Colors.black : Colors.transparent,
+                        color: widget.initialColor.toARGB32() == c ? Colors.black : Colors.transparent,
                         width: 2,
                       ),
                     ),

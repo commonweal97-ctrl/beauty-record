@@ -11,8 +11,8 @@ import 'list_view_screen.dart';
 import 'create_booking_sheet.dart';
 import 'booking_view_sheet.dart';
 import '../../../services/notification_check_service.dart';
-import 'manual_notification_sheet.dart';
 import 'chat_screen.dart';
+import '../../utils/app_logger.dart';
 
 
 
@@ -273,9 +273,9 @@ class _JournalScreenState extends State<JournalScreen> {
   Future<void> _loadMonthDates(int year, int month) async {
     final monthKey = '$year-$month';
     
-    print('🔍 _loadMonthDates called: $monthKey');
-    print('   _loadedMonths: $_loadedMonths');
-    print('   _isLoadingMonth: $_isLoadingMonth');
+    AppLogger.debug('🔍 _loadMonthDates called: $monthKey');
+    AppLogger.debug('   _loadedMonths: $_loadedMonths');
+    AppLogger.debug('   _isLoadingMonth: $_isLoadingMonth');
     
     if (_loadedMonths.contains(monthKey) || _isLoadingMonth) return;
     
@@ -288,10 +288,10 @@ class _JournalScreenState extends State<JournalScreen> {
       final result = await ApiService.get(
           '/api/booking/month-dates?project_id=${widget.projectId}&year=$year&month=$month');
       
-      print('📡 API response for $monthKey:');
-      print('   success: ${result['success']}');
-      print('   dates count: ${(result['dates'] as List?)?.length ?? 0}');
-      print('   dates: ${result['dates']}');
+      AppLogger.debug('📡 API response for $monthKey:');
+      AppLogger.debug('   success: ${result['success']}');
+      AppLogger.debug('   dates count: ${(result['dates'] as List?)?.length ?? 0}');
+      AppLogger.debug('   dates: ${result['dates']}');
       
       if (result['success'] == true && mounted) {
         final newDates = List<Map<String, dynamic>>.from(result['dates'] ?? []);
@@ -306,13 +306,13 @@ class _JournalScreenState extends State<JournalScreen> {
               .where((d) => !existingDates.contains(d['date']))
               .toList();
           
-          print('   uniqueNewDates: ${uniqueNewDates.length}');
+          AppLogger.debug('   uniqueNewDates: ${uniqueNewDates.length}');
           
           if (uniqueNewDates.isNotEmpty) {
             final allDates = [..._monthDates, ...uniqueNewDates];
             allDates.sort((a, b) => (a['date'] as String).compareTo(b['date'] as String));
             
-            print('   Total _monthDates after add: ${allDates.length}');
+            AppLogger.debug('   Total _monthDates after add: ${allDates.length}');
             
             setState(() {
               _monthDates = allDates;
@@ -324,7 +324,7 @@ class _JournalScreenState extends State<JournalScreen> {
         _loadedMonths.add(monthKey);
       }
     } catch (e) {
-      print('❌ Error loading dates for $monthKey: $e');
+      AppLogger.debug('❌ Error loading dates for $monthKey: $e');
     } finally {
       _isLoadingMonth = false;
     }
@@ -333,7 +333,9 @@ class _JournalScreenState extends State<JournalScreen> {
   void _checkAndLoadAdjacentDates() {
     if (!_dateScrollController.hasClients ||
         _isLoadingMonth ||
-        !_datesInitialized) return;
+        !_datesInitialized) {
+      return;
+    }
 
     final offset = _dateScrollController.offset;
     final maxScroll = _dateScrollController.position.maxScrollExtent;
@@ -483,7 +485,7 @@ class _JournalScreenState extends State<JournalScreen> {
         visibleIds: _employees.map((e) => e['id'] as int).toSet(),
         onApply: (visibleIds) {
           setState(() {
-            if (_allEmployees == null) _allEmployees = List.from(_employees);
+            _allEmployees ??= List.from(_employees);
             _employees = _allEmployees!.where((e) => visibleIds.contains(e['id'])).toList();
             _showAllEmployees = visibleIds.length == _allEmployees!.length;
           });
@@ -779,7 +781,7 @@ void initState() {
             GestureDetector(
               onTap: _toggleSidebar,
               child: Container(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
               ),
             ),
 
@@ -1225,7 +1227,7 @@ void initState() {
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 4,
                             ),
                           ],
@@ -1270,7 +1272,7 @@ void initState() {
               : (isToday ? const Color(0xFFFDF2F5) : Colors.transparent),
           borderRadius: BorderRadius.circular(12),
           border: isToday && !isSelected
-              ? Border.all(color: const Color(0xFFDD1847).withOpacity(0.5))
+              ? Border.all(color: const Color(0xFFDD1847).withValues(alpha: 0.5))
               : null,
         ),
         child: Column(
@@ -1682,8 +1684,9 @@ void initState() {
                                       ...List.generate(totalSlots, (i) {
                                         final m = minStart + i * slotInterval;
                                         final min = m % 60;
-                                        if (min != 0)
+                                        if (min != 0) {
                                           return const SizedBox.shrink();
+                                        }
                                         return Positioned(
                                           top: i * rowHeight,
                                           left: 0,
@@ -1697,8 +1700,9 @@ void initState() {
                                       ...List.generate(totalSlots, (i) {
                                         final m = minStart + i * slotInterval;
                                         final min = m % 60;
-                                        if (min != 30)
+                                        if (min != 30) {
                                           return const SizedBox.shrink();
+                                        }
                                         return Positioned(
                                           top: i * rowHeight,
                                           left: 0,
@@ -1724,19 +1728,25 @@ void initState() {
                                             _timeToMin(startTime);
                                         var itemEnd = _timeToMin(endTime);
                                         if (itemEnd <= workStart ||
-                                            itemStart >= workEnd)
+                                            itemStart >= workEnd) {
                                           return const SizedBox.shrink();
-                                        if (itemStart < workStart)
+                                        }
+                                        if (itemStart < workStart) {
                                           itemStart = workStart;
-                                        if (itemEnd > workEnd)
+                                        }
+                                        if (itemEnd > workEnd) {
                                           itemEnd = workEnd;
+                                        }
                                         if (itemEnd <= minStart ||
-                                            itemStart >= maxEnd)
+                                            itemStart >= maxEnd) {
                                           return const SizedBox.shrink();
-                                        if (itemStart < minStart)
+                                        }
+                                        if (itemStart < minStart) {
                                           itemStart = minStart;
-                                        if (itemEnd > maxEnd)
+                                        }
+                                        if (itemEnd > maxEnd) {
                                           itemEnd = maxEnd;
+                                        }
                                         final top =
                                             ((itemStart - minStart) /
                                                     slotInterval) *
@@ -1767,7 +1777,7 @@ void initState() {
                                             child: Container(
                                               decoration: BoxDecoration(
                                                 color:
-                                                    color.withOpacity(0.5),
+                                                    color.withValues(alpha: 0.5),
                                                 borderRadius:
                                                     BorderRadius.circular(8),
                                               ),
@@ -1785,7 +1795,7 @@ void initState() {
                                                       fontWeight:
                                                           FontWeight.w700,
                                                       color: Colors.black
-                                                          .withOpacity(0.8),
+                                                          .withValues(alpha: 0.8),
                                                     ),
                                                     maxLines: 1,
                                                     overflow:
@@ -1799,7 +1809,7 @@ void initState() {
                                                         fontWeight:
                                                             FontWeight.w400,
                                                         color: Colors.black
-                                                            .withOpacity(0.6),
+                                                            .withValues(alpha: 0.6),
                                                       ),
                                                       maxLines: 1,
                                                       overflow: TextOverflow
@@ -1850,7 +1860,7 @@ void initState() {
                                                   colors: [
                                                     recordColor,
                                                     recordColor
-                                                        .withOpacity(0.8)
+                                                        .withValues(alpha: 0.8)
                                                   ],
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
@@ -1860,7 +1870,7 @@ void initState() {
                                                 boxShadow: [
                                                   BoxShadow(
                                                     color: recordColor
-                                                        .withOpacity(0.3),
+                                                        .withValues(alpha: 0.3),
                                                     blurRadius: 4,
                                                     offset:
                                                         const Offset(0, 2),
@@ -2168,7 +2178,7 @@ class _CalendarPickerState extends State<_CalendarPicker> {
     ];
     final today = DateTime.now();
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.8,
       child: Column(
         children: [
@@ -2335,7 +2345,7 @@ class _FilterEmployeeSheetState extends State<_FilterEmployeeSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Column(
         children: [

@@ -151,7 +151,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
                       boxShadow: isFilled && !hasError
                           ? [
                               BoxShadow(
-                                color: const Color(0xFFDD1847).withOpacity(0.3),
+                                color: const Color(0xFFDD1847).withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 spreadRadius: 1,
                               )

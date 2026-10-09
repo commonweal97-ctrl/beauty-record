@@ -7,12 +7,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
-import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
 import 'fixed_time_settings_sheet.dart';
 import 'access_screen.dart';
 import 'employee_schedule_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../utils/app_logger.dart';
 
 // ==================== ОТДЕЛЬНЫЙ ВИДЖЕТ ДЛЯ ПОЛЯ ЦЕНЫ ====================
 class _PriceField extends StatefulWidget {
@@ -214,7 +214,7 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
         child: Row(children: [
           Container(
             width: 56, height: 56,
@@ -298,7 +298,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   Map<String, dynamic>? _optimalStats;
 
   List<Map<String, dynamic>> _photos = [];
-  List<int> _deletedPhotoIds = [];
+  final List<int> _deletedPhotoIds = [];
 
   String _accessStatus = 'Настроить';
   String _scheduleStatus = 'Настроить';
@@ -369,8 +369,9 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
           else if (phone.startsWith('+7')) { dial = '+7'; number = phone.substring(2); }
           else if (phone.startsWith('8')) { dial = '+7'; number = phone.substring(1); }
           else { number = phone; }
-          if (dial == '+7' && number.length == 10) number = '${number.substring(0,3)} ${number.substring(3,6)} ${number.substring(6,8)} ${number.substring(8,10)}';
-          else if ((dial == '+375' || dial == '+380') && number.length >= 2) number = '${number.substring(0,2)} ${number.substring(2)}';
+          if (dial == '+7' && number.length == 10) {
+            number = '${number.substring(0,3)} ${number.substring(3,6)} ${number.substring(6,8)} ${number.substring(8,10)}';
+          } else if ((dial == '+375' || dial == '+380') && number.length >= 2) number = '${number.substring(0,2)} ${number.substring(2)}';
         }
         if (d['notifications'] != null) {
           _notifications = Map<String, bool>.from(d['notifications']);
@@ -423,7 +424,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
         _loadEmployeeServices();
       }
     } catch (e) {
-      print('❌ Load error: $e');
+      AppLogger.debug('❌ Load error: $e');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -694,8 +695,9 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   void _onPhoneChanged(String value) {
     final dial = _selectedDial.replaceAll('+', '');
     String digits = value.replaceAll(RegExp(r'[^\d]'), '');
-    if (dial == '7' && digits.length >= 10) digits = '${digits.substring(0,3)} ${digits.substring(3,6)} ${digits.substring(6,8)} ${digits.substring(8,10)}';
-    else if ((dial == '375' || dial == '380') && digits.length >= 2) digits = '${digits.substring(0,2)} ${digits.substring(2)}';
+    if (dial == '7' && digits.length >= 10) {
+      digits = '${digits.substring(0,3)} ${digits.substring(3,6)} ${digits.substring(6,8)} ${digits.substring(8,10)}';
+    } else if ((dial == '375' || dial == '380') && digits.length >= 2) digits = '${digits.substring(0,2)} ${digits.substring(2)}';
     _phoneCtrl.value = TextEditingValue(text: digits, selection: TextSelection.collapsed(offset: digits.length));
   }
 
@@ -720,7 +722,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       context: context, isScrollControlled: true, backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(builder: (context, setModalState) {
-        return Container(height: MediaQuery.of(context).size.height * 0.6, child: Column(children: [
+        return SizedBox(height: MediaQuery.of(context).size.height * 0.6, child: Column(children: [
           Container(padding: const EdgeInsets.all(20), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0)))), child: Row(children: [
             GestureDetector(onTap: () => Navigator.pop(ctx), child: const Icon(Icons.arrow_back)),
             const Spacer(), const Text('Оповещения', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -748,7 +750,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   Widget _buildNotifItem(String title, String desc, bool value, ValueChanged<bool> onChanged) {
     return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(16)), child: Row(children: [
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)), const SizedBox(height: 4), Text(desc, style: const TextStyle(fontSize: 13, color: Color(0xFF888888)))])),
-      Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFDD1847)),
+      Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFDD1847)),
     ]));
   }
 
@@ -756,7 +758,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setModalState) => Container(
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setModalState) => SizedBox(
         height: MediaQuery.of(context).size.height * 0.8, child: Column(children: [
           Container(padding: const EdgeInsets.all(16), decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0)))), child: Row(children: [
             GestureDetector(onTap: () => Navigator.pop(ctx), child: const Icon(Icons.arrow_back)), const Spacer(),
@@ -797,7 +799,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
     return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)), child: Row(children: [
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)), const SizedBox(height: 2), Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF999999)))])),
       if (showSettings && onSettingsTap != null) TextButton(onPressed: onSettingsTap, child: Row(mainAxisSize: MainAxisSize.min, children: const [Icon(Icons.calendar_today, size: 14, color: Color(0xFFDD1847)), SizedBox(width: 4), Text('Настроить', style: TextStyle(color: Color(0xFFDD1847)))])),
-      Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFDD1847)),
+      Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFDD1847)),
     ]));
   }
 
@@ -806,8 +808,9 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
     final unit = _minBookingTime['unit'] ?? 'hours';
     final now = DateTime.now();
     DateTime future = now;
-    if (unit == 'minutes') future = now.add(Duration(minutes: value));
-    else if (unit == 'hours') future = now.add(Duration(hours: value));
+    if (unit == 'minutes') {
+      future = now.add(Duration(minutes: value));
+    } else if (unit == 'hours') future = now.add(Duration(hours: value));
     else if (unit == 'days') future = now.add(Duration(days: value));
     final nowStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     final futureStr = '${future.hour.toString().padLeft(2, '0')}:${future.minute.toString().padLeft(2, '0')}';
@@ -891,7 +894,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => GestureDetector(
           onTap: () => FocusScope.of(ctx).unfocus(),
-          child: Container(
+          child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.8,
             child: Column(children: [
               Container(
@@ -1074,7 +1077,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
                                               _updateServiceOnlineBooking(id, v);
                                               setModalState(() {});
                                             },
-                                            activeColor: const Color(0xFFDD1847),
+                                            activeThumbColor: const Color(0xFFDD1847),
                                           ),
                                         ]),
                                       ),
@@ -1155,13 +1158,13 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       const Text('Цвет записей', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)), const SizedBox(height: 12),
       Wrap(spacing: 8, runSpacing: 8, children: _colors.map((c) => GestureDetector(
         onTap: () => setState(() => _bookingColor = c),
-        child: Container(width: 36, height: 36, decoration: BoxDecoration(color: Color(int.parse('FF${c.substring(1)}', radix: 16)), borderRadius: BorderRadius.circular(10), border: Border.all(color: _bookingColor == c ? Colors.black : Colors.transparent, width: 2.5), boxShadow: [BoxShadow(color: _bookingColor == c ? Color(int.parse('FF${c.substring(1)}', radix: 16)).withOpacity(0.4) : Colors.transparent, blurRadius: 8, spreadRadius: 1)]), child: _bookingColor == c ? const Center(child: Icon(Icons.check, color: Colors.white, size: 16)) : null),
+        child: Container(width: 36, height: 36, decoration: BoxDecoration(color: Color(int.parse('FF${c.substring(1)}', radix: 16)), borderRadius: BorderRadius.circular(10), border: Border.all(color: _bookingColor == c ? Colors.black : Colors.transparent, width: 2.5), boxShadow: [BoxShadow(color: _bookingColor == c ? Color(int.parse('FF${c.substring(1)}', radix: 16)).withValues(alpha: 0.4) : Colors.transparent, blurRadius: 8, spreadRadius: 1)]), child: _bookingColor == c ? const Center(child: Icon(Icons.check, color: Colors.white, size: 16)) : null),
       )).toList()),
     ]);
   }
 
   void _showCategoryPicker() {
-    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (ctx) => Container(height: MediaQuery.of(context).size.height * 0.5, child: Column(children: [
+    showModalBottomSheet(context: context, backgroundColor: Colors.white, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))), builder: (ctx) => SizedBox(height: MediaQuery.of(context).size.height * 0.5, child: Column(children: [
       Padding(padding: const EdgeInsets.all(16), child: Row(children: [const Expanded(child: Text('Выберите категорию', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx))])),
       Expanded(child: ListView(children: _categories.map((cat) => ListTile(title: Text(cat), trailing: _category == cat ? const Icon(Icons.check, color: Color(0xFFDD1847)) : null, onTap: () { setState(() => _category = cat); Navigator.pop(ctx); })).toList())),
     ])));
@@ -1172,7 +1175,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   }
 
   Widget _buildToggleRow(String label, bool value, ValueChanged<bool> onChanged) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)), child: Row(children: [Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)), const Spacer(), Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFDD1847))]));
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)), child: Row(children: [Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)), const Spacer(), Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFDD1847))]));
   }
 
   Widget _buildDeleteButton() {
@@ -1208,7 +1211,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       Wrap(spacing: 10, runSpacing: 10, children: [
         ..._photos.map((p) => ClipRRect(borderRadius: BorderRadius.circular(16), child: Container(width: 100, height: 100, decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE0E0E0), width: 1), borderRadius: BorderRadius.circular(16)), child: Stack(fit: StackFit.expand, children: [
           ClipRRect(borderRadius: BorderRadius.circular(15), child: CachedNetworkImage(imageUrl: '$_baseUrl${p['photo_url'] ?? p['url']}', fit: BoxFit.cover)),
-          Positioned(top: 6, right: 6, child: GestureDetector(onTap: () => _deletePhoto(p), child: Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
+          Positioned(top: 6, right: 6, child: GestureDetector(onTap: () => _deletePhoto(p), child: Container(width: 24, height: 24, decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
         ])))),
         if (_photos.length < 6) GestureDetector(onTap: _pickWorkPhoto, child: Container(width: 100, height: 100, decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE0E0E0), width: 2), borderRadius: BorderRadius.circular(16), color: const Color(0xFFF8F8F8)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add, size: 24, color: Colors.grey[400]), const SizedBox(height: 4), Text('Добавить\nфото', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.grey[500]))]))),
       ]),
@@ -1224,10 +1227,10 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return Container(height: MediaQuery.of(context).size.height * 0.85, child: const Center(child: CircularProgressIndicator()));
+    if (_loading) return SizedBox(height: MediaQuery.of(context).size.height * 0.85, child: const Center(child: CircularProgressIndicator()));
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
-      child: Container(height: MediaQuery.of(context).size.height * 0.9, child: Column(children: [
+      child: SizedBox(height: MediaQuery.of(context).size.height * 0.9, child: Column(children: [
         Container(padding: const EdgeInsets.all(16), decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20)), border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0)))), child: Row(children: [
           GestureDetector(onTap: () => Navigator.pop(context), child: const Icon(Icons.arrow_back)), const Spacer(),
           const Text('Профиль сотрудника', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)), const Spacer(),
@@ -1237,7 +1240,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
           child: ListView(padding: const EdgeInsets.all(20), children: [
             Row(children: [
               GestureDetector(onTap: _pickAvatar, child: Stack(clipBehavior: Clip.none, children: [
-                Container(width: 80, height: 80, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFF0F0F0), border: Border.all(color: Colors.white, width: 3), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12)]), child: ClipOval(child: _avatarFile != null ? Image.file(_avatarFile!, fit: BoxFit.cover) : _avatarUrl.isNotEmpty ? CachedNetworkImage(imageUrl: '$_baseUrl$_avatarUrl', fit: BoxFit.cover) : const Center(child: Icon(Icons.person, size: 40, color: Color(0xFF999999))))),
+                Container(width: 80, height: 80, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFF0F0F0), border: Border.all(color: Colors.white, width: 3), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12)]), child: ClipOval(child: _avatarFile != null ? Image.file(_avatarFile!, fit: BoxFit.cover) : _avatarUrl.isNotEmpty ? CachedNetworkImage(imageUrl: '$_baseUrl$_avatarUrl', fit: BoxFit.cover) : const Center(child: Icon(Icons.person, size: 40, color: Color(0xFF999999))))),
                 if (_avatarFile != null || _avatarUrl.isNotEmpty) Positioned(bottom: -5, right: -5, child: GestureDetector(onTap: _deleteAvatar, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFFF44336), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
               ])),
               const SizedBox(width: 16),
@@ -1355,7 +1358,7 @@ class _TimeWheelPickerState extends State<_TimeWheelPicker> {
                     physics: const FixedExtentScrollPhysics(),
                     onSelectedItemChanged: (v) => setState(() => _selectedMinute = v * 5),
                     childDelegate: ListWheelChildBuilderDelegate(
-                      builder: (context, index) => Center(child: Text('${(index * 5).toString().padLeft(2, '0')}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: _selectedMinute == index * 5 ? const Color(0xFFDD1847) : const Color(0xFF333333)))),
+                      builder: (context, index) => Center(child: Text((index * 5).toString().padLeft(2, '0'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: _selectedMinute == index * 5 ? const Color(0xFFDD1847) : const Color(0xFF333333)))),
                       childCount: 12,
                     ),
                   ),

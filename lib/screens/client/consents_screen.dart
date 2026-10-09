@@ -213,9 +213,9 @@ class _ConsentsScreenState extends State<ConsentsScreen> {
         Switch(
           value: value,
           onChanged: canToggle ? (v) => _toggleConsent(projectId, field, value) : null,
-          activeColor: const Color(0xFF16A34A),
+          activeThumbColor: const Color(0xFF16A34A),
           inactiveThumbColor: canToggle ? null : const Color(0xFF16A34A),
-          inactiveTrackColor: canToggle ? null : const Color(0xFF16A34A).withOpacity(0.3),
+          inactiveTrackColor: canToggle ? null : const Color(0xFF16A34A).withValues(alpha: 0.3),
         ),
       ]),
     );

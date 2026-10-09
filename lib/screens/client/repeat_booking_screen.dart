@@ -217,7 +217,7 @@ class _RepeatBookingScreenState extends State<RepeatBookingScreen> {
             Row(children: [
               const SkeletonBox(width: 44, height: 44, radius: 14),
               const SizedBox(width: 12),
-              Expanded(child: SizedBox(height: 62, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: 5, itemBuilder: (_, __) => const Padding(padding: EdgeInsets.only(right: 8), child: SkeletonBox(width: 62, height: 62, radius: 14))))),
+              Expanded(child: SizedBox(height: 62, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: 5, itemBuilder: (_, _) => const Padding(padding: EdgeInsets.only(right: 8), child: SkeletonBox(width: 62, height: 62, radius: 14))))),
             ]),
             const SizedBox(height: 20),
             Wrap(spacing: 8, children: List.generate(6, (_) => const Padding(padding: EdgeInsets.only(bottom: 8), child: SkeletonBox(width: 80, height: 40, radius: 12)))),
@@ -276,7 +276,7 @@ class _RepeatBookingScreenState extends State<RepeatBookingScreen> {
                     decoration: BoxDecoration(
                       color: isSelected ? const Color(0xFFDD1847) : (isToday ? const Color(0xFFFDF2F5) : Colors.white),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: isSelected ? const Color(0xFFDD1847) : (isToday ? const Color(0xFFDD1847).withOpacity(0.5) : const Color(0xFFE8E8E8))),
+                      border: Border.all(color: isSelected ? const Color(0xFFDD1847) : (isToday ? const Color(0xFFDD1847).withValues(alpha: 0.5) : const Color(0xFFE8E8E8))),
                     ),
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Text('${date.day}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isSelected ? Colors.white : Colors.black)),
@@ -407,7 +407,7 @@ class _CalendarPickerState extends State<_CalendarPicker> {
   Widget build(BuildContext context) {
     final m = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     final today = DateTime.now();
-    return Container(height: 500, child: Column(children: [
+    return SizedBox(height: 500, child: Column(children: [
       Container(width: 40, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 8), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
       Text(_headerText, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)), const SizedBox(height: 8),
       Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d) => SizedBox(width: 36, child: Text(d, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: d == 'Сб' || d == 'Вс' ? const Color(0xFFDD1847) : Colors.grey)))).toList()),

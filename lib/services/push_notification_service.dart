@@ -1,17 +1,16 @@
 // lib/services/push_notification_service.dart
 import 'dart:async';
 import 'dart:convert';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
+import '../utils/app_logger.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
-  print('🔔 BACKGROUND HANDLER CALLED!');
-  print('🔔 DATA: ${message.data}');
-  print('🔔 NOTIFICATION: ${message.notification?.title}');
+  AppLogger.debug('🔔 BACKGROUND HANDLER CALLED!');
+  AppLogger.debug('🔔 DATA: ${message.data}');
+  AppLogger.debug('🔔 NOTIFICATION: ${message.notification?.title}');
 
   final data = message.data;
   final title = data['title'] ?? message.notification?.title ?? 'Уведомление';
@@ -63,7 +62,7 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
     payload: jsonEncode(data),
   );
 
-  print('🔔 BACKGROUND NOTIFICATION SHOWN');
+  AppLogger.debug('🔔 BACKGROUND NOTIFICATION SHOWN');
 }
 
 class PushNotificationService {
@@ -78,7 +77,7 @@ class PushNotificationService {
   String? _cachedToken;
 
   Future<void> initialize() async {
-    final settings = await _firebaseMessaging.requestPermission(
+    await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
@@ -105,9 +104,9 @@ class PushNotificationService {
     try {
       token = await _firebaseMessaging.getToken();
       _cachedToken = token;
-      print('🔑 FCM TOKEN: $token');
+      AppLogger.debug('🔑 FCM TOKEN: $token');
     } catch (e) {
-      print('FCM token error: $e');
+      AppLogger.debug('FCM token error: $e');
     }
 
     _firebaseMessaging.onTokenRefresh.listen(_saveFcmToken);
@@ -130,20 +129,20 @@ class PushNotificationService {
   }
 
   Future<void> _saveFcmToken(String token) async {
-    print('📤 Sending FCM token to server...');
+    AppLogger.debug('📤 Sending FCM token to server...');
     try {
       final result = await ApiService.post('/api/notification/register-device', {
         'token': token,
         'platform': 'android',
       });
-      print('📤 Server response: $result');
+      AppLogger.debug('📤 Server response: $result');
       if (result['success'] == true) {
-        print('✅ FCM token saved to server');
+        AppLogger.debug('✅ FCM token saved to server');
       } else {
-        print('❌ Server rejected token: ${result['message']}');
+        AppLogger.debug('❌ Server rejected token: ${result['message']}');
       }
     } catch (e) {
-      print('❌ Failed to save FCM token: $e');
+      AppLogger.debug('❌ Failed to save FCM token: $e');
     }
   }
 

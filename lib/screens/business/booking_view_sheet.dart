@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
@@ -267,7 +266,7 @@ class _BookingViewSheetState extends State<BookingViewSheet> {
   @override
 Widget build(BuildContext context) {
   if (_loading) {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.85,
       child: const Center(
         child: Column(
@@ -285,7 +284,7 @@ Widget build(BuildContext context) {
     final services = d['services'] as List? ?? [];
     final avatar = d['master_avatar'];
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.85,
       child: Column(children: [
         Padding(
@@ -578,7 +577,7 @@ class _DatetimePickerPageState extends State<_DatetimePickerPage> {
   Map<int, List<Map<String, dynamic>>> _occupiedByEmployee = {};
   bool _loadingEmployees = true;
   final _datesScrollController = ScrollController();
-  List<DateTime> _dates = [];
+  final List<DateTime> _dates = [];
   int _totalServiceDuration = 0;
 
   @override
@@ -912,7 +911,7 @@ class _ServicesPickerState extends State<_ServicesPicker> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 400,
       child: Column(children: [
         Padding(padding: const EdgeInsets.all(20), child: Row(children: [const Spacer(), const Text('Выберите услуги', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)), const Spacer(), IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))])),
@@ -921,7 +920,7 @@ class _ServicesPickerState extends State<_ServicesPicker> {
               ? ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: 5,
-                  itemBuilder: (_, __) => Padding(
+                  itemBuilder: (_, _) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(children: [
                       const SkeletonBox(width: 40, height: 40, radius: 8),
@@ -1055,7 +1054,7 @@ class _ReminderPickerState extends State<_ReminderPicker> {
                 Switch(
                   value: _confirmRequired,
                   onChanged: (v) => setState(() => _confirmRequired = v),
-                  activeColor: const Color(0xFFDD1847),
+                  activeThumbColor: const Color(0xFFDD1847),
                 ),
               ]),
             ),
@@ -1241,7 +1240,7 @@ class _CalendarPickerState extends State<_CalendarPicker> {
     final m = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
     final today = DateTime.now();
 
-    return Container(
+    return SizedBox(
       height: 500,
       child: Column(children: [
         Container(width: 40, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 8), decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),

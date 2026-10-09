@@ -6,7 +6,6 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
-import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -70,7 +69,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.08), blurRadius: 3)
+                      color: Colors.black.withValues(alpha: 0.08), blurRadius: 3)
                 ],
               ),
               indicatorSize: TabBarIndicatorSize.tab,
@@ -862,7 +861,7 @@ class _HistoryTab extends StatefulWidget {
 
 class _HistoryTabState extends State<_HistoryTab> {
   List<Map<String, dynamic>> _items = [];
-  Map<int, Map<String, dynamic>> _itemsCache = {};
+  final Map<int, Map<String, dynamic>> _itemsCache = {};
   bool _loading = true;
   String _period = 'week';
   DateTime _currentDate = DateTime.now();
@@ -1379,8 +1378,8 @@ final avatarUrl = item['client_avatar']?.toString() ?? item['master_avatar']?.to
         child: CachedNetworkImage(
           imageUrl: '${ApiService.baseUrl}$avatarUrl',
           width: 40, height: 40, fit: BoxFit.cover,
-          placeholder: (_, __) => const SkeletonCircle(size: 40),
-          errorWidget: (_, __, ___) => Text(initials, style: const TextStyle(color: Color(0xFF999999), fontWeight: FontWeight.w600, fontSize: 16)),
+          placeholder: (_, _) => const SkeletonCircle(size: 40),
+          errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFF999999), fontWeight: FontWeight.w600, fontSize: 16)),
         ),
       )
     : Text(initials, style: const TextStyle(color: Color(0xFF999999), fontWeight: FontWeight.w600, fontSize: 16)),
@@ -1704,7 +1703,7 @@ class _NotificationDetailSheet extends StatelessWidget {
                 ? const Color(0xFF7B1FA2)
                 : const Color(0xFFF57C00);
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.7,
       child: Column(
         children: [
@@ -1832,7 +1831,7 @@ class _ChannelsTabState extends State<_ChannelsTab> {
   bool _manualEnabled = true;
   bool _internalEnabled = false;
   Map<String, bool> _internalTypes = {};
-  Map<String, bool> _channels = {
+  final Map<String, bool> _channels = {
     'sms': true,
     'telegram': true,
     'whatsapp': true,
@@ -2107,7 +2106,7 @@ class _ChannelsTabState extends State<_ChannelsTab> {
                   setState(() => _internalTypes[key] = v);
                   _saveInternal(types: _internalTypes);
                 },
-                activeColor: const Color(0xFFDD1847),
+                activeThumbColor: const Color(0xFFDD1847),
               ),
             ],
           ),
@@ -2180,7 +2179,7 @@ class _ChannelsTabState extends State<_ChannelsTab> {
                   _saveTelegram(
                       types: _telegramTypes);
                 },
-                activeColor:
+                activeThumbColor:
                     const Color(0xFFDD1847),
               ),
             ],
@@ -2314,7 +2313,7 @@ class _ManualSettingsScreenState extends State<_ManualSettingsScreen> {
                     setState(() => _manualEnabled = v);
                     widget.onManualToggle(v);
                   },
-                  activeColor: const Color(0xFFDD1847),
+                  activeThumbColor: const Color(0xFFDD1847),
                 ),
               ],
             ),
@@ -2369,7 +2368,7 @@ class _ManualSettingsScreenState extends State<_ManualSettingsScreen> {
                       setState(() => _channels[channel] = v);
                       widget.onChannelChanged(channel, v);
                     },
-                    activeColor: const Color(0xFFDD1847),
+                    activeThumbColor: const Color(0xFFDD1847),
                   ),
                 ],
               ),
@@ -2478,7 +2477,7 @@ class _TelegramSettingsScreenState extends State<_TelegramSettingsScreen> {
                     setState(() => _telegramEnabled = v);
                     widget.onTelegramToggle(v);
                   },
-                  activeColor: const Color(0xFFDD1847),
+                  activeThumbColor: const Color(0xFFDD1847),
                 ),
               ],
             ),
@@ -2530,7 +2529,7 @@ class _TelegramSettingsScreenState extends State<_TelegramSettingsScreen> {
                       setState(() => _telegramTypes[key] = v);
                       widget.onTypeChanged(_telegramTypes);
                     },
-                    activeColor: const Color(0xFFDD1847),
+                    activeThumbColor: const Color(0xFFDD1847),
                   ),
                 ],
               ),
@@ -2642,7 +2641,7 @@ class _InternalSettingsScreenState extends State<_InternalSettingsScreen> {
                     setState(() => _internalEnabled = v);
                     widget.onInternalToggle(v);
                   },
-                  activeColor: const Color(0xFFDD1847),
+                  activeThumbColor: const Color(0xFFDD1847),
                 ),
               ],
             ),
@@ -2694,7 +2693,7 @@ class _InternalSettingsScreenState extends State<_InternalSettingsScreen> {
                       setState(() => _internalTypes[key] = v);
                       widget.onTypeChanged(_internalTypes);
                     },
-                    activeColor: const Color(0xFFDD1847),
+                    activeThumbColor: const Color(0xFFDD1847),
                   ),
                 ],
               ),
@@ -2718,7 +2717,7 @@ class _ManualAccessScreenState extends State<_ManualAccessScreen> {
   List<Map<String, dynamic>> _employees = [];
   bool _loading = true;
   String _search = '';
-  Map<int, bool> _notificationRights = {};
+  final Map<int, bool> _notificationRights = {};
 
   @override
   void initState() {
@@ -2901,7 +2900,7 @@ class _ManualAccessScreenState extends State<_ManualAccessScreen> {
                               onChanged: (v) =>
                                   _toggleAccess(
                                       emp['id'], v),
-                              activeColor:
+                              activeThumbColor:
                                   const Color(0xFFDD1847),
                             ),
                           ],
@@ -2998,22 +2997,25 @@ class _TypesTabState extends State<_TypesTab> {
         if (num % 10 == 1 && num % 100 != 11) return 'день';
         if (num % 10 >= 2 &&
             num % 10 <= 4 &&
-            (num % 100 < 10 || num % 100 >= 20))
+            (num % 100 < 10 || num % 100 >= 20)) {
           return 'дня';
+        }
         return 'дней';
       case 'weeks':
         if (num % 10 == 1 && num % 100 != 11) return 'неделя';
         if (num % 10 >= 2 &&
             num % 10 <= 4 &&
-            (num % 100 < 10 || num % 100 >= 20))
+            (num % 100 < 10 || num % 100 >= 20)) {
           return 'недели';
+        }
         return 'недель';
       case 'months':
         if (num % 10 == 1 && num % 100 != 11) return 'месяц';
         if (num % 10 >= 2 &&
             num % 10 <= 4 &&
-            (num % 100 < 10 || num % 100 >= 20))
+            (num % 100 < 10 || num % 100 >= 20)) {
           return 'месяца';
+        }
         return 'месяцев';
       default:
         return unit ?? '';
@@ -3188,12 +3190,12 @@ class _NotificationTypeSettingsScreenState
   bool _skipBlocked = true;
   bool _skipNoConsent = true;
   bool _confirmEnabled = true;
-  Map<String, String> _templates = {
+  final Map<String, String> _templates = {
     'manual': '',
     'telegram': '',
     'internal': '',
   };
-  Map<String, String> _confirmTemplates = {
+  final Map<String, String> _confirmTemplates = {
     'manual': '',
     'telegram': '',
     'internal': '',
@@ -3413,7 +3415,7 @@ class _NotificationTypeSettingsScreenState
                 setState(() => _settings['enabled'] = v);
                 _autoSave();
               },
-              activeColor: const Color(0xFFDD1847),
+              activeThumbColor: const Color(0xFFDD1847),
               contentPadding: EdgeInsets.zero,
             ),
           ),
@@ -3506,7 +3508,7 @@ class _NotificationTypeSettingsScreenState
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFFDD1847),
+            activeThumbColor: const Color(0xFFDD1847),
           ),
         ],
       ),
@@ -4252,10 +4254,11 @@ class _NotificationTypeSettingsScreenState
                                   Text(e.value)))
                       .toList(),
                   onChanged: (v) {
-                    if (v != null)
+                    if (v != null) {
                       setState(() =>
                           _settings[
                               'interval_unit'] = v);
+                    }
                   },
                 ),
               ),

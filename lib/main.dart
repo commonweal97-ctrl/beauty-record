@@ -6,17 +6,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/api_service.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/auth/otp_screen.dart';
-import 'screens/auth/register_screen.dart';
 import 'screens/select_role_screen.dart';
 import 'screens/client/client_dashboard_screen.dart';
 import 'screens/business/business_dashboard_screen.dart';
 import 'screens/auth/pin_setup_screen.dart';
 import 'screens/auth/biometric_setup_screen.dart';
-import 'screens/auth/pin_login_screen.dart';
-import 'services/auth_service.dart';
 import 'services/push_notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'utils/app_logger.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -48,13 +45,13 @@ void main() async {
       ),
     );
   } catch (e) {
-    print('Firebase error: $e');
+    AppLogger.debug('Firebase error: $e');
   }
   
   final pushService = PushNotificationService();
   pushService.initialize();
   pushService.onNotificationTap = (projectId, count) {
-    print('Push tap: project=$projectId, count=$count');
+    AppLogger.debug('Push tap: project=$projectId, count=$count');
   };
   await ApiService.init();
   runApp(const BeautyRecordApp());

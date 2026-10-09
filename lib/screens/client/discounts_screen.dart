@@ -80,7 +80,7 @@ class _DiscountsScreenState extends State<DiscountsScreen> with SingleTickerProv
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
+                                color: Colors.black.withValues(alpha: 0.06),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -143,7 +143,7 @@ class _DiscountsScreenState extends State<DiscountsScreen> with SingleTickerProv
               ? ListView.builder(
                   padding: const EdgeInsets.all(20),
                   itemCount: 4,
-                  itemBuilder: (_, __) => _buildSkeletonItem(),
+                  itemBuilder: (_, _) => _buildSkeletonItem(),
                 )
               : _discounts.isEmpty
                   ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.discount_outlined, size: 48, color: Color(0xFFCCCCCC)), SizedBox(height: 12), Text('У вас пока нет скидок', style: TextStyle(color: Color(0xFF999999))), SizedBox(height: 4), Text('Записывайтесь к мастерам и получайте скидки', style: TextStyle(fontSize: 12, color: Color(0xFF999999)))]))

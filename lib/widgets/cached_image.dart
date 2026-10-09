@@ -18,8 +18,8 @@ class CachedAvatar extends StatelessWidget {
       child: CachedNetworkImage(
         imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$url',
         width: size, height: size, fit: BoxFit.cover,
-        placeholder: (_, __) => const SkeletonCircle(),
-        errorWidget: (_, __, ___) => Container(width: size, height: size, color: Colors.grey[200], child: const Icon(Icons.person, color: Colors.grey)),
+        placeholder: (_, _) => const SkeletonCircle(),
+        errorWidget: (_, _, _) => Container(width: size, height: size, color: Colors.grey[200], child: const Icon(Icons.person, color: Colors.grey)),
       ),
     );
   }

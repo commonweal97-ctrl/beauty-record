@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
@@ -96,11 +94,13 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
       }).toList();
 
       final employees = await Future.wait(futures);
-      if (mounted) setState(() { 
+      if (mounted) {
+        setState(() { 
         _employees = employees; 
         _employeeBookingDays = employeeBookingDays;
         _loading = false; 
       });
+      }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
@@ -381,7 +381,7 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
                                                     shape: BoxShape.circle,
                                                     boxShadow: sel ? [] : [
                                                       BoxShadow(
-                                                        color: const Color(0xFFDD1847).withOpacity(0.5),
+                                                        color: const Color(0xFFDD1847).withValues(alpha: 0.5),
                                                         blurRadius: 4,
                                                         spreadRadius: 1,
                                                       ),
@@ -480,7 +480,7 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, -4))],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4))],
           ),
           child: SafeArea(
             top: false,
@@ -548,7 +548,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
   TimeOfDay _workStart = const TimeOfDay(hour: 10, minute: 0);
   TimeOfDay _workEnd = const TimeOfDay(hour: 20, minute: 0);
   bool _allDay = false;
-  List<Map<String, String>> _breaks = [];
+  final List<Map<String, String>> _breaks = [];
   
   DateTime? _periodStart;
   DateTime? _periodEnd;
@@ -855,7 +855,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
           ),
           if (_loading)
             Container(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -874,8 +874,9 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
 
   Widget _buildHeader() {
     String title = 'Выберите сотрудников';
-    if (_step == 2) title = 'Тип графика';
-    else if (_step == 3 && _scheduleType == 'weekdays') title = 'По дням недели';
+    if (_step == 2) {
+      title = 'Тип графика';
+    } else if (_step == 3 && _scheduleType == 'weekdays') title = 'По дням недели';
     else if (_step == 3 && _scheduleType == 'cyclic') title = 'Циклический график';
     else if (_step == 4) title = 'Циклический график';
     else if (_step == 5) title = 'Настройка времени';
@@ -1144,8 +1145,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
                     primary: Color(0xFFDD1847),
                     surface: Colors.white,
                     onSurface: Colors.black,
-                  ),
-                  dialogBackgroundColor: Colors.white,
+                  ), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
                 ),
                 child: child!,
               ),
@@ -1441,7 +1441,7 @@ class _PeriodCalendarPickerState extends State<_PeriodCalendarPicker> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    return Container(
+    return SizedBox(
       height: 550,
       child: Column(children: [
         Padding(

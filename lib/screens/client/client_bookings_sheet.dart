@@ -393,7 +393,7 @@ Future<void> _openBookingDetail(int bookingId) async {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: color.withOpacity(0.06),
+          color: color.withValues(alpha: 0.06),
           border: Border(
             left: BorderSide(color: color, width: 4),
           ),

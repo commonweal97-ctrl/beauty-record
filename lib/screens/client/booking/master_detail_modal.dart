@@ -137,7 +137,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                     child: Container(
                       width: 40, height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -186,7 +186,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                         if (master['position'] != null && master['position'].toString().isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
-                            child: Text(master['position'], style: const TextStyle(fontSize: 14, color: Color(0xFF888))),
+                            child: Text(master['position'], style: const TextStyle(fontSize: 14, color: Color(0x000ff888))),
                           ),
                         
                         // Описание
@@ -196,7 +196,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                             master['description'],
                             maxLines: _descExpanded ? null : 4,
                             overflow: _descExpanded ? null : TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 14, color: Color(0xFF555), height: 1.5),
+                            style: const TextStyle(fontSize: 14, color: Color(0x000ff555), height: 1.5),
                           ),
                           GestureDetector(
                             onTap: () => setState(() => _descExpanded = !_descExpanded),
@@ -222,7 +222,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                             const SizedBox(width: 8),
                             Text(_masterRating.toStringAsFixed(1), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                             const SizedBox(width: 4),
-                            Text('· $_masterReviewsCount ${_getReviewWord(_masterReviewsCount)}', style: const TextStyle(fontSize: 13, color: Color(0xFF888))),
+                            Text('· $_masterReviewsCount ${_getReviewWord(_masterReviewsCount)}', style: const TextStyle(fontSize: 13, color: Color(0x000ff888))),
                           ],
                         ),
                       ],
@@ -269,7 +269,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                   if (services.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(20),
-                      child: Text('Нет доступных услуг', style: TextStyle(color: Color(0xFF999))),
+                      child: Text('Нет доступных услуг', style: TextStyle(color: Color(0x000ff999))),
                     )
                   else
                     ...services.map((s) => GestureDetector(
@@ -304,7 +304,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                                 children: [
                                   Text(s['name'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                                   if (s['category'] != null && s['category'].toString().isNotEmpty)
-                                    Text(s['category'], style: const TextStyle(fontSize: 12, color: Color(0xFF888))),
+                                    Text(s['category'], style: const TextStyle(fontSize: 12, color: Color(0x000ff888))),
                                 ],
                               ),
                             ),
@@ -313,13 +313,13 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                               children: [
                                 Text(_formatPrice(s), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                                 if ((s['duration'] ?? 0) > 0)
-                                  Text(_formatDuration((s['duration'] as num).toInt()), style: const TextStyle(fontSize: 11, color: Color(0xFF888))),
+                                  Text(_formatDuration((s['duration'] as num).toInt()), style: const TextStyle(fontSize: 11, color: Color(0x000ff888))),
                               ],
                             ),
                           ],
                         ),
                       ),
-                    )).toList(),
+                    )),
                   
                   // Отзывы
                   const SizedBox(height: 20),
@@ -334,10 +334,10 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                   else if (_masterReviews.isEmpty)
                     const Padding(
                       padding: EdgeInsets.all(20),
-                      child: Text('Пока нет отзывов', style: TextStyle(color: Color(0xFF999))),
+                      child: Text('Пока нет отзывов', style: TextStyle(color: Color(0x000ff999))),
                     )
                   else
-                    ..._masterReviews.map((review) => _buildReviewCard(review)).toList(),
+                    ..._masterReviews.map((review) => _buildReviewCard(review)),
                   
                   const SizedBox(height: 40),
                 ],
@@ -351,7 +351,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -4))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, -4))],
         ),
         child: SafeArea(
           child: ElevatedButton(
@@ -407,7 +407,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
                           color: i < rating.round() ? const Color(0xFFF5A623) : const Color(0xFFE5E7EB),
                         )),
                         const SizedBox(width: 6),
-                        Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF999))),
+                        Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0x000ff999))),
                       ],
                     ),
                   ],
@@ -417,7 +417,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
           ),
           if (comment.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(comment, style: const TextStyle(fontSize: 14, color: Color(0xFF555), height: 1.5)),
+            Text(comment, style: const TextStyle(fontSize: 14, color: Color(0x000ff555), height: 1.5)),
           ],
         ],
       ),

@@ -7,9 +7,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
-import '../../../widgets/cached_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../widgets/toast.dart';
+import '../../utils/app_logger.dart';
 
 class BusinessProjectProfileScreen extends StatefulWidget {
   final int projectId;
@@ -211,7 +211,7 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
                 itemCount: _addressSuggestions.length,
-                separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF5F5F5)),
+                separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF5F5F5)),
                 itemBuilder: (context, index) {
                   final s = _addressSuggestions[index];
                   return InkWell(
@@ -356,8 +356,8 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
             });
           }
         } catch (_) {}
-print('📸 Profile photo from server: ${d['profile_photo']}');
-print('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_photos'].runtimeType})');
+AppLogger.debug('📸 Profile photo from server: ${d['profile_photo']}');
+AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_photos'].runtimeType})');
         setState(() {
           _data = d;
           _nameCtrl.text = d['name'] ?? '';
@@ -537,7 +537,7 @@ print('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_
               padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.of(context).padding.bottom),
               decoration: BoxDecoration(
                 color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, -4))],
               ),
               child: SizedBox(
                 height: 52,
@@ -914,7 +914,7 @@ print('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
               decoration: BoxDecoration(
-                border: Border(right: BorderSide(color: Colors.black.withOpacity(0.1))),
+                border: Border(right: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1610,7 +1610,9 @@ print('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_
                       Expanded(
                         child: _scheduleActionBtn('Выбрать все', () {
                           setModalState(() {
-                            for (int i = 0; i < 7; i++) selectedDays.add(i);
+                            for (int i = 0; i < 7; i++) {
+                              selectedDays.add(i);
+                            }
                           });
                         }),
                       ),
@@ -1670,7 +1672,9 @@ print('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_
                           if (end == null || !ctx.mounted) return;
                           final ts = '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}–${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
                           setModalState(() {
-                            for (final d in selectedDays) _schedule[d] = ts;
+                            for (final d in selectedDays) {
+                              _schedule[d] = ts;
+                            }
                             selectedDays.clear();
                           });
                         }, enabled: selectedDays.isNotEmpty),
@@ -1679,7 +1683,9 @@ print('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_
                       Expanded(
                         child: _scheduleActionBtn('Сделать выходным', () {
                           setModalState(() {
-                            for (final d in selectedDays) _schedule.remove(d);
+                            for (final d in selectedDays) {
+                              _schedule.remove(d);
+                            }
                             selectedDays.clear();
                           });
                         }, enabled: selectedDays.isNotEmpty, isRed: true),

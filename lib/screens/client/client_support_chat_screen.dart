@@ -338,7 +338,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: isClosed ? Colors.white24 : const Color(0xFF4CAF50).withOpacity(0.3),
+                    color: isClosed ? Colors.white24 : const Color(0xFF4CAF50).withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -394,7 +394,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4))],
               ),
               child: const Icon(Icons.chat_bubble_outline, size: 40, color: Color(0xFFDD1847)),
             ),
@@ -431,7 +431,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, -2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, -2))],
       ),
       child: SafeArea(
         child: Padding(
@@ -461,7 +461,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
                     color: const Color(0xFFF3F4F6),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _focusNode.hasFocus ? const Color(0xFFDD1847).withOpacity(0.3) : Colors.transparent,
+                      color: _focusNode.hasFocus ? const Color(0xFFDD1847).withValues(alpha: 0.3) : Colors.transparent,
                       width: 1.5,
                     ),
                   ),
@@ -595,12 +595,12 @@ class _MessageBubble extends StatelessWidget {
                             ? CachedNetworkImage(
                                 imageUrl: message.displayUrl,
                                 fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(
+                                placeholder: (_, _) => Container(
                                   width: 200, height: 200,
                                   color: Colors.grey[200],
                                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFDD1847))),
                                 ),
-                                errorWidget: (_, __, ___) => Container(
+                                errorWidget: (_, _, _) => Container(
                                   width: 200, height: 100,
                                   color: Colors.grey[200],
                                   child: const Icon(Icons.broken_image, color: Color(0xFF999999), size: 32),
@@ -644,7 +644,7 @@ class _MessageBubble extends StatelessWidget {
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: (isMine ? const Color(0xFFDD1847) : Colors.black).withOpacity(isMine ? 0.15 : 0.04),
+                          color: (isMine ? const Color(0xFFDD1847) : Colors.black).withValues(alpha: isMine ? 0.15 : 0.04),
                           blurRadius: isMine ? 8 : 4,
                           offset: const Offset(0, 2),
                         ),

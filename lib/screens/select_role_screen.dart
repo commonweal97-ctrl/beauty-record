@@ -1,12 +1,12 @@
 // lib/screens/select_role_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../main.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import 'client/client_dashboard_screen.dart';
 import 'business/business_dashboard_screen.dart';
 import 'auth/login_screen.dart';
+import '../utils/app_logger.dart';
 
 class SelectRoleScreen extends StatefulWidget {
   const SelectRoleScreen({super.key});
@@ -43,8 +43,8 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> with SingleTickerPr
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 400),
-            pageBuilder: (_, __, ___) => page,
-            transitionsBuilder: (_, animation, __, child) => FadeTransition(opacity: animation, child: child),
+            pageBuilder: (_, _, _) => page,
+            transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
           ),
         );
       }
@@ -87,7 +87,7 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> with SingleTickerPr
         );
       }
     } catch (e) {
-      print('Logout error: $e');
+      AppLogger.debug('Logout error: $e');
       if (mounted) {
         setState(() => _isLoggingOut = false);
       }

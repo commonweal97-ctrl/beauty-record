@@ -86,20 +86,22 @@ class _NetworksScreenState extends State<NetworksScreen> {
         leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.grey), onPressed: () => Navigator.pop(context)),
       ),
       body: _loading
-          ? ListView.builder(padding: const EdgeInsets.all(16), itemCount: 3, itemBuilder: (_, __) => _buildSkeleton())
+          ? ListView.builder(padding: const EdgeInsets.all(16), itemCount: 3, itemBuilder: (_, _) => _buildSkeleton())
           : _networks.isEmpty
               ? _buildEmpty()
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _networks.length + 1,
                   itemBuilder: (_, i) {
-                    if (i == 0) return Padding(
+                    if (i == 0) {
+                      return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Row(children: [
                         Expanded(child: Text('Сети', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.grey[900]))),
                         GestureDetector(onTap: () => _showCreateDialog(), child: Container(width: 40, height: 40, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFDD1847), Color(0xFFC1163D)]), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.add, color: Colors.white))),
                       ]),
                     );
+                    }
                     return _buildCard(_networks[i - 1]);
                   },
                 ),
@@ -394,7 +396,7 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
   @override
   Widget build(BuildContext context) {
     final hasSocials = _vkCtrl.text.isNotEmpty || _tgCtrl.text.isNotEmpty || _siteCtrl.text.isNotEmpty;
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.85,
       child: Column(children: [
         Padding(
@@ -426,7 +428,7 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
                               borderRadius: BorderRadius.circular(14),
                               child: CachedAvatar(url: _logoUrl, size: 86, radius: 14),
                             ),
-                            Positioned.fill(child: Container(decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.camera_alt, color: Colors.white, size: 24))),
+                            Positioned.fill(child: Container(decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.camera_alt, color: Colors.white, size: 24))),
                           ])
                         : _logoPlaceholder(),
                   ),

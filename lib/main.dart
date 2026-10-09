@@ -19,6 +19,7 @@ import 'core/app_colors.dart';
 import 'core/app_typography.dart';
 import 'core/crashlytics_service.dart';
 import 'core/analytics_service.dart';
+import 'core/connectivity_service.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -82,6 +83,9 @@ void main() async {
   } catch (e) {
     AppLogger.debug('Firebase error: $e');
   }
+
+  // ========== CONNECTIVITY ==========
+  ConnectivityService.instance.init();
   
   final pushService = PushNotificationService();
   pushService.initialize();
@@ -100,6 +104,10 @@ class BeautyRecordApp extends StatelessWidget {
     return MaterialApp(
       title: 'Б-Запись',
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        if (child == null) return const SizedBox.shrink();
+        return ConnectivityService.instance.buildBanner(context, child);
+      },
       locale: const Locale('ru'),
       supportedLocales: const [
         Locale('ru'),

@@ -1,4 +1,4 @@
-package com.example.beauty_record
+package com.beautyrosha.beauty_record
 
 import io.flutter.embedding.android.FlutterActivity
 

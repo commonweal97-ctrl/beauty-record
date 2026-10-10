@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.beauty_record"
+    namespace = "com.beautyrosha.beauty_record"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.beauty_record"
+        applicationId = "com.beautyrosha.beauty_record"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

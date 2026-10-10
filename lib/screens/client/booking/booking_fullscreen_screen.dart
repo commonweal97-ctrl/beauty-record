@@ -1,8 +1,16 @@
 // lib/screens/client/booking/booking_fullscreen_screen.dart
+//
+// Single-screen wizard для онлайн-записи (как на сайте book/page.php).
+//
+// Архитектура:
+//   - Все шаги — в одном экране.
+//   - Переключение через _stepHistory (стек).
+//   - Никаких Navigator.push между шагами.
+//   - При возврате назад — очистка данных последующих шагов (как bfsGoBack).
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../services/api_service.dart';
-import 'datetime_selection_screen.dart';
 import 'steps/booking_start_step.dart';
 import 'steps/booking_services_step.dart';
 import 'steps/booking_masters_step.dart';
@@ -10,6 +18,7 @@ import 'steps/booking_master_services_step.dart';
 import 'steps/booking_contact_step.dart';
 import 'steps/booking_confirm_step.dart';
 import 'steps/booking_success_step.dart';
+import 'datetime/datetime_step.dart';
 import '../../../core/app_logger.dart';
 
 class BookingFullscreenScreen extends StatefulWidget {
@@ -24,7 +33,7 @@ class BookingFullscreenScreen extends StatefulWidget {
   final String specialistLabelAccusative;
   final String serviceLabelGenitive;
   final String specialistLabelGenitive;
-  
+
   const BookingFullscreenScreen({
     super.key,
     required this.projectId,
@@ -45,6 +54,12 @@ class BookingFullscreenScreen extends StatefulWidget {
 }
 
 class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
+  // ========== СТЕК НАВИГАЦИИ (как bfsStepHistory на сайте) ==========
+  final List<String> _stepHistory = ['start'];
+
+  String get _currentStep => _stepHistory.last;
+
+  // ========== ДАННЫЕ ==========
   List<Map<String, dynamic>> _services = [];
   List<Map<String, dynamic>> _employees = [];
   final List<Map<String, dynamic>> _employeeServiceLinks = [];
@@ -53,25 +68,26 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
   final Map<int, int> _serviceMasters = {};
   DateTime? _selectedDate;
   String? _selectedTime;
-  
+
   final _commentController = TextEditingController();
   final _promoController = TextEditingController();
-  
+
   bool _agreeData = false;
   bool _agreeMarketing = true;
-  
+
   bool _loading = false;
   bool _submitting = false;
   Map<String, dynamic>? _clientData;
   Map<String, dynamic>? _contactData;
   List<Map<String, dynamic>> _warnings = [];
-  
+
+  // ========== LIFECYCLE ==========
   @override
   void initState() {
     super.initState();
     _loadData();
     _loadClientSession();
-    
+
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -82,7 +98,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
       ),
     );
   }
-  
+
   @override
   void dispose() {
     SystemChrome.setSystemUIOverlayStyle(
@@ -94,12 +110,116 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
     );
-    
     _commentController.dispose();
     _promoController.dispose();
     super.dispose();
   }
-  
+
+  // ========== НАВИГАЦИЯ (как bfsGoNext / bfsGoBack) ==========
+
+  /// Перейти на новый шаг (push в стек).
+  void _pushStep(String step) {
+    if (_stepHistory.last == step) return; // уже там
+    setState(() {
+      _stepHistory.add(step);
+    });
+    AppLogger.debug('Booking step: $_stepHistory');
+  }
+
+  /// Вернуться на предыдущий шаг (pop + очистка как bfsGoBack).
+  void _goBack() {
+    if (_stepHistory.length <= 1) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() {
+      _stepHistory.removeLast();
+      final prev = _stepHistory.last;
+      AppLogger.debug('Booking back to: $prev (history=$_stepHistory)');
+
+      // Очистка данных в зависимости от того, на какой шаг вернулись
+      // (аналогично bfsGoBack на сайте)
+      switch (prev) {
+        case 'start':
+          _selectedMaster = null;
+          _selectedServices.clear();
+          _serviceMasters.clear();
+          _selectedDate = null;
+          _selectedTime = null;
+          break;
+        case 'services':
+          _selectedMaster = null;
+          _serviceMasters.clear();
+          _selectedDate = null;
+          _selectedTime = null;
+          break;
+        case 'masters':
+          _serviceMasters.clear();
+          _selectedDate = null;
+          _selectedTime = null;
+          break;
+        case 'master-services':
+          _selectedServices.clear();
+          _serviceMasters.clear();
+          _selectedDate = null;
+          _selectedTime = null;
+          break;
+        case 'master-assignment':
+          _serviceMasters.clear();
+          _selectedDate = null;
+          _selectedTime = null;
+          break;
+        case 'datetime':
+          _selectedDate = null;
+          _selectedTime = null;
+          break;
+        case 'contact':
+        case 'confirm':
+          // ничего не очищаем
+          break;
+      }
+    });
+  }
+
+  // ========== ПЕРЕХОДЫ (как bfsGoTo*) ==========
+
+  void _goToServices() => _pushStep('services');
+  void _goToMasters() => _pushStep('masters');
+  void _goToMasterServices() => _pushStep('master-services');
+  void _goToMasterAssignment() => _pushStep('master-assignment');
+  void _goToDateTime() => _pushStep('datetime');
+  void _goToContact() => _pushStep('contact');
+  void _goToConfirm() => _pushStep('confirm');
+  void _goToSuccess() => _pushStep('success');
+
+  /// Главная кнопка «Продолжить» на шаге услуг/мастеров.
+  /// Логика как bfsGoNext на сайте:
+  /// - Если мастер выбран → автоназначить на все услуги → datetime.
+  /// - Если услуг 2+ → master-assignment.
+  /// - Иначе → datetime.
+  void _goNext() {
+    if (_selectedServices.isEmpty) {
+      _showSnackBar('Выберите хотя бы одну услугу');
+      return;
+    }
+
+    if (_selectedMaster != null) {
+      for (final s in _selectedServices) {
+        _serviceMasters[(s['id'] as num).toInt()] = (_selectedMaster!['id'] as num).toInt();
+      }
+      _goToDateTime();
+      return;
+    }
+
+    if (_selectedServices.length >= 2) {
+      _goToMasterAssignment();
+    } else {
+      _goToDateTime();
+    }
+  }
+
+  // ========== ЗАГРУЗКА ДАННЫХ ==========
   Future<void> _loadClientSession() async {
     try {
       final result = await ApiService.get('/api/auth/check-session');
@@ -110,21 +230,21 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
       }
     } catch (_) {}
   }
-  
+
   Future<void> _loadData() async {
     setState(() => _loading = true);
-    
+
     try {
       final servicesResult = await ApiService.get('/api/service/list?project_id=${widget.projectId}&public=1');
       if (servicesResult['success'] == true) {
         _services = List<Map<String, dynamic>>.from(servicesResult['data'] ?? []);
       }
-      
+
       final employeesResult = await ApiService.get('/api/employee/schedule/list-for-date?project_id=${widget.projectId}&date=${DateTime.now().toIso8601String().substring(0, 10)}');
       if (employeesResult['success'] == true) {
         _employees = List<Map<String, dynamic>>.from(employeesResult['data'] ?? []);
       }
-      
+
       final linksResult = await ApiService.get('/api/employee/list?project_id=${widget.projectId}');
       if (linksResult['success'] == true) {
         final employees = List<Map<String, dynamic>>.from(linksResult['data'] ?? []);
@@ -147,13 +267,13 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
           }
         }
       }
-      
+
       final rulesResult = await ApiService.get('/api/project-profile/get-booking-rules?project_id=${widget.projectId}');
       if (rulesResult['success'] == true) {
         final rules = List<Map<String, dynamic>>.from(rulesResult['data'] ?? []);
         _warnings = rules.where((r) => r['type'] == 'warning').toList();
       }
-      
+
       if (widget.masterId != null) {
         final master = _employees.where((e) => (e['id'] as num).toInt() == widget.masterId).firstOrNull;
         if (master != null) {
@@ -163,18 +283,19 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
     } catch (e) {
       AppLogger.debug('Error loading booking data: $e');
     }
-    
+
     setState(() => _loading = false);
   }
-  
+
+  // ========== ХЕЛПЕРЫ ==========
   int _getTotalPrice() {
     return _selectedServices.fold(0, (sum, s) => sum + ((s['price'] as num?)?.toInt() ?? 0));
   }
-  
+
   int _getTotalDuration() {
     return _selectedServices.fold(0, (sum, s) => sum + ((s['duration'] as num?)?.toInt() ?? 0));
   }
-  
+
   String _formatDuration(int minutes) {
     final h = minutes ~/ 60;
     final m = minutes % 60;
@@ -183,143 +304,66 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
     if (m > 0) return '$m мин';
     return '0 мин';
   }
-  
+
   String _formatPrice(Map<String, dynamic> s) {
     final price = (s['price'] as num?)?.toInt() ?? 0;
     if (price == 0) return 'Бесплатно';
     final from = s['price_from'] == 1 || s['price_from'] == true;
     return '${from ? 'от ' : ''}$price ₽';
   }
-  
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: widget.primaryColor),
     );
   }
-  
-  // ЕДИНЫЙ МЕТОД НАВИГАЦИИ
-  Future<void> _navigateTo(Widget screen) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => screen),
-    );
-  }
-  
-  Future<void> _goToServices() async {
-    await _navigateTo(_buildServicesScreen());
-  }
-  
-  Future<void> _goToMasters() async {
-    await _navigateTo(_buildMastersScreen());
-  }
-  
-  Future<void> _goToConfirm() async {
-    _contactData = {
-      'name': _clientData?['name']?.toString() ?? '',
-      'lastName': '',
-      'phone': _clientData?['phone']?.toString() ?? '',
-      'email': _clientData?['email']?.toString() ?? '',
-      'comment': _commentController.text.trim(),
-      'promo': _promoController.text.trim(),
-    };
-    await _navigateTo(_buildConfirmScreen());
-  }
-  
-  Future<void> _goToSuccess() async {
-    await _navigateTo(_buildSuccessScreen());
-  }
-  
-  Future<void> _goToDateTime() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DateTimeSelectionScreen(
-          projectId: widget.projectId,
-          selectedServices: _selectedServices,
-          selectedMaster: _selectedMaster,
-          serviceMasters: _serviceMasters,
-          employees: _employees,
-          primaryColor: widget.primaryColor,
-          buttonBg: widget.buttonBg,
-          buttonText: widget.buttonText,
-          specialistLabel: widget.specialistLabel,
-          serviceLabel: widget.serviceLabel,
-          onDateTimeSelected: (date, time, masterId) async {
-            setState(() {
-              _selectedDate = date;
-              _selectedTime = time;
-              if (masterId != null) {
-                final masterIdInt = masterId;
-                for (final s in _selectedServices) {
-                  _serviceMasters[(s['id'] as num).toInt()] = masterIdInt;
-                }
-                final master = _employees.where((e) => (e['id'] as num).toInt() == masterIdInt).firstOrNull;
-                if (master != null) {
-                  _selectedMaster = master;
-                }
-              }
-            });
-            // Заменяем текущий экран на контакты
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => _buildContactScreen()),
-            );
-          },
-        ),
-      ),
-    );
-  }
-  
-  Future<void> _submitBooking() async {
-    setState(() => _submitting = true);
-    
-    try {
-      final cd = _contactData ?? {};
-      final date = _selectedDate != null 
-          ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
-          : '';
-      final startTime = _selectedTime != null ? '$_selectedTime:00' : '';
-      
-      final serviceIds = _selectedServices.map((s) => (s['id'] as num).toInt()).toList();
-      
-      final serviceMasters = <String, int>{};
-      for (final s in _selectedServices) {
-        final sid = (s['id'] as num).toInt();
-        if (_serviceMasters.containsKey(sid)) {
-          serviceMasters[sid.toString()] = _serviceMasters[sid]!;
-        } else if (_selectedMaster != null) {
-          serviceMasters[sid.toString()] = (_selectedMaster!['id'] as num).toInt();
-        }
-      }
-      
-      final result = await ApiService.createBooking(
-        projectId: widget.projectId,
-        date: date,
-        startTime: startTime,
-        serviceIds: serviceIds,
-        employeeId: _selectedMaster != null ? (_selectedMaster!['id'] as num).toInt() : 0,
-        clientName: cd['name'] ?? '',
-        clientPhone: cd['phone'] ?? '',
-      );
-      
-      if (result['success'] == true) {
-        await _goToSuccess();
-      } else {
-        _showSnackBar(result['message'] ?? 'Ошибка при создании записи');
-      }
-    } catch (e) {
-      _showSnackBar('Ошибка соединения с сервером');
-    }
-    
-    setState(() => _submitting = false);
-  }
 
+  // ========== ГЛАВНЫЙ BUILD ==========
   @override
   Widget build(BuildContext context) {
-    return _buildStartScreen();
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return PopScope(
+      canPop: _stepHistory.length <= 1,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _goBack();
+      },
+      child: _buildCurrentStep(),
+    );
   }
-  
-  // Экраны (обёртки для шагов)
+
+  Widget _buildCurrentStep() {
+    switch (_currentStep) {
+      case 'start':
+        return _buildStartScreen();
+      case 'services':
+        return _buildServicesScreen();
+      case 'masters':
+        return _buildMastersScreen();
+      case 'master-services':
+        return _buildMasterServicesScreen();
+      case 'master-assignment':
+        return _buildMasterAssignmentScreen();
+      case 'datetime':
+        return _buildDateTimeScreen();
+      case 'contact':
+        return _buildContactScreen();
+      case 'confirm':
+        return _buildConfirmScreen();
+      case 'success':
+        return _buildSuccessScreen();
+      default:
+        return _buildStartScreen();
+    }
+  }
+
+  // ========== ЭКРАНЫ ШАГОВ ==========
+
   Widget _buildStartScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -327,23 +371,21 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
         children: [
           _buildHeader('Онлайн-запись'),
           Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : BookingStartStep(
-                    serviceLabelAccusative: widget.serviceLabelAccusative,
-                    specialistLabelAccusative: widget.specialistLabelAccusative,
-                    serviceLabelGenitive: widget.serviceLabelGenitive,
-                    specialistLabelGenitive: widget.specialistLabelGenitive,
-                    primaryColor: widget.primaryColor,
-                    onSelectServices: _goToServices,
-                    onSelectMasters: _goToMasters,
-                  ),
+            child: BookingStartStep(
+              serviceLabelAccusative: widget.serviceLabelAccusative,
+              specialistLabelAccusative: widget.specialistLabelAccusative,
+              serviceLabelGenitive: widget.serviceLabelGenitive,
+              specialistLabelGenitive: widget.specialistLabelGenitive,
+              primaryColor: widget.primaryColor,
+              onSelectServices: _goToServices,
+              onSelectMasters: _goToMasters,
+            ),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildServicesScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -371,13 +413,13 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
             ),
           ),
           _buildBottomBar(
-            onPressed: _selectedServices.isEmpty ? null : _goToDateTime,
+            onPressed: _selectedServices.isEmpty ? null : _goNext,
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildMastersScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -389,9 +431,9 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
               employees: _employees,
               primaryColor: widget.primaryColor,
               specialistLabelGenitive: widget.specialistLabelGenitive,
-              onSelectMaster: (master) async {
+              onSelectMaster: (master) {
                 setState(() => _selectedMaster = master);
-                await _navigateTo(_buildMasterServicesScreen());
+                _goToMasterServices();
               },
             ),
           ),
@@ -399,7 +441,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
       ),
     );
   }
-  
+
   Widget _buildMasterServicesScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -424,13 +466,77 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
             ),
           ),
           _buildBottomBar(
-            onPressed: _selectedServices.isEmpty ? null : _goToDateTime,
+            onPressed: _selectedServices.isEmpty ? null : _goNext,
           ),
         ],
       ),
     );
   }
-  
+
+  Widget _buildMasterAssignmentScreen() {
+    // TODO: реализовать экран назначения мастеров (пока заглушка)
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: Column(
+        children: [
+          _buildHeader('Назначение ${widget.specialistLabelGenitive}'),
+          const Expanded(
+            child: Center(child: Text('Назначение мастеров на услуги')),
+          ),
+          _buildBottomBar(
+            onPressed: _goToDateTime,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateTimeScreen() {
+    return DateTimeStep(
+      projectId: widget.projectId,
+      selectedServices: _selectedServices,
+      selectedMaster: _selectedMaster,
+      serviceMasters: _serviceMasters,
+      employees: _employees,
+      primaryColor: widget.primaryColor,
+      buttonBg: widget.buttonBg,
+      buttonText: widget.buttonText,
+      specialistLabel: widget.specialistLabel,
+      serviceLabel: widget.serviceLabel,
+      onBack: _goBack,
+      onSelected: (date, time, masterId) {
+        setState(() {
+          _selectedDate = date;
+          _selectedTime = time;
+          if (masterId != null) {
+            for (final s in _selectedServices) {
+              _serviceMasters[(s['id'] as num).toInt()] = masterId;
+            }
+            final master = _employees
+                .where((e) => (e['id'] as num).toInt() == masterId)
+                .firstOrNull;
+            if (master != null) _selectedMaster = master;
+          }
+        });
+        // Дальше как bfsConfirmBooking:
+        // если залогинен → confirm, иначе → contact
+        if (_clientData != null && _clientData!['email'] != null && (_clientData!['email'] as String).isNotEmpty) {
+          _contactData = {
+            'name': _clientData?['name']?.toString() ?? '',
+            'lastName': '',
+            'phone': _clientData?['phone']?.toString() ?? '',
+            'email': _clientData?['email']?.toString() ?? '',
+            'comment': '',
+            'promo': '',
+          };
+          _goToConfirm();
+        } else {
+          _goToContact();
+        }
+      },
+    );
+  }
+
   Widget _buildContactScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -446,13 +552,23 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
             ),
           ),
           _buildBottomBar(
-            onPressed: _goToConfirm,
+            onPressed: () {
+              _contactData = {
+                'name': _clientData?['name']?.toString() ?? '',
+                'lastName': '',
+                'phone': _clientData?['phone']?.toString() ?? '',
+                'email': _clientData?['email']?.toString() ?? '',
+                'comment': _commentController.text.trim(),
+                'promo': _promoController.text.trim(),
+              };
+              _goToConfirm();
+            },
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildConfirmScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -486,7 +602,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
       ),
     );
   }
-  
+
   Widget _buildSuccessScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -514,7 +630,9 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
       ),
     );
   }
-  
+
+  // ========== ОБЩИЕ ЭЛЕМЕНТЫ ==========
+
   Widget _buildHeader(String title) {
     return Container(
       decoration: BoxDecoration(
@@ -528,7 +646,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: _goBack,
                 child: Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
@@ -552,7 +670,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
       ),
     );
   }
-  
+
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
@@ -573,13 +691,13 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
       ),
     );
   }
-  
+
   Widget _buildBottomBar({VoidCallback? onPressed}) {
     final totalPrice = _getTotalPrice();
     final totalDuration = _getTotalDuration();
     final serviceCount = _selectedServices.length;
     final serviceWord = serviceCount == 1 ? 'услуга' : (serviceCount >= 2 && serviceCount <= 4 ? 'услуги' : 'услуг');
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -616,6 +734,51 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
         ),
       ),
     );
+  }
+
+  // ========== SUBMIT ==========
+  Future<void> _submitBooking() async {
+    setState(() => _submitting = true);
+
+    try {
+      final cd = _contactData ?? {};
+      final date = _selectedDate != null
+          ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
+          : '';
+      final startTime = _selectedTime != null ? '$_selectedTime:00' : '';
+
+      final serviceIds = _selectedServices.map((s) => (s['id'] as num).toInt()).toList();
+
+      final serviceMasters = <String, int>{};
+      for (final s in _selectedServices) {
+        final sid = (s['id'] as num).toInt();
+        if (_serviceMasters.containsKey(sid)) {
+          serviceMasters[sid.toString()] = _serviceMasters[sid]!;
+        } else if (_selectedMaster != null) {
+          serviceMasters[sid.toString()] = (_selectedMaster!['id'] as num).toInt();
+        }
+      }
+
+      final result = await ApiService.createBooking(
+        projectId: widget.projectId,
+        date: date,
+        startTime: startTime,
+        serviceIds: serviceIds,
+        employeeId: _selectedMaster != null ? (_selectedMaster!['id'] as num).toInt() : 0,
+        clientName: cd['name'] ?? '',
+        clientPhone: cd['phone'] ?? '',
+      );
+
+      if (result['success'] == true) {
+        _goToSuccess();
+      } else {
+        _showSnackBar(result['message'] ?? 'Ошибка при создании записи');
+      }
+    } catch (e) {
+      _showSnackBar('Ошибка соединения с сервером');
+    }
+
+    setState(() => _submitting = false);
   }
 }
 

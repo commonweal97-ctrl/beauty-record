@@ -29,7 +29,7 @@ class UserProvider extends ChangeNotifier {
 
   bool get isAuthenticated => _user != null;
   bool get isClient => _user?.role == 'client';
-  bool get isBusiness => _user?.role == 'business';
+  bool get isBusiness => _user?.role == 'salon_owner';
 
   // ========== ЗАГРУЗКА ==========
 
@@ -75,7 +75,7 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Обновить роль ('client' | 'business').
+  /// Обновить роль ('client' | 'salon_owner').
   Future<void> setRole(String role) async {
     await AuthService.saveLastRole(role);
     if (_user != null) {

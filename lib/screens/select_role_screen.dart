@@ -61,7 +61,7 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> with SingleTickerPr
   }
 
   Future<void> _goToBusiness() async {
-    await context.read<UserProvider>().setRole('business');
+    await context.read<UserProvider>().setRole('salon_owner');
     if (!mounted) return;
     _navigate(const BusinessDashboardScreen());
   }

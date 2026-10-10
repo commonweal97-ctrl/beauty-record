@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
         
-        if (lastRole == 'business') {
+        if (lastRole == 'salon_owner') {
           final lastProjectId = await AuthService.getLastProjectId();
           if (!mounted) return;
           

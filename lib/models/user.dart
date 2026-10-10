@@ -6,7 +6,7 @@ class User {
   final int id;
   final String email;
   final bool hasPin;
-  final String? role; // 'client' | 'business' | null
+  final String? role; // 'client' | 'salon_owner' | null
 
   const User({
     required this.id,

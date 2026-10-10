@@ -73,7 +73,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   }
 
   Future<void> _switchToBusiness() async {
-    await context.read<UserProvider>().setRole('business');
+    await context.read<UserProvider>().setRole('salon_owner');
     if (!mounted) return;
     Navigator.pushReplacement(
       context,

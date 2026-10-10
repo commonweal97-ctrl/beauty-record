@@ -22,7 +22,6 @@ class _RepeatBookingScreenState extends State<RepeatBookingScreen> {
   String? _selectedTime;
   bool _loading = true;
   bool _showConfirm = false;
-  int _totalDuration = 60;
   Set<String> _availableDates = {};
 
   String get _actionLabel => widget.isReschedule ? 'Перенос записи' : 'Повторная запись';
@@ -43,7 +42,7 @@ class _RepeatBookingScreenState extends State<RepeatBookingScreen> {
       if (result['success'] == true && mounted) {
         setState(() {
           _booking = result['data'];
-          _totalDuration = int.tryParse(result['data']['total_duration']?.toString() ?? '60') ?? 60;
+          // _totalDuration рассчитывается на сервере в time-slots-data
           _loading = false;
         });
         _loadSlots();
@@ -73,45 +72,29 @@ class _RepeatBookingScreenState extends State<RepeatBookingScreen> {
     final empId = _booking!['master_id'];
 
     try {
-      final results = await Future.wait([
-        ApiService.get('/api/booking/list?project_id=$projectId&date=$dateStr'),
-        ApiService.get('/api/occupied-time/list?project_id=$projectId&date=$dateStr'),
-        ApiService.get('/api/employee/schedule/get?employee_id=$empId&project_id=$projectId&year=${_selectedDate.year}&month=${_selectedDate.month}'),
-        ApiService.get('/api/employee/get-fixed-time?employee_id=$empId&project_id=$projectId'),
-      ]);
+      // Публичный эндпоинт: отдаёт готовые слоты для мастера на дату.
+      // Учитывает брони/занятости/график/fixed_time — всё на сервере.
+      // PII чужих броней наружу не отдаётся.
+      final serviceIdsParam = _booking!['service_ids']?.toString() ?? '';
+      final result = await ApiService.get(
+        '/api/booking/time-slots-data?project_id=$projectId&date=$dateStr&end_date=$dateStr'
+        '&employee_ids=$empId&service_ids=$serviceIdsParam',
+      );
 
-      final bookings = results[0]['success'] == true ? List<Map<String, dynamic>>.from(results[0]['data'] ?? []) : [];
-      final occupied = results[1]['success'] == true ? List<Map<String, dynamic>>.from(results[1]['data'] ?? []) : [];
-      final schedule = results[2]['success'] == true ? results[2]['data'] : {};
-      final fixedTime = results[3]['success'] == true && results[3]['data'] != null && results[3]['data']['enabled'] == true ? results[3]['data'] : null;
-
-      final bookedRanges = <Map<String, int>>[];
-      for (final b in bookings) {
-        if (b['status'] == 'cancelled') continue;
-        bookedRanges.add({'start': _t(b['start_time']), 'end': _t(b['end_time']) + (int.tryParse(b['break_after']?.toString() ?? '0') ?? 0)});
-      }
-      for (final o in occupied) {
-        bookedRanges.add({'start': _t(o['start_time']), 'end': _t(o['end_time'])});
+      if (result['success'] != true || result['data'] == null) {
+        if (mounted) setState(() => _slots = []);
+        return;
       }
 
-      int startMin = 9 * 60, endMin = 18 * 60;
-      final dayKey = _selectedDate.day.toString();
-      final daySchedule = schedule[dayKey];
-      if (daySchedule != null) {
-        if (daySchedule['is_working'] == false) { if (mounted) setState(() => _slots = []); return; }
-        startMin = _t(daySchedule['start_time'] ?? '09:00');
-        endMin = _t(daySchedule['end_time'] ?? '18:00');
-      }
+      final data = result['data'];
+      final timeSlots = data['time_slots'];
 
-      final allSlots = <String>[];
-      if (fixedTime != null) {
-        for (final t in (fixedTime['time_data']?['times'] ?? []) as List) {
-          final m = _t(t.toString());
-          if (m >= startMin && m + _totalDuration <= endMin) allSlots.add(t.toString().substring(0, 5));
-        }
-      } else {
-        for (int m = startMin; m + _totalDuration <= endMin; m += 30) {
-          allSlots.add('${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}');
+      List<String> allSlots = [];
+      if (timeSlots is Map && timeSlots[dateStr] is Map) {
+        final daySlots = timeSlots[dateStr] as Map;
+        final empSlots = daySlots[empId.toString()];
+        if (empSlots is List) {
+          allSlots = empSlots.map((s) => s.toString()).toList();
         }
       }
 
@@ -122,10 +105,7 @@ class _RepeatBookingScreenState extends State<RepeatBookingScreen> {
       if (mounted) {
         setState(() {
           _slots = allSlots.where((s) {
-            final m = _t(s);
-            final end = m + _totalDuration;
-            if (bookedRanges.any((r) => m < r['end']! && end > r['start']!)) return false;
-            if (isToday && m < currentMin) return false;
+            if (isToday && _t(s) < currentMin) return false;
             return true;
           }).toList();
         });

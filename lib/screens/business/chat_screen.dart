@@ -245,9 +245,6 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
               child: const Icon(Icons.edit, size: 18, color: Color(0xFFDD1847)),
             ),
           ),
-        // TODO: настройки группы не реализованы
-        if (_activeChat != null && _activeChat!['type'] == 'group')
-          const Icon(Icons.settings, color: Color(0xFF666666)),
         const SizedBox(width: 8),
         GestureDetector(
           onTap: () => Navigator.pop(context),

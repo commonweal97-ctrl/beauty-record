@@ -7,7 +7,6 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/app_logger.dart';
 
 class ServicesScreen extends StatefulWidget {
   final int projectId;
@@ -358,40 +357,23 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   (s['employee_ids'] as List?)?.map((e) => int.tryParse(e.toString()) ?? 0).where((e) => e > 0) ?? []
 );
 
-AppLogger.debug('=== DEBUG employee_prices ===');
-AppLogger.debug('Service keys: ${s.keys}');
-AppLogger.debug('Has employee_prices key: ${s.containsKey('employee_prices')}');
-AppLogger.debug('RAW employee_prices: ${s['employee_prices']}');
-AppLogger.debug('Type: ${s['employee_prices']?.runtimeType}');
-
-_employeePrices = {};
-if (s['employee_prices'] != null) {
-  final raw = s['employee_prices'];
-  if (raw is Map) {
-    raw.forEach((k, v) {
-      AppLogger.debug('  Key: $k (${k.runtimeType}), Value: $v (${v.runtimeType})');
-      final empId = int.tryParse(k.toString()) ?? 0;
-      if (empId > 0 && v is Map) {
-        _employeePrices[empId] = Map<String, dynamic>.from(v);
-        AppLogger.debug('  -> Added empId=$empId: ${_employeePrices[empId]}');
-      } else {
-        AppLogger.debug('  -> SKIPPED: empId=$empId, v is Map=${v is Map}');
-      }
-    });
-  } else {
-    AppLogger.debug('raw is NOT a Map, it is ${raw.runtimeType}');
-  }
-  for (final empId in _employeePrices.keys) {
-    if (!_employeeIds.contains(empId)) {
-      _employeeIds.add(empId);
-    }
-  }
-} else {
-  AppLogger.debug('employee_prices is NULL');
-}
-AppLogger.debug('PARSED _employeePrices: $_employeePrices');
-AppLogger.debug('_employeeIds: $_employeeIds');
-AppLogger.debug('=== END DEBUG ===');
+        _employeePrices = {};
+        if (s['employee_prices'] != null) {
+          final raw = s['employee_prices'];
+          if (raw is Map) {
+            raw.forEach((k, v) {
+              final empId = int.tryParse(k.toString()) ?? 0;
+              if (empId > 0 && v is Map) {
+                _employeePrices[empId] = Map<String, dynamic>.from(v);
+              }
+            });
+          }
+          for (final empId in _employeePrices.keys) {
+            if (!_employeeIds.contains(empId)) {
+              _employeeIds.add(empId);
+            }
+          }
+        }
         }
     _loadResources();
     _loadEmployees();
@@ -462,12 +444,8 @@ AppLogger.debug('=== END DEBUG ===');
   Future<void> _loadEmployeePrices() async {
   try {
     final result = await ApiService.get('/api/service/get?id=${widget.service!['id']}&project_id=${widget.projectId}');
-    AppLogger.debug('=== _loadEmployeePrices ===');
-    AppLogger.debug('Result success: ${result['success']}');
     if (result['success'] == true) {
       final data = result['data'];
-      AppLogger.debug('Has employee_prices: ${data['employee_prices'] != null}');
-      AppLogger.debug('RAW: ${data['employee_prices']}');
       if (data['employee_prices'] != null && mounted) {
         setState(() {
           _employeePrices = {};
@@ -482,13 +460,11 @@ AppLogger.debug('=== END DEBUG ===');
               _employeeIds.add(empId);
             }
           }
-          AppLogger.debug('PARSED: $_employeePrices');
         });
       }
     }
-    AppLogger.debug('=== END _loadEmployeePrices ===');
-  } catch (e) {
-    AppLogger.debug('_loadEmployeePrices ERROR: $e');
+  } catch (_) {
+    // ignore: empty_catches — некритичная ошибка загрузки цен
   }
 }
 

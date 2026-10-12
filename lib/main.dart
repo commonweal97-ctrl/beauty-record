@@ -1,5 +1,4 @@
 // lib/main.dart
-import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -23,16 +22,7 @@ import 'core/connectivity_service.dart';
 import 'providers/user_provider.dart';
 import 'package:provider/provider.dart';
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (cert, host, port) => true;
-  }
-}
-
 void main() async {
-  HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   initializeDateFormatting('ru');
   

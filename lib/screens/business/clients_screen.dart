@@ -4,6 +4,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/phone_input.dart';
 import '../client/client_profile_sheet.dart';
 import 'edit_client_sheet.dart';
 import '../../core/app_logger.dart';
@@ -346,6 +347,7 @@ class AddClientSheet extends StatefulWidget {
 class _AddClientSheetState extends State<AddClientSheet> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final GlobalKey<PhoneInputState> _phoneKey = GlobalKey<PhoneInputState>();
   final _emailCtrl = TextEditingController();
   bool _loading = false;
 
@@ -356,7 +358,8 @@ class _AddClientSheetState extends State<AddClientSheet> {
     }
     setState(() => _loading = true);
     try {
-      final result = await ApiService.saveClient(widget.projectId, _nameCtrl.text.trim(), _phoneCtrl.text.trim(), _emailCtrl.text.trim());
+      final phone = _phoneKey.currentState?.fullPhone ?? '';
+      final result = await ApiService.saveClient(widget.projectId, _nameCtrl.text.trim(), phone, _emailCtrl.text.trim());
       AppLogger.debug('📤 Save client result: $result');
       if (result['success'] == true && mounted) { 
         Navigator.pop(context); 
@@ -390,7 +393,11 @@ class _AddClientSheetState extends State<AddClientSheet> {
         const SizedBox(height: 20),
         _field(_nameCtrl, 'Имя *', Icons.person_outline),
         const SizedBox(height: 12),
-        _field(_phoneCtrl, 'Телефон', Icons.phone_outlined, keyboardType: TextInputType.phone),
+        PhoneInput(
+          key: _phoneKey,
+          controller: _phoneCtrl,
+          onPhoneChanged: (_) => setState(() {}),
+        ),
         const SizedBox(height: 12),
         _field(_emailCtrl, 'Email', Icons.email_outlined, keyboardType: TextInputType.emailAddress),
         const SizedBox(height: 24),

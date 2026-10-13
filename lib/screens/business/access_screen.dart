@@ -5,6 +5,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/phone_input.dart';
 
 class AccessScreen extends StatefulWidget {
   final int projectId;
@@ -340,6 +341,7 @@ class _AccessFormSheetState extends State<AccessFormSheet> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final GlobalKey<PhoneInputState> _phoneKey = GlobalKey<PhoneInputState>();
   final _emailCtrl = TextEditingController();
 
   String _selectedRole = 'employee_edit';
@@ -405,7 +407,7 @@ class _AccessFormSheetState extends State<AccessFormSheet> {
         'user_id': widget.accessData?['user_id'],
         'first_name': _firstNameCtrl.text.trim(),
         'last_name': _lastNameCtrl.text.trim(),
-        'phone': _phoneCtrl.text.trim(),
+        'phone': _phoneKey.currentState?.fullPhone ?? '',
         'email': _emailCtrl.text.trim(),
         'access_role': _selectedRole,
         'settings': {..._settings, 'showClientLastNames': _showClientLastNames},
@@ -458,7 +460,11 @@ class _AccessFormSheetState extends State<AccessFormSheet> {
               Expanded(child: _field(_lastNameCtrl, 'Фамилия')),
             ]),
             const SizedBox(height: 20),
-            _field(_phoneCtrl, 'Телефон для входа', keyboardType: TextInputType.phone),
+            PhoneInput(
+              key: _phoneKey,
+              controller: _phoneCtrl,
+              onPhoneChanged: (_) => setState(() {}),
+            ),
             const SizedBox(height: 20),
             _field(_emailCtrl, 'Email для входа', keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 24),

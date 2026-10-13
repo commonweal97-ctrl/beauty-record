@@ -10,6 +10,7 @@ import '../../../widgets/skeletons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../widgets/toast.dart';
 import '../../core/app_logger.dart';
+import '../../widgets/common/phone_input.dart';
 
 class BusinessProjectProfileScreen extends StatefulWidget {
   final int projectId;
@@ -34,6 +35,8 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
   List<Map<String, dynamic>> _interiorPhotos = [];
 
   List<Map<String, String>> _phones = [{'dial': '+7', 'number': ''}];
+  final List<TextEditingController> _phoneControllers = [];
+  final List<GlobalKey<PhoneInputState>> _phoneKeys = [];
   static const int _maxPhones = 5;
 
   List<String> _selectedSubcategories = [];
@@ -91,12 +94,7 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
 
   static const _dadataToken = 'c5ef8181057b91fbe37bbdedf3f635832e8f51ad';
 
-  static const _countries = [
-    {'flag': '🇷🇺', 'dial': '+7', 'name': 'Россия'},
-    {'flag': '🇧🇾', 'dial': '+375', 'name': 'Беларусь'},
-    {'flag': '🇰🇿', 'dial': '+7', 'name': 'Казахстан'},
-    {'flag': '🇺🇦', 'dial': '+380', 'name': 'Украина'},
-  ];
+
 
   @override
   void initState() {
@@ -362,6 +360,7 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
           _addressCtrl.text = d['address_raw'] ?? '';
           _profilePhotoUrl = d['profile_photo'];
           _phones = phones;
+          _syncPhoneHelpers();
           _socialLinks = socialLinks;
           _schedule = schedule;
           _selectedSubcategories = (d['subcategories'] is List) ? List<String>.from(d['subcategories']) : [];
@@ -396,25 +395,35 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
 
   void _markChanged() => setState(() => _hasChanges = true);
 
-  String _getFlag(String dial) {
-    switch (dial) {
-      case '+375': return '🇧🇾';
-      case '+380': return '🇺🇦';
-      case '+7': return '🇷🇺';
-      default: return '🇷🇺';
+  void _syncPhoneHelpers() {
+    // Синхронизируем количество controllers/keys с _phones
+    while (_phoneControllers.length < _phones.length) {
+      _phoneControllers.add(TextEditingController());
+      _phoneKeys.add(GlobalKey<PhoneInputState>());
+    }
+    while (_phoneControllers.length > _phones.length) {
+      _phoneControllers.removeLast().dispose();
+      _phoneKeys.removeLast();
+    }
+    // Обновляем текст controllers из _phones (только если пуст или нужно)
+    for (int i = 0; i < _phones.length; i++) {
+      final digits = (_phones[i]['number'] ?? '').replaceAll(RegExp(r'[^\d]'), '');
+      if (digits.isNotEmpty && _phoneControllers[i].text.isEmpty) {
+        _phoneControllers[i].text = digits;
+      }
     }
   }
 
 
+
+
   Future<void> _save() async {
     try {
-      final phones = _phones
-          .where((p) => p['number']!.isNotEmpty)
-          .map((p) {
-            final cleanNumber = p['number']!.replaceAll(RegExp(r'[^\d]'), '');
-            return '${p['dial']}$cleanNumber';
-          })
-          .toList();
+      final phones = <String>[];
+      for (int i = 0; i < _phoneKeys.length; i++) {
+        final full = _phoneKeys[i].currentState?.fullPhone ?? '';
+        if (full.isNotEmpty && full.length > 2) phones.add(full);
+      }
       final body = {
         'project_id': widget.projectId,
         'name': _nameCtrl.text,
@@ -835,6 +844,7 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
                 GestureDetector(
                   onTap: () {
                     _phones.add({'dial': '+7', 'number': ''});
+                    _syncPhoneHelpers();
                     _markChanged();
                     setState(() {});
                   },
@@ -863,95 +873,32 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
   }
 
   Widget _buildPhoneField(int index, String dial, String number) {
-    final controller = TextEditingController();
-    
-    // Устанавливаем начальное значение
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final digits = number.replaceAll(RegExp(r'[^\d]'), '');
-      if (digits.isNotEmpty && controller.text.isEmpty) {
-        controller.text = digits;
-        controller.selection = TextSelection.fromPosition(
-          TextPosition(offset: digits.length),
-        );
-      }
-    });
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      child: Row(
-        children: [
+    return Row(
+      children: [
+        Expanded(
+          child: PhoneInput(
+            key: _phoneKeys[index],
+            controller: _phoneControllers[index],
+            onPhoneChanged: (_) {
+              _phones[index]['number'] = _phoneControllers[index].text;
+              _markChanged();
+            },
+          ),
+        ),
+        if (_phones.length > 1)
           GestureDetector(
-            onTap: () => _showCountryPicker(index),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-              decoration: BoxDecoration(
-                border: Border(right: BorderSide(color: Colors.black.withValues(alpha: 0.1))),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_getFlag(dial), style: const TextStyle(fontSize: 16)),
-                  const SizedBox(width: 4),
-                  Text(dial, style: const TextStyle(fontSize: 14, color: Color(0xFF666666))),
-                  const SizedBox(width: 2),
-                  const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFFCCCCCC)),
-                ],
-              ),
+            onTap: () {
+              _phones.removeAt(index);
+              _syncPhoneHelpers();
+              _markChanged();
+              setState(() {});
+            },
+            child: const Padding(
+              padding: EdgeInsets.only(left: 8),
+              child: Icon(Icons.close, size: 20, color: Color(0xFF999999)),
             ),
           ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: TextInputType.phone,
-              style: const TextStyle(fontSize: 15),
-              decoration: const InputDecoration(
-                hintText: 'Номер телефона',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              ),
-              onChanged: (val) {
-                // Сохраняем только цифры
-                final digits = val.replaceAll(RegExp(r'[^\d]'), '');
-                
-                // Ограничиваем длину для российских номеров
-                String cleaned = digits;
-                if (dial == '+7' && cleaned.length > 10) {
-                  cleaned = cleaned.substring(0, 10);
-                }
-                
-                // Обновляем значение в модели
-                _phones[index]['number'] = cleaned;
-                
-                // Обновляем текст в контроллере
-                if (cleaned != controller.text) {
-                  controller.text = cleaned;
-                  controller.selection = TextSelection.fromPosition(
-                    TextPosition(offset: cleaned.length),
-                  );
-                }
-                
-                _markChanged();
-              },
-            ),
-          ),
-          if (_phones.length > 1)
-            GestureDetector(
-              onTap: () {
-                _phones.removeAt(index);
-                _markChanged();
-                setState(() {});
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Icon(Icons.close, size: 18, color: Color(0xFF999999)),
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1348,53 +1295,6 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
     );
   }
 
-  void _showCountryPicker(int index) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => GestureDetector(
-        onTap: () => Navigator.pop(ctx),
-        child: Container(
-          color: Colors.black54,
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Text('Код страны', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                      ),
-                      const Divider(height: 1),
-                      ..._countries.map((c) => ListTile(
-                        leading: Text(c['flag']!, style: const TextStyle(fontSize: 24)),
-                        title: Text(c['name']!, style: const TextStyle(fontSize: 16)),
-                        trailing: Text(c['dial']!, style: const TextStyle(fontSize: 16, color: Color(0xFF666666))),
-                        onTap: () {
-                          _phones[index]['dial'] = c['dial']!;
-                          _markChanged();
-                          setState(() {});
-                          Navigator.pop(ctx);
-                        },
-                      )),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showSocialEditor() {
     final vkCtrl = TextEditingController();

@@ -6,6 +6,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/phone_input.dart';
 
 class NetworksScreen extends StatefulWidget {
   const NetworksScreen({super.key});
@@ -225,17 +226,9 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
   String _slug = '';
   bool _loading = false;
   bool _loadingProjects = true;
-  String _countryDial = '+7';
-  String _countryFlag = '🇷🇺';
-  String _countryCode = '7';
+  final GlobalKey<PhoneInputState> _phoneKey = GlobalKey<PhoneInputState>();
   bool get _isEdit => widget.network != null;
 
-  final _countries = [
-    {'code': '7', 'dial': '+7', 'flag': '🇷🇺', 'name': 'Россия'},
-    {'code': '375', 'dial': '+375', 'flag': '🇧🇾', 'name': 'Беларусь'},
-    {'code': '7', 'dial': '+7', 'flag': '🇰🇿', 'name': 'Казахстан'},
-    {'code': '380', 'dial': '+380', 'flag': '🇺🇦', 'name': 'Украина'},
-  ];
 
   @override
   void initState() {
@@ -248,23 +241,7 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
       _selectedProjectIds = List<int>.from(n['project_ids'] ?? []);
       
       if (n['phone'] != null && n['phone'].toString().isNotEmpty) {
-        String phone = n['phone'].toString();
-        if (phone.startsWith('+7')) {
-          _countryDial = '+7'; _countryFlag = '🇷🇺'; _countryCode = '7';
-          phone = phone.substring(2);
-        } else if (phone.startsWith('+375')) {
-          _countryDial = '+375'; _countryFlag = '🇧🇾'; _countryCode = '375';
-          phone = phone.substring(4);
-        } else if (phone.startsWith('+380')) {
-          _countryDial = '+380'; _countryFlag = '🇺🇦'; _countryCode = '380';
-          phone = phone.substring(4);
-        }
-        final digits = phone.replaceAll(RegExp(r'\D'), '');
-        if (_countryCode == '7' && digits.length >= 10) {
-          _phoneCtrl.text = '${digits.substring(0,3)} ${digits.substring(3,6)} ${digits.substring(6,8)} ${digits.substring(8,10)}';
-        } else {
-          _phoneCtrl.text = digits;
-        }
+        _phoneCtrl.text = n['phone'].toString();
       }
       
       final links = n['social_links'];
@@ -305,24 +282,6 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
     setState(() => _slug = _transliterate(v));
   }
 
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context, backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-        const SizedBox(height: 16),
-        const Text('Выберите страну', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 16),
-        ..._countries.map((c) => ListTile(
-          leading: Text(c['flag']!, style: const TextStyle(fontSize: 28)),
-          title: Text(c['name']!),
-          trailing: Text(c['dial']!, style: const TextStyle(fontSize: 16, color: Color(0xFF666666))),
-          onTap: () { setState(() { _countryDial = c['dial']!; _countryFlag = c['flag']!; _countryCode = c['code']!; }); Navigator.pop(context); },
-        )),
-      ])),
-    );
-  }
 
   void _save() async {
     if (_nameCtrl.text.trim().isEmpty) return;
@@ -335,9 +294,7 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
       final body = {
         if (_isEdit) 'id': widget.network!['id'].toString(),
         'name': _nameCtrl.text.trim(), 'slug': _slug,
-        'phone': _phoneCtrl.text.isNotEmpty 
-            ? '$_countryDial${_phoneCtrl.text.replaceAll(RegExp(r'\D'), '').replaceFirst(_countryCode, '')}' 
-            : '',
+        'phone': _phoneKey.currentState?.fullPhone ?? '',
         'project_ids': _selectedProjectIds, 'social_links': jsonEncode(socials),
       };
       final result = await ApiService.saveNetwork(body);
@@ -450,37 +407,10 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
             const SizedBox(height: 20),
             const Text('ТЕЛЕФОН', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF888888), letterSpacing: 0.5)),
             const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE0E0E0))),
-              child: Row(children: [
-                GestureDetector(
-                  onTap: () => _showCountryPicker(),
-                  child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14), decoration: const BoxDecoration(border: Border(right: BorderSide(color: Color(0x1A000000)))), child: Row(children: [Text(_countryFlag, style: const TextStyle(fontSize: 20)), const SizedBox(width: 4), Text(_countryDial, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF666666)))])),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _phoneCtrl,
-                    keyboardType: TextInputType.phone,
-                    style: const TextStyle(fontSize: 15),
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\s]'))],
-                    onChanged: (v) {
-                      final digits = v.replaceAll(RegExp(r'\D'), '');
-                      if (_countryCode == '7' && digits.length >= 7) {
-                        final formatted = '${digits.substring(0,3)} ${digits.substring(3,6)} ${digits.substring(6,8)} ${digits.substring(8,10)}';
-                        if (formatted != v) {
-                          _phoneCtrl.value = TextEditingValue(text: formatted.trim(), selection: TextSelection.collapsed(offset: formatted.trim().length));
-                        }
-                      }
-                    },
-                    decoration: const InputDecoration(
-                      hintText: '987 654 32 10',
-                      hintStyle: TextStyle(color: Colors.grey),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    ),
-                  ),
-                ),
-              ]),
+            PhoneInput(
+              key: _phoneKey,
+              controller: _phoneCtrl,
+              onPhoneChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 20),
             GestureDetector(

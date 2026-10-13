@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
@@ -44,38 +45,40 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
   }
 
   Future<void> _tryBiometric() async {
-    AppLogger.debug('🔐 _tryBiometric called');
     try {
+      // 1. Биометрия должна быть включена ЛОКАЛЬНО для ЭТОГО пользователя
+      final prefs = await SharedPreferences.getInstance();
+      final biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
+      final biometricUserId = prefs.getInt('biometric_user_id');
+
+      if (!biometricEnabled || biometricUserId != widget.userId) {
+        // Не настроена или привязана к другому юзеру — не показываем
+        return;
+      }
+
+      // 2. Проверяем наличие биометрии на устройстве
       final bool canCheck = await _localAuth.canCheckBiometrics;
-      AppLogger.debug('🔐 canCheckBiometrics: $canCheck');
-      
       if (!canCheck) return;
-      
-      final List<BiometricType> availableBiometrics = 
-          await _localAuth.getAvailableBiometrics();
-      AppLogger.debug('🔐 availableBiometrics: $availableBiometrics');
-      
+
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
       if (availableBiometrics.isEmpty) return;
-      
+
+      // 3. Локальная аутентификация (без сервера)
       final bool authenticated = await _localAuth.authenticate(
         localizedReason: 'Войдите в приложение по биометрии',
       );
-      AppLogger.debug('🔐 biometric authenticated: $authenticated');
-      
+
       if (authenticated && mounted) {
-        AppLogger.debug('🔐 Sending biometric-login request');
-        final result = await ApiService.post('/api/auth/biometric-login', {'user_id': widget.userId});
-        AppLogger.debug('🔐 biometric-login result: $result');
-        
-        if (!mounted) return;
-      await context.read<UserProvider>().setUser(
-        id: widget.userId,
-        hasPin: true,
-        email: widget.userEmail,
-      );
-        
+        // Локальный вход: сессия на сервере уже есть
+        // (check-session пройдёт — иначе пользователь не дошёл бы до PinLoginScreen)
+        await context.read<UserProvider>().setUser(
+          id: widget.userId,
+          hasPin: true,
+          email: widget.userEmail,
+        );
+
         PushNotificationService().registerTokenAfterLogin();
-        
+
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,

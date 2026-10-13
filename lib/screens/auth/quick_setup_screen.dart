@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../widgets/skeletons.dart';
 
@@ -25,11 +26,23 @@ class _QuickSetupScreenState extends State<QuickSetupScreen> {
 
   void _loadStatus() async {
     try {
+      // PIN — с сервера (он привязан к аккаунту)
       final result = await ApiService.get('/api/quick-login/status');
-      if (result['success'] == true && mounted) {
+      final hasPin = result['success'] == true ? (result['data']['has_pin'] ?? false) : false;
+
+      // Биометрия — ЛОКАЛЬНО (на гаджете, не через сервер)
+      final prefs = await SharedPreferences.getInstance();
+      final biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
+      final biometricUserId = prefs.getInt('biometric_user_id');
+
+      // Биометрия актуальна только если привязана к текущему userId
+      final hasBiometricForThisUser =
+          biometricEnabled && biometricUserId == widget.userId;
+
+      if (mounted) {
         setState(() {
-          _hasPin = result['data']['has_pin'] ?? false;
-          _hasBiometric = result['data']['has_biometric'] ?? false;
+          _hasPin = hasPin;
+          _hasBiometric = hasBiometricForThisUser;
           _loading = false;
         });
       }
@@ -56,19 +69,37 @@ class _QuickSetupScreenState extends State<QuickSetupScreen> {
   }
 
   void _toggleBiometric() async {
+    final prefs = await SharedPreferences.getInstance();
+
     if (_hasBiometric) {
-      try {
-        final result = await ApiService.deleteBiometric();
-        if (result['success'] == true) setState(() => _hasBiometric = false);
-      } catch (_) {}
+      // ВЫКЛ — только локально (без сервера)
+      await prefs.setBool('biometric_enabled', false);
+      await prefs.remove('biometric_user_id');
+      if (mounted) setState(() => _hasBiometric = false);
     } else {
+      // ВКЛ — локальная проверка + сохранить флаг на гаджете
       final localAuth = LocalAuthentication();
       try {
+        // Проверяем, есть ли биометрия на устройстве
+        final canCheck = await localAuth.canCheckBiometrics;
+        final available = await localAuth.getAvailableBiometrics();
+
+        if (!canCheck || available.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Биометрия недоступна на этом устройстве')),
+            );
+          }
+          return;
+        }
+
         final authenticated = await localAuth.authenticate(
           localizedReason: 'Подтвердите личность для включения быстрого входа',
         );
         if (authenticated) {
-          setState(() => _hasBiometric = true);
+          await prefs.setBool('biometric_enabled', true);
+          await prefs.setInt('biometric_user_id', widget.userId);
+          if (mounted) setState(() => _hasBiometric = true);
         }
       } catch (_) {}
     }

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../core/app_typography.dart';
+import '../../core/app_logger.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
 import 'consents_screen.dart';
 import 'discounts_screen.dart';
 import '../auth/quick_setup_screen.dart';
-import '../profile/settings_screen.dart';
 import 'reviews_screen.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
@@ -30,12 +30,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _avatar;
   String? _birthDate;
   bool _loading = true;
+  bool _hasChanges = false;
+  bool _initializing = false;
+  String _originalFirstName = '';
+  String _originalLastName = '';
 
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _firstNameCtrl.addListener(_onNameChanged);
+    _lastNameCtrl.addListener(_onNameChanged);
+  }
+
+  void _onNameChanged() {
+    if (_initializing) return;
+    final changed = _firstNameCtrl.text != _originalFirstName ||
+        _lastNameCtrl.text != _originalLastName;
+    if (changed != _hasChanges) {
+      setState(() => _hasChanges = changed);
+    }
   }
 
   void _loadProfile() async {
@@ -44,14 +59,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (result['success'] == true && mounted) {
         final data = result['data'];
         setState(() {
-          _firstNameCtrl.text = data['first_name'] ?? '';
-          _lastNameCtrl.text = data['last_name'] ?? '';
+          _initializing = true;
+          _originalFirstName = data['first_name'] ?? '';
+          _originalLastName = data['last_name'] ?? '';
+          _firstNameCtrl.text = _originalFirstName;
+          _lastNameCtrl.text = _originalLastName;
           _emailCtrl.text = data['email'] ?? '';
           _phoneCtrl.text = data['phone'] ?? '';
           _avatar = data['avatar'];
           _birthDate = data['birth_date'];
           _loading = false;
         });
+        _initializing = false;
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
@@ -67,6 +86,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _firstNameCtrl.removeListener(_onNameChanged);
+    _lastNameCtrl.removeListener(_onNameChanged);
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _emailCtrl.dispose();
@@ -102,6 +123,392 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // ============================================================
+  // СМЕНА EMAIL
+  // ============================================================
+  void _showEmailDialog() {
+    final emailCtrl = TextEditingController();
+    final codeCtrl = TextEditingController();
+    String? error;
+    bool codeSent = false;
+    bool loading = false;
+    final currentEmail = context.read<UserProvider>().email;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      useRootNavigator: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 24,
+            right: 24,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Изменение email',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Текущий: $currentEmail',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
+              const SizedBox(height: 24),
+              if (!codeSent)
+                const Text(
+                  'Введите новый email',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F8F8),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                ),
+                child: TextField(
+                  controller: emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  enabled: !codeSent,
+                  style: AppTypography.input.copyWith(color: const Color(0xFF1A1A1A)),
+                  decoration: const InputDecoration(
+                    hintText: 'new@email.ru',
+                    hintStyle: AppTypography.inputHint,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  ),
+                ),
+              ),
+              if (codeSent) ...[
+                const SizedBox(height: 20),
+                const Text(
+                  'Введите код подтверждения',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F8F8),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                  ),
+                  child: TextField(
+                    controller: codeCtrl,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: 8),
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(
+                      hintText: '000000',
+                      hintStyle: AppTypography.inputHint,
+                      border: InputBorder.none,
+                      counterText: '',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3CD),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Color(0xFF856404)),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Код отправлен на указанный email',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF856404)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: loading ? null : () async {
+                    final newEmail = emailCtrl.text.trim();
+                    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(newEmail)) {
+                      setSheetState(() => error = 'Введите корректный email');
+                      return;
+                    }
+                    if (newEmail == currentEmail) {
+                      setSheetState(() => error = 'Это ваш текущий email');
+                      return;
+                    }
+                    setSheetState(() { loading = true; error = null; });
+                    try {
+                      if (!codeSent) {
+                        final result = await ApiService.saveEmail(newEmail);
+                        if (result['success'] != true) {
+                          setSheetState(() {
+                            error = result['message'] ?? 'Ошибка. Попробуйте позже';
+                            loading = false;
+                          });
+                          return;
+                        }
+                        setSheetState(() { codeSent = true; loading = false; });
+                      } else {
+                        final code = codeCtrl.text.trim();
+                        if (code.length != 6) {
+                          setSheetState(() { error = 'Введите 6-значный код'; loading = false; });
+                          return;
+                        }
+                        final result = await ApiService.verifyEmail(code);
+                        if (result['success'] != true) {
+                          setSheetState(() {
+                            error = result['message'] ?? 'Неверный код';
+                            loading = false;
+                          });
+                          return;
+                        }
+                        if (mounted) {
+                          await context.read<UserProvider>().updateEmail(newEmail);
+                          setState(() => _emailCtrl.text = newEmail);
+                          if (mounted) showToast(context, 'Email изменён');
+                        }
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      }
+                    } catch (e) {
+                      AppLogger.warning('ProfileScreen: change email failed: $e');
+                      setSheetState(() { error = 'Ошибка соединения'; loading = false; });
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDD1847),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text(
+                    loading ? '...' : (codeSent ? 'Подтвердить' : 'Отправить код'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // СМЕНА ТЕЛЕФОНА
+  // ============================================================
+  void _showPhoneDialog() {
+    final phoneKey = GlobalKey<PhoneInputState>();
+    final phoneCtrl = TextEditingController();
+    String? error;
+    bool codeSent = false;
+    bool loading = false;
+    String newPhone = '';
+    bool polling = false;
+    final currentPhone = context.read<UserProvider>().phone;
+
+    Future<void> startPolling() async {
+      if (polling) return;
+      polling = true;
+      for (int i = 0; i < 100; i++) {
+        await Future.delayed(const Duration(seconds: 3));
+        if (!mounted) break;
+        try {
+          final result = await ApiService.changePhoneConfirm(newPhone);
+          if (result['success'] == true) {
+            if (mounted) {
+              await context.read<UserProvider>().updatePhone(newPhone);
+              setState(() => _phoneCtrl.text = newPhone);
+              if (mounted) showToast(context, 'Телефон изменён');
+            }
+            if (mounted) Navigator.pop(context);
+            break;
+          }
+        } catch (_) {}
+      }
+      polling = false;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      useRootNavigator: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 24,
+            right: 24,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Изменение телефона',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Текущий: $currentPhone',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
+              const SizedBox(height: 24),
+              if (!codeSent) ...[
+                const Text(
+                  'Введите новый номер телефона',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                PhoneInput(
+                  key: phoneKey,
+                  controller: phoneCtrl,
+                  onPhoneChanged: (_) => setSheetState(() {}),
+                ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF2F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.phone_in_talk, size: 40, color: Color(0xFFDD1847)),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Позвоните с нового номера',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        newPhone,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFDD1847),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Звонок сбросится — номер подтвердится автоматически',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 12),
+                      const SizedBox(
+                        width: 24, height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Ожидание звонка...',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: (loading || codeSent) ? null : () async {
+                    final state = phoneKey.currentState;
+                    if (state == null || !state.isValid) {
+                      setSheetState(() => error = 'Введите корректный номер');
+                      return;
+                    }
+                    final phone = state.fullPhone;
+                    if (phone == currentPhone) {
+                      setSheetState(() => error = 'Это ваш текущий номер');
+                      return;
+                    }
+                    setSheetState(() { loading = true; error = null; });
+                    try {
+                      final result = await ApiService.changePhoneRequest(phone);
+                      if (result['success'] != true) {
+                        setSheetState(() {
+                          error = result['message'] ?? 'Ошибка';
+                          loading = false;
+                        });
+                        return;
+                      }
+                      newPhone = phone;
+                      setSheetState(() { codeSent = true; loading = false; });
+                      startPolling();
+                    } catch (e) {
+                      AppLogger.warning('ProfileScreen: change phone failed: $e');
+                      setSheetState(() { error = 'Ошибка соединения'; loading = false; });
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDD1847),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text(
+                    loading ? '...' : 'Продолжить',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _saveProfile() async {
     try {
       final result = await ApiService.post('/api/profile/update', {
@@ -113,6 +520,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       
       if (result['success'] == true && mounted) {
+        _originalFirstName = _firstNameCtrl.text;
+        _originalLastName = _lastNameCtrl.text;
+        setState(() => _hasChanges = false);
         showToast(context, 'Профиль сохранён');
       }
     } catch (e) {
@@ -171,11 +581,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          // Аватар
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              // Аватар
           GestureDetector(
             onTap: () {},
             child: _avatar != null && _avatar!.isNotEmpty
@@ -194,20 +606,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ]),
           const SizedBox(height: 16),
 
-          // Телефон
+          // Телефон (readonly + тап → смена)
           _buildSectionTitle('Телефон'),
           const SizedBox(height: 8),
-          PhoneInput(
-            key: _phoneKey,
-            controller: _phoneCtrl,
-            onPhoneChanged: (_) => setState(() {}),
+          _buildReadonlyField(
+            value: _phoneCtrl.text.isNotEmpty ? _phoneCtrl.text : 'Не указан',
+            onTap: _showPhoneDialog,
           ),
           const SizedBox(height: 16),
 
-          // Email
+          // Email (readonly + тап → смена)
           _buildSectionTitle('Электронная почта'),
           const SizedBox(height: 8),
-          _buildField(_emailCtrl, 'example@mail.ru', keyboardType: TextInputType.emailAddress),
+          _buildReadonlyField(
+            value: _emailCtrl.text.isNotEmpty ? _emailCtrl.text : 'Не указан',
+            onTap: _showEmailDialog,
+          ),
           const SizedBox(height: 16),
 
           // Дата рождения
@@ -239,16 +653,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
 
           // Быстрый вход
-          _buildSettingsRow('Настройки', '', () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-          }),
-          const SizedBox(height: 8),
-
-          _buildSettingsRow('Настройки', '', () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-          }),
-          const SizedBox(height: 8),
-
           _buildSettingsRow('Быстрый вход', '', () {
             _getUserId().then((id) {
               if (!context.mounted) return;
@@ -261,14 +665,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(width: 8),
             const Icon(Icons.chevron_right, color: Colors.grey),
           ])),
-          const SizedBox(height: 24),
-
-          // Кнопка сохранить
-          SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
-            onPressed: _saveProfile,
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDD1847), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text('Сохранить', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-          )),
           const SizedBox(height: 24),
 
           // Переключатель Клиент / Бизнес
@@ -294,8 +690,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     },
     child: const Text('Выйти из аккаунта', style: TextStyle(color: Color(0xFF999999))),
 ),
-        ],
-      ),
+            ],
+          ),
+        ),
+        // Плавающая кнопка "Сохранить"
+        if (_hasChanges)
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 10,
+            child: ElevatedButton(
+              onPressed: _saveProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDD1847),
+                minimumSize: const Size(double.infinity, 52),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 8,
+                shadowColor: const Color(0xFFDD1847).withValues(alpha: 0.3),
+              ),
+              child: const Text(
+                'Сохранить',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -315,6 +734,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
           hintStyle: AppTypography.inputHint,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadonlyField({required String value, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F8F8),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                value,
+                style: AppTypography.input.copyWith(
+                  color: value == 'Не указан' ? const Color(0xFF999999) : const Color(0xFF1A1A1A),
+                ),
+              ),
+            ),
+            const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF999999)),
+          ],
         ),
       ),
     );

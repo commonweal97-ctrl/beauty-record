@@ -4,11 +4,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'main_screen.dart';
 import 'bookings_screen.dart';
 import 'profile_screen.dart';
-import '../../../widgets/app_footer.dart';
+import '../business/business_dashboard_screen.dart';
 import '../../../services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/user_provider.dart';
-import '../select_role_screen.dart';
 import 'client_chat_screen.dart';
 import '../../../services/push_notification_service.dart';
 
@@ -77,7 +76,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => SelectRoleScreen()),
+      MaterialPageRoute(builder: (_) => const BusinessDashboardScreen()),
     );
   }
 
@@ -141,8 +140,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       ),
       body: Column(
         children: [
+          _buildRoleToggle(),
           Expanded(child: _screens[_currentIndex]),
-          const AppFooter(),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -161,7 +160,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                 _buildNavItem(0, 'assets/home.svg', 'Главная'),
                 _buildNavItem(1, 'assets/calendar.svg', 'Мои записи'),
                 _buildNavItem(2, 'assets/user.svg', 'Кабинет'),
-                _buildNavItem(3, 'assets/layers.svg', 'Бизнес'),
               ],
             ),
           ),
@@ -170,18 +168,63 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     );
   }
 
+  Widget _buildRoleToggle() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      height: 44,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {}, // уже клиент — ничего не делаем
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))],
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  'Клиент',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFDD1847),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: _switchToBusiness,
+              child: Container(
+                alignment: Alignment.center,
+                child: const Text(
+                  'Бизнес',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildNavItem(int index, String iconPath, String label) {
     final isActive = _currentIndex == index;
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          if (index == 3) {
-            // Кнопка переключения на бизнес
-            _switchToBusiness();
-            return;
-          }
-          setState(() => _currentIndex = index);
-        },
+        onTap: () => setState(() => _currentIndex = index),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(color: isActive ? const Color(0xFFFDF2F5) : Colors.transparent, borderRadius: BorderRadius.circular(14)),

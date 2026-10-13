@@ -13,6 +13,7 @@ import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
 import '../../../widgets/common/phone_input.dart';
+import '../../utils/phone_display.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -610,7 +611,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildSectionTitle('Телефон'),
           const SizedBox(height: 8),
           _buildReadonlyField(
-            value: _phoneCtrl.text.isNotEmpty ? _phoneCtrl.text : 'Не указан',
+            value: _phoneCtrl.text.isNotEmpty ? formatPhoneDisplay(_phoneCtrl.text) : 'Не указан',
             onTap: _showPhoneDialog,
           ),
           const SizedBox(height: 16),

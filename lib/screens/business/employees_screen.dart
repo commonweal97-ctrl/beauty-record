@@ -14,6 +14,7 @@ import 'employee_schedule_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_logger.dart';
 import '../../widgets/common/phone_input.dart';
+import '../../utils/phone_display.dart';
 
 // ==================== ОТДЕЛЬНЫЙ ВИДЖЕТ ДЛЯ ПОЛЯ ЦЕНЫ ====================
 class _PriceField extends StatefulWidget {
@@ -233,7 +234,7 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
               Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFF0F0F0), borderRadius: BorderRadius.circular(20)), child: Text(position, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF666666)))),
               const SizedBox(height: 8),
               Wrap(spacing: 16, runSpacing: 4, children: [
-                if (phone.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.phone, size: 14, color: Color(0xFF999999)), const SizedBox(width: 4), Text(phone, style: const TextStyle(fontSize: 13, color: Color(0xFF666666)))]),
+                if (phone.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.phone, size: 14, color: Color(0xFF999999)), const SizedBox(width: 4), Text(formatPhoneDisplay(phone), style: const TextStyle(fontSize: 13, color: Color(0xFF666666)))]),
                 if (email.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.email_outlined, size: 14, color: Color(0xFF999999)), const SizedBox(width: 4), Flexible(child: Text(email, style: const TextStyle(fontSize: 13, color: Color(0xFF666666)), overflow: TextOverflow.ellipsis))]),
               ]),
             ]),
@@ -524,6 +525,15 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   }
 
   String _getFullPhone() => _phoneKey.currentState?.fullPhone ?? '';
+
+  String get _initials {
+    final first = _firstNameCtrl.text.trim();
+    final last = _lastNameCtrl.text.trim();
+    if (first.isEmpty && last.isEmpty) return '?';
+    final f = first.isNotEmpty ? first[0].toUpperCase() : '';
+    final l = last.isNotEmpty ? last[0].toUpperCase() : '';
+    return '$f$l';
+  }
   
   String _getNotificationsStatus() {
     final enabled = [_notifyNewBooking, _notifyBookingChange, _notifyBookingCancel].where((v) => v).length;
@@ -1209,7 +1219,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
           child: ListView(padding: const EdgeInsets.all(20), children: [
             Row(children: [
               GestureDetector(onTap: _pickAvatar, child: Stack(clipBehavior: Clip.none, children: [
-                Container(width: 80, height: 80, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFF0F0F0), border: Border.all(color: Colors.white, width: 3), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12)]), child: ClipOval(child: _avatarFile != null ? Image.file(_avatarFile!, fit: BoxFit.cover) : _avatarUrl.isNotEmpty ? CachedNetworkImage(imageUrl: '$_baseUrl$_avatarUrl', fit: BoxFit.cover) : const Center(child: Icon(Icons.person, size: 40, color: Color(0xFF999999))))),
+                Container(width: 80, height: 80, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFF0F0F0), border: Border.all(color: Colors.white, width: 3), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12)]), child: ClipOval(child: _avatarFile != null ? Image.file(_avatarFile!, fit: BoxFit.cover) : _avatarUrl.isNotEmpty ? CachedNetworkImage(imageUrl: '$_baseUrl$_avatarUrl', fit: BoxFit.cover) : Center(child: Text(_initials, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Color(0xFFDD1847)))))),
                 if (_avatarFile != null || _avatarUrl.isNotEmpty) Positioned(bottom: -5, right: -5, child: GestureDetector(onTap: _deleteAvatar, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFFF44336), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
               ])),
               const SizedBox(width: 16),

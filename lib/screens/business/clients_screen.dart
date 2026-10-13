@@ -5,6 +5,7 @@ import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
 import '../../../widgets/common/phone_input.dart';
+import '../../../utils/phone_display.dart';
 import '../client/client_profile_sheet.dart';
 import 'edit_client_sheet.dart';
 import '../../core/app_logger.dart';
@@ -312,7 +313,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
               Text(c['name'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))), 
               const SizedBox(height: 4), 
               Wrap(spacing: 16, runSpacing: 4, children: [
-                if (c['phone'] != null && c['phone'].toString().isNotEmpty) _buildMetaItem(Icons.phone, c['phone'].toString()), 
+                if (c['phone'] != null && c['phone'].toString().isNotEmpty) _buildMetaItem(Icons.phone, formatPhoneDisplay(c['phone'].toString())), 
                 if (c['email'] != null && c['email'].toString().isNotEmpty) _buildMetaItem(Icons.email, c['email'].toString()), 
                 _buildMetaItem(Icons.calendar_today, '${c['bookings_count'] ?? 0} записей')
               ])

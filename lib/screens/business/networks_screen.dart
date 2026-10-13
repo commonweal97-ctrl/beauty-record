@@ -81,11 +81,7 @@ class _NetworksScreenState extends State<NetworksScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white, elevation: 0,
-        title: const Text('Сети', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600)),
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.grey), onPressed: () => Navigator.pop(context)),
-      ),
+
       body: _loading
           ? ListView.builder(padding: const EdgeInsets.all(16), itemCount: 3, itemBuilder: (_, _) => _buildSkeleton())
           : _networks.isEmpty

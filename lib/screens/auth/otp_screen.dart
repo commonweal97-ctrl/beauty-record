@@ -89,13 +89,16 @@ class _OtpScreenState extends State<OtpScreen> {
     });
   }
 
+  /// Маска email: `ro*****12@gmail.com` — 2 первых + 5 звёздочек + 2 последних до @.
   String _maskEmail(String email) {
-    final parts = email.split('@');
-    if (parts.length != 2) return email;
-    final name = parts[0];
-    final domain = parts[1];
-    if (name.length <= 3) return '${name[0]}***@$domain';
-    return '${name.substring(0, 3)}***${name.substring(name.length - 1)}@$domain';
+    final atIdx = email.indexOf('@');
+    if (atIdx <= 0) return email;
+    final name = email.substring(0, atIdx);
+    final domain = email.substring(atIdx);
+    if (name.length <= 4) {
+      return '${name[0]}****$domain';
+    }
+    return '${name.substring(0, 2)}*****${name.substring(name.length - 2)}$domain';
   }
 
   String get _code => _controllers.map((c) => c.text).join();
@@ -236,8 +239,18 @@ class _OtpScreenState extends State<OtpScreen> {
                   text: TextSpan(
                     style: TextStyle(fontSize: 15, color: Colors.grey[600]),
                     children: [
-                      const TextSpan(text: 'Код отправлен на '),
-                      TextSpan(text: widget.email.isNotEmpty ? _maskEmail(widget.email) : '', style: const TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w600)),
+                      if (widget.email.isNotEmpty) ...[
+                        const TextSpan(text: 'Код отправлен на '),
+                        TextSpan(
+                          text: _maskEmail(widget.email),
+                          style: const TextStyle(
+                            color: Color(0xFFDD1847),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const TextSpan(text: ' и в приложение Б-Рощи'),
+                      ] else
+                        const TextSpan(text: 'Код отправлен в приложение Б-Рощи'),
                     ],
                   ),
                 ),

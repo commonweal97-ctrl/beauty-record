@@ -234,7 +234,12 @@ class _LoginScreenState extends State<LoginScreen> {
         final userId = result['data']['user_id'];
         final methods = result['data']['methods'] ?? {};
         final hasPin = methods['pin'] == true;
-        final userEmail = result['data']['user_email'] ?? '';
+        // Email пользователя: из API, либо из формы (если вход по email).
+        // API может не вернуть user_email — тогда подставляем введённый.
+        final userEmail =
+            (result['data']['user_email'] as String?)?.isNotEmpty == true
+                ? result['data']['user_email'] as String
+                : (_isPhone ? '' : _emailController.text.trim());
         
         if (!mounted) return;
         await context.read<UserProvider>().setUser(

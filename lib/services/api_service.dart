@@ -266,6 +266,31 @@ class ApiService {
     return _post('/api/quick-login/pin/delete', {});
   }
 
+  // ========== СМЕНА EMAIL / ТЕЛЕФОНА ==========
+
+  /// Отправить код на новый email
+  static Future<Map<String, dynamic>> saveEmail(String email) async {
+    return _post('/api/auth/save-email', {
+      'email': email,
+      'terms': true,
+    });
+  }
+
+  /// Подтвердить код и сменить email
+  static Future<Map<String, dynamic>> verifyEmail(String code) async {
+    return _post('/api/auth/verify-email', {'code': code});
+  }
+
+  /// Запросить смену телефона — создать pending
+  static Future<Map<String, dynamic>> changePhoneRequest(String phone) async {
+    return _post('/api/auth/change-phone/request', {'phone': phone});
+  }
+
+  /// Подтвердить смену телефона (после звонка)
+  static Future<Map<String, dynamic>> changePhoneConfirm(String phone) async {
+    return _post('/api/auth/change-phone/confirm', {'phone': phone});
+  }
+
   static Future<Map<String, dynamic>> deleteBiometric() async {
     return _post('/api/biometric/unregister', {});
   }

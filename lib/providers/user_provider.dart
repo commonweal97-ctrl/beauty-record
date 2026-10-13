@@ -31,6 +31,10 @@ class UserProvider extends ChangeNotifier {
   bool get isClient => _user?.role == 'client';
   bool get isBusiness => _user?.role == 'salon_owner';
 
+  int get id => _user?.id ?? 0;
+  String get email => _user?.email ?? '';
+  String get phone => _user?.phone ?? '';
+
   // ========== ЗАГРУЗКА ==========
 
   /// Загружает состояние из SharedPreferences.
@@ -45,6 +49,7 @@ class UserProvider extends ChangeNotifier {
         _user = User(
           id: saved['user_id'] as int,
           email: (saved['user_email'] ?? '') as String,
+          phone: (saved['user_phone'] ?? '') as String,
           hasPin: (saved['has_pin'] ?? false) as bool,
           role: await AuthService.getLastRole(),
         );
@@ -76,7 +81,7 @@ class UserProvider extends ChangeNotifier {
       userEmail: email,
       userPhone: phone,
     );
-    _user = User(id: id, email: email, hasPin: hasPin, role: role ?? _user?.role);
+    _user = User(id: id, email: email, phone: phone, hasPin: hasPin, role: role ?? _user?.role);
     AppLogger.debug('UserProvider.setUser: $_user');
     notifyListeners();
   }
@@ -99,6 +104,35 @@ class UserProvider extends ChangeNotifier {
       _user = _user!.copyWith(hasPin: hasPin);
       notifyListeners();
     }
+  }
+
+  /// Обновить email (после подтверждения через OTP).
+  Future<void> updateEmail(String newEmail) async {
+    if (_user == null) return;
+    // Сохраняем в SharedPreferences (для auto-login)
+    await AuthService.saveLogin(
+      _user!.id,
+      hasPin: _user!.hasPin,
+      userEmail: newEmail,
+      userPhone: _user!.phone,
+    );
+    _user = _user!.copyWith(email: newEmail);
+    AppLogger.debug('UserProvider.updateEmail: $newEmail');
+    notifyListeners();
+  }
+
+  /// Обновить телефон (после подтверждения звонком).
+  Future<void> updatePhone(String newPhone) async {
+    if (_user == null) return;
+    await AuthService.saveLogin(
+      _user!.id,
+      hasPin: _user!.hasPin,
+      userEmail: _user!.email,
+      userPhone: newPhone,
+    );
+    _user = _user!.copyWith(phone: newPhone);
+    AppLogger.debug('UserProvider.updatePhone: $newPhone');
+    notifyListeners();
   }
 
   /// Установить последний проект (для бизнеса).

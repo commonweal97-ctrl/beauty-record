@@ -166,11 +166,19 @@ class AppTypography {
     letterSpacing: 0.3,
   );
 
-  /// Текст в поле ввода
+  /// Текст в поле ввода — единый стиль для всех полей
   static const input = TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.w500,
-    height: 1.4,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.5,
+    height: 1.3,
+  );
+
+  /// Hint (плейсхолдер) для поля ввода
+  static const inputHint = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    color: Color(0xFFCCCCCC),
   );
 
   /// Текст ссылки

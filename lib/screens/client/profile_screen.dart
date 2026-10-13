@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
+import '../../core/app_typography.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
 import 'consents_screen.dart';
@@ -294,7 +295,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildField(TextEditingController ctrl, String hint, {TextInputType? keyboardType}) {
     return Container(
       decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE0E0E0))),
-      child: TextField(controller: ctrl, keyboardType: keyboardType, style: const TextStyle(fontSize: 16), decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(color: Colors.grey, fontSize: 16), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16))),
+      child: TextField(
+        controller: ctrl,
+        keyboardType: keyboardType,
+        style: AppTypography.input.copyWith(color: const Color(0xFF1A1A1A)),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: AppTypography.inputHint,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
     );
   }
 

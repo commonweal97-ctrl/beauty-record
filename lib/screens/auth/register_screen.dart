@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../services/api_service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../utils/phone_formatter.dart';
+import '../../widgets/common/phone_input.dart';
 import 'otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -27,28 +26,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final GlobalKey<PhoneInputState> _phoneKey = GlobalKey<PhoneInputState>();
   bool _termsAccepted = false;
   bool _newsletterAccepted = true;
   bool _isLoading = false;
   String? _error;
-  String _countryCode = '7';
-  String _countryDial = '+7';
-  String _countryFlag = '🇷🇺';
 
 
-  final List<Map<String, dynamic>> _countries = [
-    {'code': 'ru', 'dial_code': '7', 'flag': '🇷🇺', 'name': 'Россия', 'max_digits': 10},
-    {'code': 'by', 'dial_code': '375', 'flag': '🇧🇾', 'name': 'Беларусь', 'max_digits': 9},
-    {'code': 'kz', 'dial_code': '7', 'flag': '🇰🇿', 'name': 'Казахстан', 'max_digits': 10},
-    {'code': 'ua', 'dial_code': '380', 'flag': '🇺🇦', 'name': 'Украина', 'max_digits': 9},
-    {'code': 'de', 'dial_code': '49', 'flag': '🇩🇪', 'name': 'Германия', 'max_digits': 11},
-    {'code': 'us', 'dial_code': '1', 'flag': '🇺🇸', 'name': 'США', 'max_digits': 10},
-  ];
 
-  int get _maxDigits {
-    final country = _countries.firstWhere((c) => c['dial_code'] == _countryCode, orElse: () => _countries.first);
-    return country['max_digits'] as int;
-  }
+
+
 
   @override
   void initState() {
@@ -64,9 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         String phone = widget.prefillData!['phone']!.replaceAll(RegExp(r'\D'), '');
         if (phone.startsWith('7') && phone.length > 10) phone = phone.substring(1);
         if (phone.startsWith('375')) phone = phone.substring(3);
-        if (phone.length > _maxDigits) phone = phone.substring(0, _maxDigits);
         _phoneController.text = phone;
-        _onPhoneChanged(phone);
       }
     }
     
@@ -74,7 +59,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String phone = widget.identifier.replaceAll(RegExp(r'\D'), '');
       if (phone.startsWith('7') && phone.length > 10) phone = phone.substring(1);
       _phoneController.text = phone;
-      _onPhoneChanged(phone);
     } else if (widget.type == 'email' && widget.prefillData == null) {
       _emailController.text = widget.identifier;
     }
@@ -98,17 +82,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   bool _isEmailValid() => RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(_emailController.text.trim());
-  bool _isPhoneValid() => PhoneFormatter.isValid(_phoneController.text, _maxDigits);
+  bool _isPhoneValid() => _phoneKey.currentState?.isValid ?? false;
 
-  String _cleanPhone() => PhoneFormatter.normalizeForApi(_phoneController.text, '+$_countryCode');
-
-  void _onPhoneChanged(String value) {
-    String digits = PhoneFormatter.clean(value);
-    if (digits.length > _maxDigits) digits = digits.substring(0, _maxDigits);
-    String formatted = PhoneFormatter.formatRu(digits);
-    _phoneController.value = TextEditingValue(text: formatted, selection: TextSelection.collapsed(offset: formatted.length));
-    setState(() => _error = null);
-  }
+  String _cleanPhone() => _phoneKey.currentState?.fullPhone ?? '';
 
   void _register() async {
     if (_firstNameController.text.trim().length < 2) {
@@ -280,15 +256,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildPhoneField() {
-    return Container(
-      decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE0E0E0))),
-      child: Row(children: [
-        GestureDetector(
-          onTap: () => _showCountryPicker(),
-          child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16), decoration: const BoxDecoration(border: Border(right: BorderSide(color: Color(0x1A000000), width: 1))), child: Row(children: [Text(_countryFlag, style: const TextStyle(fontSize: 20)), const SizedBox(width: 4), Text(_countryDial, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF666666)))])),
-        ),
-        Expanded(child: TextField(controller: _phoneController, keyboardType: TextInputType.phone, inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\s]'))], onChanged: _onPhoneChanged, style: const TextStyle(fontSize: 16), decoration: const InputDecoration(hintText: '987 654 32 10', hintStyle: TextStyle(color: Colors.grey, fontSize: 16), border: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16)))),
-      ]),
+    return PhoneInput(
+      key: _phoneKey,
+      controller: _phoneController,
+      hasError: _error != null,
+      onPhoneChanged: (_) => setState(() {}),
     );
   }
 
@@ -339,25 +311,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context, backgroundColor: Colors.white, isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-        const SizedBox(height: 16),
-        Align(alignment: Alignment.centerLeft, child: Text('Выберите страну', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.grey[900]))),
-        const SizedBox(height: 16),
-        Flexible(child: ListView.builder(shrinkWrap: true, itemCount: _countries.length, itemBuilder: (_, i) {
-          final c = _countries[i];
-          return ListTile(
-            leading: Text(c['flag'] as String, style: const TextStyle(fontSize: 28)),
-            title: Text(c['name'] as String, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            trailing: Text('+${c['dial_code']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF666666))),
-            onTap: () { setState(() { _countryCode = c['dial_code'] as String; _countryDial = '+${c['dial_code']}'; _countryFlag = c['flag'] as String; _phoneController.clear(); }); Navigator.pop(ctx); },
-          );
-        })),
-      ]))),
-    );
-  }
 }

@@ -192,6 +192,26 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    try {
+      await ApiService.logout();
+    } catch (_) {}
+
+    try {
+      await ApiService.clearSession();
+    } catch (_) {}
+
+    if (!mounted) return;
+    await context.read<UserProvider>().logout();
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
   void _forgotPin() async {
     AppLogger.debug('🔐 _forgotPin called');
     try {
@@ -202,7 +222,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
     
     if (!mounted) return;
     
-    Navigator.pushAndRemoveUntil(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => OtpScreen(
@@ -211,7 +231,6 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
           phone: '',
         ),
       ),
-      (route) => false,
     );
   }
 
@@ -261,6 +280,22 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
               ),
             ),
             const Spacer(),
+            // Кнопка «Выйти» — на случай, если забыл PIN или хочет
+            // войти другим пользователем (иначе тупик).
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TextButton(
+                onPressed: _logout,
+                child: Text(
+                  'Выйти из аккаунта',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

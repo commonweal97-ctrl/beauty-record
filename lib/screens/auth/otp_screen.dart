@@ -9,6 +9,7 @@ import '../select_role_screen.dart';
 import '../auth/pin_setup_screen.dart';
 import '../auth/register_screen.dart';
 import 'call_verification_screen.dart';
+import 'login_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final int userId;
@@ -360,7 +361,21 @@ class _OtpScreenState extends State<OtpScreen> {
                 SizedBox(
                   width: double.infinity, height: 52,
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      // Безопасный возврат: если стек пуст (pushReplacement /
+                      // pushAndRemoveUntil), pop дал бы чёрный экран.
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      }
+                    },
                     style: OutlinedButton.styleFrom(foregroundColor: Colors.grey[600], side: BorderSide(color: Colors.grey[300]!), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     child: const Text('Назад', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                   ),

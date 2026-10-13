@@ -54,14 +54,14 @@ class _OtpScreenState extends State<OtpScreen> {
       setState(() => _phone = widget.phone);
       return;
     }
-    
+
     try {
       final result = await ApiService.get('/api/auth/check-session');
       if (result['success'] == true && result['user_phone'] != null) {
         setState(() => _phone = result['user_phone'] ?? '');
         return;
       }
-      
+
       if (widget.userId > 0) {
         final userData = await ApiService.checkUser(widget.userId.toString(), 'user_id');
         if (userData['success'] == true) {

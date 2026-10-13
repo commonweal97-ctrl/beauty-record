@@ -68,8 +68,14 @@ class UserProvider extends ChangeNotifier {
     String email = '',
     bool hasPin = false,
     String? role,
+    String phone = '',
   }) async {
-    await AuthService.saveLogin(id, hasPin: hasPin, userEmail: email);
+    await AuthService.saveLogin(
+      id,
+      hasPin: hasPin,
+      userEmail: email,
+      userPhone: phone,
+    );
     _user = User(id: id, email: email, hasPin: hasPin, role: role ?? _user?.role);
     AppLogger.debug('UserProvider.setUser: $_user');
     notifyListeners();

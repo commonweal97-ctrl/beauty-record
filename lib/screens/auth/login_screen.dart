@@ -148,7 +148,11 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 200),
-          pageBuilder: (_, _, _) => PinLoginScreen(userId: saved['user_id'] ?? 0, userEmail: saved['user_email'] ?? ''),
+          pageBuilder: (_, _, _) => PinLoginScreen(
+            userId: saved['user_id'] ?? 0,
+            userEmail: saved['user_email'] ?? '',
+            phone: saved['user_phone'] ?? '',
+          ),
           transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
         ),
       );
@@ -246,6 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
           id: userId,
           email: userEmail,
           hasPin: hasPin,
+          phone: _isPhone ? _cleanPhone() : '',
         );
         await AnalyticsService.logLogin(hasPin ? 'pin' : 'otp');
         await AnalyticsService.setUserId(userId);
@@ -254,7 +259,11 @@ class _LoginScreenState extends State<LoginScreen> {
         if (hasPin) {
           Navigator.push(context, PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 250),
-            pageBuilder: (_, _, _) => PinLoginScreen(userId: userId, userEmail: userEmail),
+            pageBuilder: (_, _, _) => PinLoginScreen(
+              userId: userId,
+              userEmail: userEmail,
+              phone: _isPhone ? _cleanPhone() : '',
+            ),
             transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
           ));
         } else {

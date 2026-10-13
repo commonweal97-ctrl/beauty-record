@@ -51,11 +51,17 @@ class AuthService {
     }
   }
 
-  static Future<void> saveLogin(int userId, {bool hasPin = false, String userEmail = ''}) async {
+  static Future<void> saveLogin(
+    int userId, {
+    bool hasPin = false,
+    String userEmail = '',
+    String userPhone = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('user_id', userId);
     await prefs.setBool('has_pin', hasPin);
     await prefs.setString('user_email', userEmail);
+    await prefs.setString('user_phone', userPhone);
     // Сбрасываем флаг выхода при новом входе
     await prefs.setBool('logged_out', false);
   }
@@ -69,6 +75,7 @@ class AuthService {
       'user_id': userId,
       'has_pin': prefs.getBool('has_pin') ?? false,
       'user_email': prefs.getString('user_email') ?? '',
+      'user_phone': prefs.getString('user_phone') ?? '',
     };
   }
 
@@ -97,6 +104,7 @@ class AuthService {
     await prefs.remove('user_id');
     await prefs.remove('has_pin');
     await prefs.remove('user_email');
+    await prefs.remove('user_phone');
     await prefs.remove('remember_token');
     await prefs.remove('saved_cookies');
     // Устанавливаем флаг, что пользователь вышел намеренно

@@ -15,7 +15,13 @@ import '../../core/app_logger.dart';
 class PinLoginScreen extends StatefulWidget {
   final int userId;
   final String userEmail;
-  const PinLoginScreen({super.key, required this.userId, this.userEmail = ''});
+  final String phone;
+  const PinLoginScreen({
+    super.key,
+    required this.userId,
+    this.userEmail = '',
+    this.phone = '',
+  });
 
   @override
   State<PinLoginScreen> createState() => _PinLoginScreenState();
@@ -228,7 +234,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
         builder: (_) => OtpScreen(
           userId: widget.userId,
           email: widget.userEmail,
-          phone: '',
+          phone: widget.phone,
         ),
       ),
     );

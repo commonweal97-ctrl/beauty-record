@@ -7,6 +7,7 @@ import '../../../services/api_service.dart';
 import 'consents_screen.dart';
 import 'discounts_screen.dart';
 import '../auth/quick_setup_screen.dart';
+import '../profile/settings_screen.dart';
 import 'reviews_screen.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
@@ -238,6 +239,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
 
           // Быстрый вход
+          _buildSettingsRow('Настройки', '', () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+          }),
+          const SizedBox(height: 8),
+
+          _buildSettingsRow('Настройки', '', () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+          }),
+          const SizedBox(height: 8),
+
           _buildSettingsRow('Быстрый вход', '', () {
             _getUserId().then((id) {
               if (!context.mounted) return;

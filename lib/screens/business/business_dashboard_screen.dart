@@ -8,6 +8,7 @@ import '../../../services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/user_provider.dart';
 import '../auth/quick_setup_screen.dart';
+import '../profile/settings_screen.dart';
 import '../select_role_screen.dart';
 import 'business_profile_screen.dart';
 import 'networks_screen.dart';
@@ -273,6 +274,14 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
                     ]),
                     const SizedBox(height: 24),
                     _drawerSection('Аккаунт', [
+                      _drawerItem(
+                        icon: Icons.lock_outline,
+                        label: 'Настройки',
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                        },
+                      ),
                       _drawerItem(
                         icon: Icons.lock_outline,
                         label: 'Быстрый вход',

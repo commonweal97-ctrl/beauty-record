@@ -15,6 +15,7 @@ import 'steps/booking_start_step.dart';
 import 'steps/booking_services_step.dart';
 import 'steps/booking_masters_step.dart';
 import 'steps/booking_master_services_step.dart';
+import 'steps/booking_master_assignment_step.dart';
 import 'steps/booking_contact_step.dart';
 import 'steps/booking_confirm_step.dart';
 import 'steps/booking_success_step.dart';
@@ -474,17 +475,39 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
   }
 
   Widget _buildMasterAssignmentScreen() {
-    // TODO: реализовать экран назначения мастеров (пока заглушка)
+    // Все услуги назначены?
+    final allAssigned = _selectedServices.every((s) {
+      final sid = (s['id'] as num).toInt();
+      return _serviceMasters.containsKey(sid);
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
           _buildHeader('Назначение ${widget.specialistLabelGenitive}'),
-          const Expanded(
-            child: Center(child: Text('Назначение мастеров на услуги')),
+          Expanded(
+            child: BookingMasterAssignmentStep(
+              services: _selectedServices,
+              employees: _employees,
+              employeeServiceLinks: _employeeServiceLinks,
+              serviceMasters: _serviceMasters,
+              primaryColor: widget.primaryColor,
+              specialistLabel: widget.specialistLabel,
+              onAssign: (serviceId, masterId) {
+                setState(() {
+                  _serviceMasters[serviceId] = masterId;
+                  // Также обновляем _selectedMaster для совместимости с datetime
+                  final master = _employees
+                      .where((e) => (e['id'] as num).toInt() == masterId)
+                      .firstOrNull;
+                  if (master != null) _selectedMaster = master;
+                });
+              },
+            ),
           ),
           _buildBottomBar(
-            onPressed: _goToDateTime,
+            onPressed: allAssigned ? _goToDateTime : null,
           ),
         ],
       ),

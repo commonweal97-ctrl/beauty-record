@@ -34,11 +34,14 @@ class CallVerificationScreen extends StatefulWidget {
 class _CallVerificationScreenState extends State<CallVerificationScreen> {
   Timer? _checkTimer;
   Timer? _countdownTimer;
+  Timer? _verifyCountdownTimer;
   bool _isWaiting = false;
   bool _isChecking = false;
   bool _isConfirmed = false;
+  bool _isVerifying = false;
   String? _error;
   int _secondsLeft = 300;
+  int _verifySecondsLeft = 30;
 
   @override
   void initState() {
@@ -62,6 +65,7 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
   void dispose() {
     _checkTimer?.cancel();
     _countdownTimer?.cancel();
+    _verifyCountdownTimer?.cancel();
     super.dispose();
   }
 
@@ -97,6 +101,11 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
     });
   }
 
+  String get _verifyTimerText {
+    final s = _verifySecondsLeft.toString().padLeft(2, '0');
+    return '00:$s';
+  }
+
   String get _timerText {
     final m = (_secondsLeft ~/ 60).toString().padLeft(2, '0');
     final s = (_secondsLeft % 60).toString().padLeft(2, '0');
@@ -116,10 +125,14 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
       if (result['success'] == true && result['verified'] == true && mounted) {
         _checkTimer?.cancel();
         _countdownTimer?.cancel();
+        _verifyCountdownTimer?.cancel();
         setState(() {
           _isWaiting = false;
           _isConfirmed = true;
         });
+
+        // Даём overlay показаться (UX как в Б-Роща)
+        await Future.delayed(const Duration(milliseconds: 1200));
 
         await _performLogin();
       }
@@ -130,6 +143,7 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
   }
 
   Future<void> _performLogin() async {
+    debugPrint('CV: _performLogin START');
     try {
       if (widget.isRegistration) {
         await _registerByCall();
@@ -137,10 +151,12 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
       }
 
       // Существующий пользователь
+      debugPrint('CV: POST /api/auth/login-by-call user_id=${widget.userId}');
       final result = await ApiService.post(
         '/api/auth/login-by-call',
         {'user_id': widget.userId},
       );
+      debugPrint('CV: login-by-call result = $result');
       final token = result['remember_token'] ?? '';
 
       if (token.isNotEmpty) {
@@ -208,6 +224,31 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
   }
 
   Future<void> _callNumber() async {
+    // UX как в Б-Роща: overlay "Проверяем ваш номер" + таймер 30 сек
+    setState(() {
+      _isVerifying = true;
+      _isWaiting = false;
+      _verifySecondsLeft = 30;
+    });
+
+    _verifyCountdownTimer?.cancel();
+    _verifyCountdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) { timer.cancel(); return; }
+      setState(() {
+        if (_verifySecondsLeft > 0) {
+          _verifySecondsLeft--;
+        } else {
+          timer.cancel();
+          _isVerifying = false;
+        }
+      });
+    });
+
+    _checkTimer?.cancel();
+    _checkTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      await _checkVerification();
+    });
+
     final uri = Uri.parse('tel:+79803043674');
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -219,8 +260,10 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
+            Column(
+              children: [
             const Spacer(),
             
             // Иконка
@@ -359,7 +402,74 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
               ),
             ),
             
-            const SizedBox(height: 24),
+                const SizedBox(height: 24),
+              ],
+            ),
+            // Overlay "Проверяем ваш номер" — UX как в Б-Роща
+            if (_isVerifying || _isConfirmed)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.white,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: Stack(
+                          children: [
+                            const Positioned.fill(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: Color(0xFFDD1847),
+                              ),
+                            ),
+                            const Center(
+                              child: Icon(
+                                Icons.phone_in_talk,
+                                size: 32,
+                                color: Color(0xFFDD1847),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      const Text(
+                        'Проверяем ваш номер',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.phone,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF666666),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _verifyTimerText,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFDD1847),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Ожидайте подтверждения звонка',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),

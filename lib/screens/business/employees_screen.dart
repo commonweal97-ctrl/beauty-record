@@ -13,6 +13,7 @@ import 'access_screen.dart';
 import 'employee_schedule_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_logger.dart';
+import '../../widgets/common/phone_input.dart';
 
 // ==================== ОТДЕЛЬНЫЙ ВИДЖЕТ ДЛЯ ПОЛЯ ЦЕНЫ ====================
 class _PriceField extends StatefulWidget {
@@ -276,7 +277,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
 
-  String _selectedDial = '+7';
+  final GlobalKey<PhoneInputState> _phoneKey = GlobalKey<PhoneInputState>();
   String _category = 'Не выбрано';
   bool _providesServices = true;
   String _bookingColor = '#DD1847';
@@ -311,12 +312,6 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   static const _colors = ['#DD1847', '#E91E63', '#9C27B0', '#2196F3', '#4CAF50', '#FF9800', '#607D8B'];
   static const String _baseUrl = 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai';
   static const _categories = ['Администратор', 'Бровист', 'Визажист', 'Врач', 'Косметолог', 'Массажист', 'Мастер', 'Мастер ногтевого сервиса', 'Мастер пирсинга', 'Мастер по наращиванию ресниц', 'Парикмахер', 'Преподаватель', 'Специалист', 'Специалист по эстетике тела', 'Татуировщик', 'Тренер', 'Прочее'];
-  static const _countries = [
-    {'flag': '🇷🇺', 'name': 'Россия', 'dial': '+7'},
-    {'flag': '🇧🇾', 'name': 'Беларусь', 'dial': '+375'},
-    {'flag': '🇰🇿', 'name': 'Казахстан', 'dial': '+7'},
-    {'flag': '🇺🇦', 'name': 'Украина', 'dial': '+380'},
-  ];
   static const _roleLabels = {
     'creator': 'Создатель', 'admin': 'Администратор', 'admin_limited': 'Администратор (огр.)',
     'employee_view': 'Сотрудник (просмотр)', 'employee_edit': 'Сотрудник (ред.)',
@@ -405,7 +400,6 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
           _lastNameCtrl.text = d['last_name'] ?? '';
           _aboutCtrl.text = d['about'] ?? '';
           _positionCtrl.text = d['position'] ?? '';
-          _selectedDial = dial;
           _phoneCtrl.text = number;
           _emailCtrl.text = d['email'] ?? '';
           _category = d['category'] ?? 'Не выбрано';
@@ -529,7 +523,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
     } catch (_) {}
   }
 
-  String _getFullPhone() => '$_selectedDial${_phoneCtrl.text.replaceAll(RegExp(r'[^\d]'), '')}';
+  String _getFullPhone() => _phoneKey.currentState?.fullPhone ?? '';
   
   String _getNotificationsStatus() {
     final enabled = [_notifyNewBooking, _notifyBookingChange, _notifyBookingCancel].where((v) => v).length;
@@ -688,30 +682,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
     setState(() { _avatarFile = null; _avatarUrl = ''; });
   }
 
-  void _onPhoneChanged(String value) {
-    final dial = _selectedDial.replaceAll('+', '');
-    String digits = value.replaceAll(RegExp(r'[^\d]'), '');
-    if (dial == '7' && digits.length >= 10) {
-      digits = '${digits.substring(0,3)} ${digits.substring(3,6)} ${digits.substring(6,8)} ${digits.substring(8,10)}';
-    } else if ((dial == '375' || dial == '380') && digits.length >= 2) digits = '${digits.substring(0,2)} ${digits.substring(2)}';
-    _phoneCtrl.value = TextEditingValue(text: digits, selection: TextSelection.collapsed(offset: digits.length));
-  }
 
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context, backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => Container(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Text('Код страны', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 16),
-        ..._countries.map((c) => ListTile(
-          leading: Text(c['flag'] as String, style: const TextStyle(fontSize: 24)),
-          title: Text(c['name'] as String), trailing: Text(c['dial'] as String),
-          onTap: () { setState(() => _selectedDial = c['dial'] as String); Navigator.pop(ctx); },
-        )),
-      ])),
-    );
-  }
 
   void _openNotificationsSettings() {
     showModalBottomSheet(
@@ -1216,10 +1187,11 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   }
 
   Widget _buildPhoneField() {
-    return Row(children: [
-      GestureDetector(onTap: _showCountryPicker, child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14), decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)), border: Border.all(color: const Color(0xFFE0E0E0))), child: Row(mainAxisSize: MainAxisSize.min, children: [Text(_selectedDial == '+7' ? '🇷🇺' : _selectedDial == '+375' ? '🇧🇾' : _selectedDial == '+380' ? '🇺🇦' : '🇷🇺', style: const TextStyle(fontSize: 18)), const SizedBox(width: 4), Text(_selectedDial, style: const TextStyle(fontSize: 14, color: Color(0xFF666666))), const SizedBox(width: 4), const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF666666))]))),
-      Expanded(child: TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, onChanged: _onPhoneChanged, decoration: InputDecoration(hintText: 'Номер телефона', filled: true, fillColor: const Color(0xFFF8F8F8), border: OutlineInputBorder(borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)), borderSide: const BorderSide(color: Color(0xFFE0E0E0))), enabledBorder: OutlineInputBorder(borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)), borderSide: const BorderSide(color: Color(0xFFE0E0E0))), focusedBorder: OutlineInputBorder(borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)), borderSide: const BorderSide(color: Color(0xFFDD1847))), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)))),
-    ]);
+    return PhoneInput(
+      key: _phoneKey,
+      controller: _phoneCtrl,
+      onPhoneChanged: (_) => setState(() {}),
+    );
   }
 
   @override

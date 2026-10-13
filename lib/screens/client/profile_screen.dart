@@ -9,7 +9,8 @@ import '../auth/quick_setup_screen.dart';
 import 'reviews_screen.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
-import '../../../widgets/toast.dart'; // Add this import
+import '../../../widgets/toast.dart';
+import '../../../widgets/common/phone_input.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,18 +24,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _lastNameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final GlobalKey<PhoneInputState> _phoneKey = GlobalKey<PhoneInputState>();
   String? _avatar;
   String? _birthDate;
-  String _countryDial = '+7';
-  String _countryFlag = '🇷🇺';
   bool _loading = true;
 
-  final List<Map<String, dynamic>> _countries = [
-    {'code': 'ru', 'dial_code': '7', 'flag': '🇷🇺', 'name': 'Россия', 'max_digits': 10},
-    {'code': 'by', 'dial_code': '375', 'flag': '🇧🇾', 'name': 'Беларусь', 'max_digits': 9},
-    {'code': 'kz', 'dial_code': '7', 'flag': '🇰🇿', 'name': 'Казахстан', 'max_digits': 10},
-    {'code': 'ua', 'dial_code': '380', 'flag': '🇺🇦', 'name': 'Украина', 'max_digits': 9},
-  ];
 
   @override
   void initState() {
@@ -51,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _firstNameCtrl.text = data['first_name'] ?? '';
           _lastNameCtrl.text = data['last_name'] ?? '';
           _emailCtrl.text = data['email'] ?? '';
-          _phoneCtrl.text = _formatPhoneForDisplay(data['phone'] ?? '');
+          _phoneCtrl.text = data['phone'] ?? '';
           _avatar = data['avatar'];
           _birthDate = data['birth_date'];
           _loading = false;
@@ -67,13 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return result['data']?['id'] ?? 0;
   }
 
-  String _formatPhoneForDisplay(String phone) {
-    final digits = phone.replaceAll(RegExp(r'[^\d]'), '');
-    if (digits.length == 11 && digits.startsWith('7')) {
-      return '${digits.substring(1, 4)} ${digits.substring(4, 7)} ${digits.substring(7, 9)} ${digits.substring(9, 11)}';
-    }
-    return phone;
-  }
+
 
   @override
   void dispose() {
@@ -118,7 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'first_name': _firstNameCtrl.text,
         'last_name': _lastNameCtrl.text,
         'email': _emailCtrl.text,
-        'phone': _phoneCtrl.text,
+        'phone': _phoneKey.currentState?.fullPhone ?? '',
         'birth_date': _birthDate,
       });
       
@@ -207,15 +195,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Телефон
           _buildSectionTitle('Телефон'),
           const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE0E0E0))),
-            child: Row(children: [
-              GestureDetector(
-                onTap: () => _showCountryPicker(),
-                child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16), decoration: const BoxDecoration(border: Border(right: BorderSide(color: Color(0x1A000000), width: 1))), child: Row(children: [Text(_countryFlag, style: const TextStyle(fontSize: 20)), const SizedBox(width: 4), Text(_countryDial, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF666666)))])),
-              ),
-              Expanded(child: TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, style: const TextStyle(fontSize: 16), decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16)))),
-            ]),
+          PhoneInput(
+            key: _phoneKey,
+            controller: _phoneCtrl,
+            onPhoneChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
 
@@ -337,24 +320,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context, backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-        const SizedBox(height: 16),
-        Text('Выберите страну', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.grey[900])),
-        const SizedBox(height: 16),
-        ..._countries.map((c) => ListTile(
-          leading: Text(c['flag'] as String, style: const TextStyle(fontSize: 28)),
-          title: Text(c['name'] as String, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          trailing: Text('+${c['dial_code']}', style: const TextStyle(fontSize: 16, color: Color(0xFF666666))),
-          onTap: () { setState(() { _countryDial = '+${c['dial_code']}'; _countryFlag = c['flag'] as String; }); Navigator.pop(ctx); },
-        )),
-      ]))),
-    );
-  }
 }
 
 // Кастомный виджет выбора даты с быстрым выбором года

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/phone_input.dart';
 
 class EditClientSheet extends StatefulWidget {
   final int? clientId;
@@ -24,11 +25,12 @@ class _EditClientSheetState extends State<EditClientSheet> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final GlobalKey<PhoneInputState> _phoneKey = GlobalKey<PhoneInputState>();
   final _emailCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   final _discountCtrl = TextEditingController();
   
-  String _selectedDial = '+7';
+
   bool _blocked = false;
   String? _gender;
   List<Map<String, String>> _socialLinks = [];
@@ -37,12 +39,6 @@ class _EditClientSheetState extends State<EditClientSheet> {
 
   bool get _isEdit => widget.clientId != null;
 
-  static const _countries = [
-    {'flag': '🇷🇺', 'name': 'Россия', 'dial': '+7'},
-    {'flag': '🇧🇾', 'name': 'Беларусь', 'dial': '+375'},
-    {'flag': '🇰🇿', 'name': 'Казахстан', 'dial': '+7'},
-    {'flag': '🇺🇦', 'name': 'Украина', 'dial': '+380'},
-  ];
 
   @override
   void initState() {
@@ -72,16 +68,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
         final name = (c['name'] ?? '').toString();
         final parts = name.split(' ');
         
-        String phone = c['phone'] ?? '';
-        String dial = '+7';
-        String number = '';
-        if (phone.isNotEmpty) {
-          if (phone.startsWith('+375')) { dial = '+375'; number = phone.substring(4); }
-          else if (phone.startsWith('+380')) { dial = '+380'; number = phone.substring(4); }
-          else if (phone.startsWith('+7')) { dial = '+7'; number = phone.substring(2); }
-          else if (phone.startsWith('8')) { dial = '+7'; number = phone.substring(1); }
-          else { number = phone; }
-        }
+        final phone = (c['phone'] ?? '').toString();
 
         List<Map<String, String>> socialLinks = [];
         try {
@@ -96,8 +83,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
         setState(() {
           _firstNameCtrl.text = parts.isNotEmpty ? parts[0] : '';
           _lastNameCtrl.text = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-          _selectedDial = dial;
-          _phoneCtrl.text = number;
+          _phoneCtrl.text = phone;
           _emailCtrl.text = c['email'] ?? '';
           _notesCtrl.text = c['notes'] ?? '';
           _discountCtrl.text = c['discount']?.toString() ?? '';
@@ -112,10 +98,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
     }
   }
 
-  String _getFullPhone() {
-    final digits = _phoneCtrl.text.replaceAll(RegExp(r'[^\d]'), '');
-    return '$_selectedDial$digits';
-  }
+  String _getFullPhone() => _phoneKey.currentState?.fullPhone ?? '';
 
   Future<void> _save() async {
     final firstName = _firstNameCtrl.text.trim();
@@ -188,34 +171,6 @@ class _EditClientSheetState extends State<EditClientSheet> {
     }
   }
   
-  void _showCountryPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text('Выберите страну', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            ),
-            ..._countries.map((c) => ListTile(
-              leading: Text(c['flag']!, style: const TextStyle(fontSize: 24)),
-              title: Text(c['name']!),
-              trailing: Text(c['dial']!, style: const TextStyle(color: Color(0xFF666666))),
-              onTap: () {
-                setState(() => _selectedDial = c['dial']!);
-                Navigator.pop(ctx);
-              },
-            )),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _showGenderPicker() {
     showModalBottomSheet(
@@ -586,55 +541,10 @@ class _EditClientSheetState extends State<EditClientSheet> {
   }
 
   Widget _buildPhoneField() {
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: _showCountryPicker,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
-              border: Border.all(color: const Color(0xFFE0E0E0)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_selectedDial == '+7' ? '🇷🇺' : _selectedDial == '+375' ? '🇧🇾' : _selectedDial == '+380' ? '🇺🇦' : '🇷🇺', style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: 4),
-                Text(_selectedDial, style: const TextStyle(fontSize: 14, color: Color(0xFF666666))),
-                const SizedBox(width: 2),
-                const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFFCCCCCC)),
-              ],
-            ),
-          ),
-        ),
-        Expanded(
-          child: TextField(
-            controller: _phoneCtrl,
-            keyboardType: TextInputType.phone,
-            style: const TextStyle(fontSize: 15),
-            decoration: InputDecoration(
-              hintText: 'Номер телефона',
-              filled: true,
-              fillColor: const Color(0xFFF8F8F8),
-              border: OutlineInputBorder(
-                borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
-                borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
-                borderSide: const BorderSide(color: Color(0xFFDD1847)),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            ),
-          ),
-        ),
-      ],
+    return PhoneInput(
+      key: _phoneKey,
+      controller: _phoneCtrl,
+      onPhoneChanged: (_) => setState(() {}),
     );
   }
 

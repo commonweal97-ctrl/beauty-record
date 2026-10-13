@@ -90,6 +90,23 @@ class PhoneInputState extends State<PhoneInput> {
   void _format(String value) {
     String digits = value.replaceAll(RegExp(r'\D'), '');
 
+    // Умное обрезание кода страны, если он уже есть в digits
+    // (например, при prefill: +79208548151 → 9208548151)
+    final dialDigits = _country.dial.replaceAll(RegExp(r'\D'), '');
+    if (dialDigits.isNotEmpty && digits.startsWith(dialDigits)) {
+      if (dialDigits == '7') {
+        // RU/KZ: dial='7'
+        //  - если digits = '77XXX...' (КЗ, 12+ цифр) — убираем одну 7 (dial)
+        //  - если digits = '7XXXXXXXXXX' (RU, 11 цифр) — убираем одну 7 (dial)
+        if (digits.length > 10) {
+          digits = digits.substring(1);
+        }
+      } else if (digits.length > dialDigits.length) {
+        // BY/UA: dial='375'/'380' — убираем полностью
+        digits = digits.substring(dialDigits.length);
+      }
+    }
+
     if (digits.isEmpty) {
       if (widget.controller.text.isNotEmpty) {
         widget.controller.value = TextEditingValue(

@@ -7,6 +7,9 @@ import 'journal_sub_screen.dart';
 import 'month_view_screen.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
+import '../../../widgets/common/avatar_initials.dart';
+import '../../../utils/name_utils.dart';
+import '../../../utils/phone_display.dart';
 import 'list_view_screen.dart';
 import 'create_booking_sheet.dart';
 import 'booking_view_sheet.dart';
@@ -1485,21 +1488,15 @@ void initState() {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Colors.grey[200],
-                                      ),
-                                      child: Center(
-                                        child: CachedAvatar(
-                                          url: e['avatar'],
-                                          size: 36,
-                                          radius: 18,
-                                        ),
-                                      ),
-                                    ),
+                                    (e['avatar'] != null && e['avatar'].toString().isNotEmpty)
+                                        ? ClipOval(
+                                            child: CachedAvatar(
+                                              url: e['avatar'],
+                                              size: 36,
+                                              radius: 18,
+                                            ),
+                                          )
+                                        : AvatarInitials(name: extractName(e), size: 36),
                                     const SizedBox(height: 4),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -1909,17 +1906,14 @@ void initState() {
                                                         overflow: TextOverflow
                                                             .ellipsis,
                                                       ),
-                                                      if (r['client_phone'] !=
-                                                          null)
+                                                      if (r['client_phone'] != null)
                                                         Text(
-                                                          r['client_phone']!,
+                                                          formatPhoneDisplay(r['client_phone']!.toString()),
                                                           style: const TextStyle(
-                                                              color: Colors
-                                                                  .white70,
+                                                              color: Colors.white70,
                                                               fontSize: 9),
                                                           maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
+                                                          overflow: TextOverflow.ellipsis,
                                                         ),
                                                       if (services != null &&
                                                           services.isNotEmpty)
@@ -2416,14 +2410,13 @@ class _FilterEmployeeSheetState extends State<_FilterEmployeeSheet> {
                   final id = e['id'] as int;
                   final sel = _selected.contains(id);
                   return ListTile(
-                    leading: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage: e['avatar'] != null
-                          ? NetworkImage('https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai${e['avatar']}')
-                          : null,
-                      child: e['avatar'] == null ? Text((e['name'] ?? '?')[0]) : null,
-                    ),
+                    leading: (e['avatar'] != null)
+                        ? CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Colors.grey[200],
+                            backgroundImage: NetworkImage('https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai${e['avatar']}'),
+                          )
+                        : AvatarInitials(name: extractName(e), size: 36),
                     title: Text(e['name'] ?? '', style: const TextStyle(fontSize: 14)),
                     trailing: Icon(
                       sel ? Icons.check_box : Icons.check_box_outline_blank,

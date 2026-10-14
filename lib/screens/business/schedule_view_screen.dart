@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
+import '../../../utils/name_utils.dart';
+import '../../../widgets/common/avatar_initials.dart';
 import '../../../widgets/toast.dart';
 
 class ScheduleViewScreen extends StatefulWidget {
@@ -115,24 +117,7 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
 
   void _clearSelection() => setState(() => _selectedCells.clear());
 
-  String _shortName(Map<String, dynamic> e) {
-    final name = e['name']?.toString() ?? '';
-    final firstName = e['first_name']?.toString() ?? '';
-    final lastName = e['last_name']?.toString() ?? '';
-    
-    if (name.isNotEmpty) {
-      final parts = name.split(' ');
-      final first = parts.isNotEmpty ? parts[0] : '';
-      final last = parts.length > 1 ? parts[1] : '';
-      return '$first ${last.isNotEmpty ? '${last[0]}.' : ''}'.trim();
-    }
-    
-    if (firstName.isNotEmpty) {
-      return '$firstName ${lastName.isNotEmpty ? '${lastName[0]}.' : ''}'.trim();
-    }
-    
-    return 'Сотрудник';
-  }
+
 
   String _timeRange(Map<String, dynamic> emp, int day) {
     final scheduleData = emp['schedule_data'];
@@ -451,12 +436,14 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    CachedAvatar(url: e['avatar'], size: 36, radius: 18),
+                                    (e['avatar'] != null && e['avatar'].toString().isNotEmpty)
+                                        ? CachedAvatar(url: e['avatar'], size: 36, radius: 18)
+                                        : AvatarInitials(name: extractName(e), size: 36),
                                     const SizedBox(height: 4),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 4),
                                       child: Text(
-                                        _shortName(e),
+                                        extractShortName(e),
                                         style: const TextStyle(fontSize: 11),
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
@@ -588,15 +575,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
     }
   }
 
-  String _employeeName(Map<String, dynamic> e) {
-    final name = e['name']?.toString() ?? '';
-    final firstName = e['first_name']?.toString() ?? '';
-    final lastName = e['last_name']?.toString() ?? '';
-    
-    if (name.isNotEmpty) return name;
-    if (firstName.isNotEmpty) return '$firstName $lastName'.trim();
-    return 'Сотрудник';
-  }
+
 
   String _formatTime(TimeOfDay time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
@@ -937,8 +916,10 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
             children: _allEmployees.map((e) {
               final sel = _selectedEmployees.contains(e['id']);
               return ListTile(
-                leading: CachedAvatar(url: e['avatar'], size: 44, radius: 22),
-                title: Text(_employeeName(e), style: const TextStyle(fontWeight: FontWeight.w500)),
+                leading: (e['avatar'] != null && e['avatar'].toString().isNotEmpty)
+                    ? CachedAvatar(url: e['avatar'], size: 44, radius: 22)
+                    : AvatarInitials(name: extractName(e), size: 44),
+                title: Text(extractName(e), style: const TextStyle(fontWeight: FontWeight.w500)),
                 subtitle: Text(e['position'] ?? 'Мастер', style: const TextStyle(color: Color(0xFF888888))),
                 trailing: Container(
                   width: 24, height: 24,

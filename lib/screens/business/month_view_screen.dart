@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
+import '../../../utils/name_utils.dart';
+import '../../../widgets/common/avatar_initials.dart';
 
 class MonthViewScreen extends StatefulWidget {
   final int projectId;
@@ -112,21 +114,6 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
       debugPrint('❌ Ошибка загрузки: $e');
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  String _shortName(Map<String, dynamic> e) {
-    final firstName = e['first_name']?.toString() ?? '';
-    final lastName = e['last_name']?.toString() ?? '';
-    
-    if (firstName.isEmpty && lastName.isEmpty) {
-      final fullName = e['name']?.toString() ?? '';
-      final parts = fullName.split(' ');
-      final first = parts.isNotEmpty ? parts[0] : '';
-      final last = parts.length > 1 ? parts[1] : '';
-      return '$first ${last.isNotEmpty ? '${last[0]}.' : ''}'.trim();
-    }
-    
-    return '$firstName ${lastName.isNotEmpty ? '${lastName[0]}.' : ''}'.trim();
   }
 
   bool _isToday(DateTime d) {
@@ -406,25 +393,20 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     // Аватар
-                                    Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: const Color(0xFFF0F0F0),
-                                      ),
-                                      clipBehavior: Clip.antiAlias,
-                                      child: CachedAvatar(
-                                        url: e['avatar'],
-                                        size: 36,
-                                        radius: 18,
-                                      ),
-                                    ),
+                                    (e['avatar'] != null && e['avatar'].toString().isNotEmpty)
+                                        ? ClipOval(
+                                            child: CachedAvatar(
+                                              url: e['avatar'],
+                                              size: 36,
+                                              radius: 18,
+                                            ),
+                                          )
+                                        : AvatarInitials(name: (e['name'] ?? '').toString(), size: 36, bgColor: const Color(0xFFF0F0F0)),
                                     const SizedBox(height: 4),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 4),
                                       child: Text(
-                                        _shortName(e),
+                                        extractShortName(e),
                                         style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,

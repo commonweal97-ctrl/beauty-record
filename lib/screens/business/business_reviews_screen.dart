@@ -8,6 +8,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../client/client_profile_sheet.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/avatar_initials.dart';
 
 class BusinessReviewsScreen extends StatefulWidget {
   final int projectId;
@@ -321,8 +322,6 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
       }
     } catch (_) {}
 
-    final initials = clientName.split(' ').where((w) => w.isNotEmpty).map((w) => w[0]).take(2).join().toUpperCase();
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(20),
@@ -331,20 +330,16 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
         Row(children: [
           GestureDetector(
             onTap: () => _openClientProfile(r['client_id']),
-            child: CircleAvatar(
-              radius: 22,
-              backgroundColor: const Color(0xFFFDF2F5),
-              child: (clientAvatar != null && clientAvatar.isNotEmpty)
-                  ? ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: BusinessReviewsScreen.buildImageUrl(clientAvatar),
-                        width: 44, height: 44, fit: BoxFit.cover,
-                        placeholder: (_, _) => const SkeletonCircle(size: 44),
-                        errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w700, fontSize: 14)),
-                      ),
-                    )
-                  : Text(initials, style: const TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w700, fontSize: 14)),
-            ),
+            child: (clientAvatar != null && clientAvatar.isNotEmpty)
+                ? ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: BusinessReviewsScreen.buildImageUrl(clientAvatar),
+                      width: 44, height: 44, fit: BoxFit.cover,
+                      placeholder: (_, _) => const SkeletonCircle(size: 44),
+                      errorWidget: (_, _, _) => AvatarInitials(name: clientName, size: 44),
+                    ),
+                  )
+                : AvatarInitials(name: clientName, size: 44),
           ),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

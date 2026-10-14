@@ -6,6 +6,8 @@ import '../../../widgets/skeletons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../widgets/toast.dart';
 import '../../../widgets/common/phone_input.dart';
+import '../../../widgets/common/avatar_initials.dart';
+import '../../../utils/phone_display.dart';
 
 class AccessScreen extends StatefulWidget {
   final int projectId;
@@ -179,7 +181,6 @@ class _AccessScreenState extends State<AccessScreen> {
     final avatar = a['avatar']?.toString();
     final deviceType = a['device_type']?.toString();
     final lastVisit = a['last_visit']?.toString();
-    final initials = name.split(' ').where((w) => w.isNotEmpty).map((w) => w[0]).take(2).join().toUpperCase();
 
     return GestureDetector(
       onTap: () => _openAccessForUser(a),
@@ -193,20 +194,16 @@ class _AccessScreenState extends State<AccessScreen> {
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Row(children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors.grey[200],
-            child: avatar != null && avatar.isNotEmpty
-                ? ClipOval(
-                    child: CachedNetworkImage(
-                      imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
-                      width: 48, height: 48, fit: BoxFit.cover,
-                      placeholder: (_, _) => const SkeletonCircle(size: 48),
-                      errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600, fontSize: 14)),
-                    ),
-                  )
-                : Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600, fontSize: 14)),
-          ),
+          (avatar != null && avatar.isNotEmpty)
+              ? ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
+                    width: 48, height: 48, fit: BoxFit.cover,
+                    placeholder: (_, _) => const SkeletonCircle(size: 48),
+                    errorWidget: (_, _, _) => AvatarInitials(name: name, size: 48, textColor: const Color(0xFF666666)),
+                  ),
+                )
+              : AvatarInitials(name: name, size: 48, textColor: const Color(0xFF666666)),
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -220,7 +217,7 @@ class _AccessScreenState extends State<AccessScreen> {
                     Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(Icons.phone, size: 12, color: Color(0xFF999999)),
                       const SizedBox(width: 4),
-                      Text(phone, style: const TextStyle(fontSize: 12, color: Color(0xFF999999))),
+                      Text(formatPhoneDisplay(phone), style: const TextStyle(fontSize: 12, color: Color(0xFF999999))),
                     ]),
                   if (email.isNotEmpty)
                     Row(mainAxisSize: MainAxisSize.min, children: [

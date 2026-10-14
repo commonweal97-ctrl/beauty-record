@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
+import '../../../widgets/common/avatar_initials.dart';
 import '../../../widgets/toast.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -1344,7 +1345,7 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildHistoryItem(Map<String, dynamic> item) {
-    final initials = (item['client_name'] ?? '?').toString()[0].toUpperCase();
+    final clientName = (item['client_name'] ?? '').toString();
     final status = item['status'] ?? 'pending';
     final time = (item['send_at'] ?? item['created_at'] ?? '').toString().length >= 16
         ? (item['send_at'] ?? item['created_at']).toString().substring(11, 16)
@@ -1362,20 +1363,16 @@ final avatarUrl = item['client_avatar']?.toString() ?? item['master_avatar']?.to
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: const Color(0xFFF3F4F6),
-              child: avatarUrl != null && avatarUrl.isNotEmpty
-    ? ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: '${ApiService.baseUrl}$avatarUrl',
-          width: 40, height: 40, fit: BoxFit.cover,
-          placeholder: (_, _) => const SkeletonCircle(size: 40),
-          errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFF999999), fontWeight: FontWeight.w600, fontSize: 16)),
-        ),
-      )
-    : Text(initials, style: const TextStyle(color: Color(0xFF999999), fontWeight: FontWeight.w600, fontSize: 16)),
-            ),
+            (avatarUrl != null && avatarUrl.isNotEmpty)
+                ? ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: '${ApiService.baseUrl}$avatarUrl',
+                      width: 40, height: 40, fit: BoxFit.cover,
+                      placeholder: (_, _) => const SkeletonCircle(size: 40),
+                      errorWidget: (_, _, _) => AvatarInitials(name: clientName, size: 40, textColor: const Color(0xFF999999)),
+                    ),
+                  )
+                : AvatarInitials(name: clientName, size: 40, textColor: const Color(0xFF999999)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1523,7 +1520,7 @@ class _NotificationDetailPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initials = (item['client_name'] ?? '?').toString()[0].toUpperCase();
+    final clientName = (item['client_name'] ?? '').toString();
     final status = item['status'] ?? 'pending';
     final channelName = _channelLabels[item['channel']] ?? 'Ручная отправка';
     final dateToShow = item['sent_at'] ?? item['send_at'] ?? item['created_at'] ?? '';
@@ -1589,17 +1586,11 @@ class _NotificationDetailPopup extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 26,
-                        backgroundColor: const Color(0xFFF0F0F0),
-                        child: Text(
-                          initials,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFDD1847),
-                            fontSize: 20,
-                          ),
-                        ),
+                      AvatarInitials(
+                        name: clientName,
+                        size: 52,
+                        bgColor: const Color(0xFFF0F0F0),
+                        textColor: const Color(0xFFDD1847),
                       ),
                       const SizedBox(width: 14),
                       Column(
@@ -2580,9 +2571,7 @@ class _ManualAccessScreenState extends State<_ManualAccessScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (_, i) {
                       final emp = filtered[i];
-                      final initials =
-                          '${(emp['first_name'] ?? '').toString()[0]}${(emp['last_name'] ?? '').toString()[0]}'
-                              .toUpperCase();
+                      final empName = '${emp['first_name'] ?? ''} ${emp['last_name'] ?? ''}'.trim();
                       final canSend =
                           _notificationRights[emp['id']] ??
                               true;
@@ -2600,20 +2589,13 @@ class _ManualAccessScreenState extends State<_ManualAccessScreen> {
                         ),
                         child: Row(
                           children: [
-                            CircleAvatar(
-                              radius: 22,
-                              backgroundColor:
-                                  const Color(0xFFF3F4F6),
-                              child: Text(
-                                initials,
-                                style: const TextStyle(
-                                    color:
-                                        Color(0xFF999999),
-                                    fontWeight:
-                                        FontWeight.w600,
-                                    fontSize: 13),
-                              ),
+                            AvatarInitials(
+                              name: empName,
+                              size: 44,
+                              bgColor: const Color(0xFFF3F4F6),
+                              textColor: const Color(0xFF999999),
                             ),
+
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
+import '../../../widgets/common/avatar_initials.dart';
 import '../client/support_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -357,20 +358,16 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFF0F0F0))),
         child: Row(children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: Colors.grey[200],
-            child: avatar != null && avatar.isNotEmpty
-                ? ClipOval(
-                    child: CachedNetworkImage(
-                      imageUrl: '$_baseUrl$avatar',
-                      width: 44, height: 44, fit: BoxFit.cover,
-                      placeholder: (_, _) => const SkeletonCircle(size: 44),
-                      errorWidget: (_, _, _) => Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
-                    ),
-                  )
-                : Text(name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
-          ),
+          (avatar != null && avatar.isNotEmpty)
+              ? ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: '$_baseUrl$avatar',
+                    width: 44, height: 44, fit: BoxFit.cover,
+                    placeholder: (_, _) => const SkeletonCircle(size: 44),
+                    errorWidget: (_, _, _) => AvatarInitials(name: name, size: 44),
+                  ),
+                )
+              : AvatarInitials(name: name, size: 44),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -503,7 +500,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                     final c = _contacts[i];
                     final sel = _selectedContacts.contains(c['id']);
                     return ListTile(
-                      leading: CircleAvatar(radius: 20, backgroundColor: const Color(0xFFF0F0F0), child: Text((c['name'] ?? '?')[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFDD1847)))),
+                      leading: AvatarInitials(name: (c['name'] ?? '').toString(), size: 40),
                       title: Text(c['name'] ?? '', style: const TextStyle(fontSize: 14)),
                       subtitle: Text(c['phone'] ?? '', style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
                       trailing: Icon(sel ? Icons.check_circle : Icons.circle_outlined, color: sel ? const Color(0xFFDD1847) : const Color(0xFFCCCCCC)),

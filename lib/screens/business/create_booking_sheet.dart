@@ -3,6 +3,8 @@ import '../../../services/api_service.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/avatar_initials.dart';
+import '../../../utils/phone_display.dart';
 
 class CreateBookingSheet extends StatefulWidget {
   final int projectId;
@@ -870,14 +872,6 @@ Widget build(BuildContext context) {
   Widget _buildClientItem(Map<String, dynamic> c) {
     final sel = _selectedClient == c['id'];
     final name = (c['name'] ?? '') as String;
-    final initials = name
-        .split(' ')
-        .where((String w) => w.isNotEmpty)
-        .map((String w) => w[0])
-        .take(2)
-        .join()
-        .toUpperCase();
-
     return GestureDetector(
       onTap: () => setState(() => _selectedClient = c['id']),
       child: Container(
@@ -890,27 +884,19 @@ Widget build(BuildContext context) {
         ),
         child: Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFFDF2F5),
-              ),
-              child: Center(
-                child: Text(
-                  initials,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFFDD1847)),
-                ),
-              ),
-            ),
+            AvatarInitials(name: name, size: 44, bgColor: const Color(0xFFFDF2F5)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1A1A1A))),
-                  Text(c['phone'] ?? 'Нет телефона', style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
+                  Text(
+  (c['phone'] ?? '').toString().isNotEmpty
+      ? formatPhoneDisplay(c['phone'].toString())
+      : 'Нет телефона',
+  style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
+),
                 ],
               ),
             ),

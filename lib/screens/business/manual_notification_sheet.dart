@@ -7,6 +7,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/avatar_initials.dart';
+import '../../../utils/phone_display.dart';
 
 /// Попап ручной отправки уведомлений (аналог ns-popup из веб-версии)
 class ManualNotificationSheet extends StatefulWidget {
@@ -382,7 +384,7 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
   }
 
   Widget _buildNotificationCard(Map<String, dynamic> item) {
-    final initials = _getInitials(item['client_name']?.toString() ?? '?');
+    final clientName = item['client_name']?.toString() ?? '';
     final avatarPath = item['client_avatar']?.toString();
     final hasTelegram = item['telegram_link'] != null && item['telegram_link'].toString().isNotEmpty;
     final String? avatarUrl = (avatarPath != null && avatarPath.isNotEmpty) ? '$_baseImageUrl$avatarPath' : null;
@@ -397,21 +399,15 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
             children: [
               SizedBox(
                 width: 52, height: 52,
-                child: CircleAvatar(
-                  radius: 26,
-                  backgroundColor: const Color(0xFFF0F0F0),
-                  child: avatarUrl != null
-                      ? ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: avatarUrl, width: 52, height: 52, fit: BoxFit.cover,
-                            placeholder: (_, _) => const SkeletonCircle(size: 52),
-                            errorWidget: (_, _, _) => Center(
-                              child: Text(initials, style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFDD1847), fontSize: 20)),
-                            ),
-                          ),
-                        )
-                      : Center(child: Text(initials, style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFDD1847), fontSize: 20))),
-                ),
+                child: avatarUrl != null
+                    ? ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: avatarUrl, width: 52, height: 52, fit: BoxFit.cover,
+                          placeholder: (_, _) => const SkeletonCircle(size: 52),
+                          errorWidget: (_, _, _) => AvatarInitials(name: clientName, size: 52, bgColor: const Color(0xFFF0F0F0)),
+                        ),
+                      )
+                    : AvatarInitials(name: clientName, size: 52, bgColor: const Color(0xFFF0F0F0)),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -421,7 +417,12 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
                   children: [
                     Text(item['client_name'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
-                    Text(item['client_phone'] ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF888888))),
+                    Text(
+  (item['client_phone'] ?? '').toString().isNotEmpty
+      ? formatPhoneDisplay(item['client_phone'].toString())
+      : '',
+  style: const TextStyle(fontSize: 13, color: Color(0xFF888888)),
+),
                   ],
                 ),
               ),
@@ -664,9 +665,4 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
     );
   }
 
-  String _getInitials(String name) {
-    final parts = name.split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
-  }
 }

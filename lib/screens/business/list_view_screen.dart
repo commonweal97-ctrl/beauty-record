@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../services/api_service.dart';
+import '../../../utils/phone_display.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 
@@ -318,7 +319,12 @@ class _ListViewScreenState extends State<ListViewScreen> {
                   Text(item['client_name'] ?? '—', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
                   const SizedBox(height: 4),
                   // Телефон
-                  Text(item['client_phone'] ?? '—', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF666666))),
+                  Text(
+  (item['client_phone'] ?? '').toString().isNotEmpty
+      ? formatPhoneDisplay(item['client_phone'].toString())
+      : '—',
+  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF666666)),
+),
                   const SizedBox(height: 4),
                   // Сотрудник
                   Text(item['employee_name'] ?? '—', style: const TextStyle(fontSize: 14, color: Color(0xFFDD1847), fontWeight: FontWeight.w500)),

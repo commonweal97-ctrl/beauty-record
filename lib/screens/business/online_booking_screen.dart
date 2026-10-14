@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
+import '../../../widgets/common/avatar_initials.dart';
 import 'fixed_time_settings_sheet.dart';
 import 'booking_rules_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -770,7 +771,6 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
                     final setting = _mbtData[empId];
                     final name = '${emp['first_name'] ?? ''} ${emp['last_name'] ?? ''}'.trim();
                     final avatar = emp['avatar']?.toString();
-                    final initials = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
                     return GestureDetector(
                       onTap: () => _openEmployeeSettings(emp),
@@ -780,20 +780,16 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
                         decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
                         child: Row(
                           children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Colors.grey[200],
-                              child: avatar != null && avatar.isNotEmpty
-                                  ? ClipOval(
-                                      child: CachedNetworkImage(
-                                        imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
-                                        width: 40, height: 40, fit: BoxFit.cover,
-                                        placeholder: (_, _) => const SkeletonCircle(size: 40),
-                                        errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600)),
-                                      ),
-                                    )
-                                  : Text(initials, style: const TextStyle(color: Color(0xFF666666), fontWeight: FontWeight.w600)),
-                            ),
+                            (avatar != null && avatar.isNotEmpty)
+                                ? ClipOval(
+                                    child: CachedNetworkImage(
+                                      imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
+                                      width: 40, height: 40, fit: BoxFit.cover,
+                                      placeholder: (_, _) => const SkeletonCircle(size: 40),
+                                      errorWidget: (_, _, _) => AvatarInitials(name: name, size: 40, textColor: const Color(0xFF666666)),
+                                    ),
+                                  )
+                                : AvatarInitials(name: name, size: 40, textColor: const Color(0xFF666666)),
                             const SizedBox(width: 12),
                             Expanded(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
                             Container(
@@ -1093,7 +1089,6 @@ class _FixedTimeEmployeesSheetState extends State<_FixedTimeEmployeesSheet> {
                             final id = emp['id'] as int;
                             final name = '${emp['last_name'] ?? ''} ${emp['first_name'] ?? ''}'.trim();
                             final avatar = emp['avatar']?.toString();
-                            final initials = name.isNotEmpty ? name[0].toUpperCase() : '?';
                             final isOn = _ftEnabled[id] == true;
                             return GestureDetector(
                               onTap: () {
@@ -1118,20 +1113,16 @@ class _FixedTimeEmployeesSheetState extends State<_FixedTimeEmployeesSheet> {
                                 decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
                                 child: Row(
                                   children: [
-                                    CircleAvatar(
-                                      radius: 20,
-                                      backgroundColor: Colors.grey[200],
-                                      child: avatar != null && avatar.isNotEmpty
-                                          ? ClipOval(
-                                              child: CachedNetworkImage(
-                                                imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
-                                                width: 40, height: 40, fit: BoxFit.cover,
-                                                placeholder: (_, _) => const SkeletonCircle(size: 40),
-                                                errorWidget: (_, _, _) => Text(initials, style: const TextStyle(color: Color(0xFF666666))),
-                                              ),
-                                            )
-                                          : Text(initials, style: const TextStyle(color: Color(0xFF666666))),
-                                    ),
+                                    (avatar != null && avatar.isNotEmpty)
+                                        ? ClipOval(
+                                            child: CachedNetworkImage(
+                                              imageUrl: 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai$avatar',
+                                              width: 40, height: 40, fit: BoxFit.cover,
+                                              placeholder: (_, _) => const SkeletonCircle(size: 40),
+                                              errorWidget: (_, _, _) => AvatarInitials(name: name, size: 40, textColor: const Color(0xFF666666)),
+                                            ),
+                                          )
+                                        : AvatarInitials(name: name, size: 40, textColor: const Color(0xFF666666)),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(

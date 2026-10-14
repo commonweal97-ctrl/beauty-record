@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/common/avatar_initials.dart';
+import '../../../utils/phone_display.dart';
 import '../client/support_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -502,7 +503,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                     return ListTile(
                       leading: AvatarInitials(name: (c['name'] ?? '').toString(), size: 40),
                       title: Text(c['name'] ?? '', style: const TextStyle(fontSize: 14)),
-                      subtitle: Text(c['phone'] ?? '', style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
+                      subtitle: Text(formatPhoneDisplay((c['phone'] ?? '').toString()), style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
                       trailing: Icon(sel ? Icons.check_circle : Icons.circle_outlined, color: sel ? const Color(0xFFDD1847) : const Color(0xFFCCCCCC)),
                       onTap: () => _toggleContact(c['id'] as int),
                     );

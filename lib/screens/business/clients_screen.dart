@@ -6,6 +6,7 @@ import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
 import '../../../widgets/common/phone_input.dart';
 import '../../../utils/phone_display.dart';
+import '../../../widgets/common/avatar_initials.dart';
 import '../client/client_profile_sheet.dart';
 import 'edit_client_sheet.dart';
 import '../../core/app_logger.dart';
@@ -292,7 +293,6 @@ class _ClientsScreenState extends State<ClientsScreen> {
   );
 
   Widget _buildClientCard(Map<String, dynamic> c) {
-    final initials = (c['name'] ?? '?').toString().split(' ').where((w) => w.isNotEmpty).map((w) => w[0]).take(2).join().toUpperCase();
     return GestureDetector(
       onTap: () => _openClientProfile(c['id']),
       child: Container(
@@ -305,7 +305,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
             clipBehavior: Clip.antiAlias, 
             child: c['avatar'] != null && c['avatar'].toString().isNotEmpty 
                 ? CachedAvatar(url: c['avatar'], size: 56, radius: 28) 
-                : Center(child: Text(initials, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFFDD1847)))),
+                : AvatarInitials(name: (c['name'] ?? '').toString(), size: 56),
           ),
           const SizedBox(width: 14),
           Expanded(

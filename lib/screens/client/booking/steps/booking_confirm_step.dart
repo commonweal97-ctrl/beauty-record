@@ -1,5 +1,6 @@
 // lib/screens/client/booking/steps/booking_confirm_step.dart
 import 'package:flutter/material.dart';
+import '../../../../utils/phone_display.dart';
 
 class BookingConfirmStep extends StatelessWidget {
   final Map<String, dynamic>? contactData;
@@ -113,7 +114,7 @@ class BookingConfirmStep extends StatelessWidget {
               ],
               if (cd['phone'] != null && cd['phone'].isNotEmpty) ...[
                 const Text('Телефон', style: TextStyle(fontSize: 13, color: Colors.black54)),
-                Text(cd['phone'], style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black)),
+                Text(formatPhoneDisplay((cd['phone'] ?? '').toString()), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black)),
                 const SizedBox(height: 8),
               ],
               if (cd['email'] != null && cd['email'].isNotEmpty) ...[

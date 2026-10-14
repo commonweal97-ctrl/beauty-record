@@ -9,6 +9,8 @@ import 'client_notification_settings_sheet.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/avatar_initials.dart';
+import '../../../utils/phone_display.dart';
 import '../business/edit_client_sheet.dart';
 
 class ClientProfileSheet extends StatefulWidget {
@@ -333,7 +335,6 @@ class _ClientProfileSheetState extends State<ClientProfileSheet> {
 
     final c = _data!;
     final name = (c['name'] ?? '').toString();
-    final initials = name.split(' ').where((w) => w.isNotEmpty).map((w) => w[0]).take(2).join().toUpperCase();
     final bookings = c['bookings'] as List? ?? [];
     final avgPrice = bookings.isEmpty ? 0 : bookings.fold<double>(0, (s, b) => s + (double.tryParse(b['total_price']?.toString() ?? '0') ?? 0)) ~/ bookings.length;
     final avatarUrl = c['avatar']?.toString() ?? '';
@@ -355,26 +356,15 @@ class _ClientProfileSheetState extends State<ClientProfileSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             children: [
               Row(children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFFDF2F5),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: avatarUrl.isNotEmpty
+                avatarUrl.isNotEmpty
                     ? CachedAvatar(url: avatarUrl, size: 72, radius: 36)
-                    : Center(
-                        child: Text(initials, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFFDD1847))),
-                      ),
-                ),
+                    : AvatarInitials(name: name, size: 72, bgColor: const Color(0xFFFDF2F5)),
                 const SizedBox(width: 14),
                 Expanded(child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-                    Text((c['phone'] ?? '').toString(), style: const TextStyle(fontSize: 14, color: Color(0xFF666666))),
+                    Text(formatPhoneDisplay((c['phone'] ?? '').toString()), style: const TextStyle(fontSize: 14, color: Color(0xFF666666))),
                   ],
                 )),
                 _pillBtn('Изменить', _openEditClient),

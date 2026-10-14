@@ -4,6 +4,7 @@ import '../../../widgets/cached_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
+import '../../../widgets/common/avatar_initials.dart';
 
 class CreateBookingForClientSheet extends StatefulWidget {
   final int projectId;
@@ -1452,7 +1453,6 @@ Widget _buildStartOption({required String iconPath, required String title, requi
 
   Widget _buildAvatar(Map<String, dynamic> master, double size) {
     final name = (master['name'] ?? '').toString();
-    final initials = name.split(' ').where((w) => w.isNotEmpty).map((w) => w[0]).take(2).join().toUpperCase();
     final avatarUrl = master['avatar']?.toString();
     return Container(
       width: size, height: size,
@@ -1460,7 +1460,7 @@ Widget _buildStartOption({required String iconPath, required String title, requi
       clipBehavior: Clip.antiAlias,
       child: avatarUrl != null && avatarUrl.isNotEmpty
           ? CachedAvatar(url: avatarUrl, size: size, radius: size / 2)
-          : Center(child: Text(initials, style: TextStyle(fontSize: size * 0.35, fontWeight: FontWeight.w600, color: const Color(0xFF999999)))),
+          : AvatarInitials(name: name, size: size, bgColor: const Color(0xFFF0F0F0), textColor: const Color(0xFF999999)),
     );
   }
 

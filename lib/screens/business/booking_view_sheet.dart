@@ -4,6 +4,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
 import '../../../widgets/toast.dart';
+import '../../../utils/phone_display.dart';
 
 class BookingViewSheet extends StatefulWidget {
   final int bookingId;
@@ -292,7 +293,7 @@ Widget build(BuildContext context) {
                 Row(children: [
                   CircleAvatar(radius: 22, backgroundColor: const Color(0xFFFDF2F5), child: Text(_initials(d['client_name'] ?? '?'), style: const TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w700))),
                   const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(d['client_name'] ?? '', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)), Text(d['client_phone'] ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF888888)))])),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(d['client_name'] ?? '', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)), Text(formatPhoneDisplay((d['client_phone'] ?? '').toString()), style: const TextStyle(fontSize: 13, color: Color(0xFF888888)))])),
                   PopupMenuButton(
                     icon: Icon(Icons.more_vert, color: Colors.grey[600]),
                     itemBuilder: (_) => [

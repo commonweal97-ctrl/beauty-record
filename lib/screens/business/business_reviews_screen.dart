@@ -9,6 +9,7 @@ import '../../../widgets/skeletons.dart';
 import '../client/client_profile_sheet.dart';
 import '../../../widgets/toast.dart';
 import '../../../widgets/common/avatar_initials.dart';
+import '../../../utils/phone_display.dart';
 
 class BusinessReviewsScreen extends StatefulWidget {
   final int projectId;
@@ -677,7 +678,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
         items: _clients,
         selectedIds: _clientIds.toSet(),
         getTitle: (c) => c['name'] ?? '',
-        getSubtitle: (c) => c['phone'] ?? '',
+        getSubtitle: (c) => formatPhoneDisplay((c['phone'] ?? '').toString()),
         getAvatar: (c) => c['avatar']?.toString(),
         onApply: (ids) { _clientIds = ids.toList(); _loadReviews(); },
       ),

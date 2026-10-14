@@ -588,25 +588,49 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
       {'minutes': 720, 'label': '12 часов'},
     ];
 
-    return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFE2E8F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))]),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(children: [
-            const Expanded(child: Text('Отложить отправку', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
-            IconButton(icon: const Icon(Icons.close, color: Color(0xFF94A3B8)), onPressed: () => setState(() => _showPostponeList = false)),
-          ]),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
         ),
-        Container(margin: const EdgeInsets.symmetric(horizontal: 16), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFFEF3C7))), child: const Text('Отложите отправку уведомления. Через указанное время вы получите напоминание об отправке', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.4))),
-        const SizedBox(height: 8),
-        ...times.map((t) => ListTile(
-          title: Text(t['label'] as String, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-          trailing: const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
-          onTap: () => _postpone(t['minutes'] as int),
-        )),
-        const SizedBox(height: 8),
-      ]),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(children: [
+              const Expanded(child: Text('Отложить отправку', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
+              IconButton(icon: const Icon(Icons.close, color: Color(0xFF94A3B8)), onPressed: () => setState(() => _showPostponeList = false)),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFFEF3C7))),
+              child: const Text('Отложите отправку уведомления. Через указанное время вы получите напоминание об отправке', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.4)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              children: times.map((t) => ListTile(
+                title: Text(t['label'] as String, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                trailing: const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
+                onTap: () => _postpone(t['minutes'] as int),
+              )).toList(),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../widgets/cached_image.dart';
+import '../../../../widgets/common/avatar_initials.dart';
 
 class MasterCard extends StatelessWidget {
   final Map<String, dynamic> master;
@@ -49,7 +50,7 @@ class MasterCard extends StatelessWidget {
               ),
               child: master['avatar'] != null && master['avatar'].toString().isNotEmpty
                   ? ClipOval(child: CachedAvatar(url: master['avatar'], size: 80, radius: 40))
-                  : Icon(Icons.person, size: 40, color: Colors.grey[400]),
+                  : AvatarInitials(name: (master['name'] ?? '').toString(), size: 80),
             ),
             const SizedBox(height: 10),
             Text(master['name'] ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600), textAlign: TextAlign.center),

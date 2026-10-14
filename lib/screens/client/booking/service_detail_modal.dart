@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/cached_image.dart';
+import '../../../widgets/common/avatar_initials.dart';
 
 class ServiceDetailModal extends StatefulWidget {
   final Map<String, dynamic> service;
@@ -190,7 +191,7 @@ class _ServiceDetailModalState extends State<ServiceDetailModal> {
                             ),
                             child: master['avatar'] != null && master['avatar'].toString().isNotEmpty
                                 ? ClipOval(child: CachedAvatar(url: master['avatar'], size: 56, radius: 28))
-                                : Icon(Icons.person, size: 28, color: Colors.grey[400]),
+                                : AvatarInitials(name: (master['name'] ?? '').toString(), size: 56),
                           ),
                           const SizedBox(width: 14),
                           Expanded(

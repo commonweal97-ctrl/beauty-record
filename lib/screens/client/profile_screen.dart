@@ -668,20 +668,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ])),
           const SizedBox(height: 24),
 
-          // Переключатель Клиент / Бизнес
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(15)),
-            padding: const EdgeInsets.all(6),
-            child: Row(children: [
-              Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8)]), child: const Text('Клиент', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFFDD1847))))),
-              Expanded(child: GestureDetector(
-                onTap: () => Navigator.pushReplacementNamed(context, '/business'),
-                child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(12)), child: const Text('Бизнес', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF666666)))),
-              )),
-            ]),
-          ),
-          const SizedBox(height: 16),
-
           TextButton(
     onPressed: () async {
       await ApiService.clearSession();

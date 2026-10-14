@@ -1,6 +1,7 @@
 // lib/screens/client/booking/steps/booking_success_step.dart
 import 'package:flutter/material.dart';
 import '../../../../widgets/cached_image.dart';
+import '../../../../widgets/common/avatar_initials.dart';
 
 class BookingSuccessStep extends StatelessWidget {
   final Map<String, dynamic>? contactData;
@@ -137,7 +138,7 @@ class BookingSuccessStep extends StatelessWidget {
                       ),
                       child: selectedMaster!['avatar'] != null && selectedMaster!['avatar'].toString().isNotEmpty
                           ? ClipOval(child: CachedAvatar(url: selectedMaster!['avatar'], size: 40, radius: 20))
-                          : Icon(Icons.person, size: 20, color: Colors.grey[400]),
+                          : AvatarInitials(name: (selectedMaster!['name'] ?? '').toString(), size: 40),
                     ),
                     const SizedBox(width: 12),
                     Column(

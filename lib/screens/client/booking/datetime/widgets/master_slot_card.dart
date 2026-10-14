@@ -1,6 +1,7 @@
 // lib/screens/client/booking/datetime/widgets/master_slot_card.dart
 
 import 'package:flutter/material.dart';
+import '../../../../../widgets/common/avatar_initials.dart';
 import '../../../../../widgets/cached_image.dart';
 
 class MasterSlotCard extends StatelessWidget {
@@ -52,7 +53,7 @@ class MasterSlotCard extends StatelessWidget {
                           radius: 20,
                         ),
                       )
-                    : Icon(Icons.person, size: 20, color: Colors.grey[400]),
+                    : AvatarInitials(name: (master['name'] ?? '').toString(), size: 40),
               ),
               const SizedBox(width: 12),
               Expanded(

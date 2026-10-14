@@ -1,6 +1,7 @@
 // lib/screens/client/booking/steps/booking_masters_step.dart
 import 'package:flutter/material.dart';
 import '../../../../widgets/cached_image.dart';
+import '../../../../widgets/common/avatar_initials.dart';
 
 class BookingMastersStep extends StatefulWidget {
   final List<Map<String, dynamic>> employees;
@@ -96,7 +97,7 @@ class _BookingMastersStepState extends State<BookingMastersStep> {
               ),
               child: m['avatar'] != null && m['avatar'].toString().isNotEmpty
                   ? ClipOval(child: CachedAvatar(url: m['avatar'], size: 56, radius: 28))
-                  : Icon(Icons.person, size: 28, color: Colors.grey[400]),
+                  : AvatarInitials(name: (m['name'] ?? '').toString(), size: 56),
             ),
             const SizedBox(width: 12),
             Expanded(

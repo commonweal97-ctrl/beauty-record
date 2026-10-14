@@ -1,6 +1,7 @@
 // lib/screens/client/booking/steps/booking_master_assignment_step.dart
 import 'package:flutter/material.dart';
 import '../../../../widgets/cached_image.dart';
+import '../../../../widgets/common/avatar_initials.dart';
 
 class BookingMasterAssignmentStep extends StatelessWidget {
   final List<Map<String, dynamic>> services;
@@ -108,7 +109,7 @@ class BookingMasterAssignmentStep extends StatelessWidget {
                                   : Container(
                                       width: 28, height: 28,
                                       color: Colors.grey[200],
-                                      child: const Icon(Icons.person, size: 16, color: Colors.grey),
+                                      child: AvatarInitials(name: (m['name'] ?? '').toString(), size: 32),
                                     ),
                             ),
                             const SizedBox(width: 8),

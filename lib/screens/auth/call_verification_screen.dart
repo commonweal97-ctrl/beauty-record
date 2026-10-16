@@ -143,20 +143,19 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
   }
 
   Future<void> _performLogin() async {
-    debugPrint('CV: _performLogin START');
     try {
-      if (widget.isRegistration) {
+      // Юзер уже создан (register создал его и вернул user_id).
+      // register-by-call нужен ТОЛЬКО если userId == 0 (регистрация чисто по звонку).
+      if (widget.isRegistration && widget.userId == 0) {
         await _registerByCall();
         return;
       }
 
-      // Существующий пользователь
-      debugPrint('CV: POST /api/auth/login-by-call user_id=${widget.userId}');
+      // Юзер есть — логиним по звонку
       final result = await ApiService.post(
         '/api/auth/login-by-call',
         {'user_id': widget.userId},
       );
-      debugPrint('CV: login-by-call result = $result');
       final token = result['remember_token'] ?? '';
 
       if (token.isNotEmpty) {

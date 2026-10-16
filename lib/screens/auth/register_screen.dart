@@ -138,7 +138,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      // Регистрация — отправка OTP, пользователь НЕ создаётся
+      // Регистрация — создаёт юзера + отправляет OTP.
+      // register() возвращает user_id в data.user_id — передаём его в OtpScreen,
+      // чтобы CallVerificationScreen знал, что юзер уже создан, и вызвал
+      // login-by-call (а не register-by-call).
       final result = await ApiService.register(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
@@ -151,11 +154,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
+        final userId = result['data']?['user_id'] ?? 0;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => OtpScreen(
-              userId: 0,
+              userId: userId,
               email: email,
               isRegistration: true,
               firstName: _firstNameController.text.trim(),

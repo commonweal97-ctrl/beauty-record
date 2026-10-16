@@ -96,7 +96,7 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
     });
 
     _checkTimer?.cancel();
-    _checkTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+    _checkTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       await _checkVerification();
     });
   }
@@ -252,7 +252,9 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
     });
 
     _checkTimer?.cancel();
-    _checkTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+    // Поллинг раз в 5 сек (было 2 сек): снижает нагрузку на MySQL в 2.5 раза.
+    // Звонок всё равно подтверждается за 5 сек — незаметно для пользователя.
+    _checkTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       await _checkVerification();
     });
 

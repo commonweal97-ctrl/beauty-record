@@ -134,6 +134,18 @@ class BeautyRecordApp extends StatelessWidget {
         ),
         useMaterial3: false,
       ),
+      // Глобальное скрытие клавиатуры при тапе по свободному месту.
+      // HitTestBehavior.translucent — тап проходит к детям (кнопки, поля),
+      // но onTap всё равно срабатывает: если тап был НЕ по интерактивному
+      // элементу — клавиатура закрывается. Работает на ВСЕХ экранах,
+      // включая будущие, без правок в отдельных виджетах.
+      builder: (context, child) {
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       initialRoute: '/',
       routes: {
         '/': (_) => const LoginScreen(),

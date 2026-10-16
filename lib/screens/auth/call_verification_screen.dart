@@ -156,16 +156,26 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
         '/api/auth/login-by-call',
         {'user_id': widget.userId},
       );
-      final token = result['remember_token'] ?? '';
 
-      if (token.isNotEmpty) {
-        if (!mounted) return;
+      // Проверяем успех: если login-by-call провалился — не сохраняем сессию
+      if (result['success'] != true) {
+        if (mounted) {
+          setState(() => _error = result['message'] ?? 'Ошибка входа');
+        }
+        return;
+      }
+
+      // setUser вызывается ВСЕГДА при успехе — сохраняет user_id в SharedPreferences.
+      // Раньше было внутри 'if (token.isNotEmpty)', но login-by-call не возвращает
+      // remember_token в JSON (ставит cookie) → setUser НЕ вызывался → сессия
+      // не сохранялась → при следующем старте приложения выкидывало на LoginScreen.
+      if (!mounted) return;
       await context.read<UserProvider>().setUser(
         id: widget.userId,
         hasPin: true,
         email: widget.email,
+        phone: widget.phone,
       );
-      }
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(
@@ -192,16 +202,14 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
 
       if (result['success'] == true) {
         final userId = result['data']['user_id'] ?? 0;
-        final token = result['remember_token'] ?? '';
 
-        if (token.isNotEmpty) {
-          if (!mounted) return;
-      await context.read<UserProvider>().setUser(
-        id: userId,
-        hasPin: false,
-        email: widget.email,
-      );
-        }
+        if (!mounted) return;
+        await context.read<UserProvider>().setUser(
+          id: userId,
+          hasPin: false,
+          email: widget.email,
+          phone: widget.phone,
+        );
 
         if (mounted && userId > 0) {
           Navigator.pushAndRemoveUntil(

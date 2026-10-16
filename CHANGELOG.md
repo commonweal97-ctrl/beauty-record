@@ -16,6 +16,43 @@
 
 ---
 
+## [2026-10-14]
+
+### Added
+- **`AvatarInitials`** (`5a59de2`) — универсальный виджет-заглушка
+  (буквы имени/фамилии в кружке) с настройкой размера и цвета.
+- **`formatPhoneDisplay`** (`6510abd`) — красивое отображение телефона
+  с флагом страны и форматом: `🇷🇺 +7 (920) 854-81-51`.
+- **`name_utils.dart`** (`a4648a1`) — единый источник имени из map
+  (`name` → `first_name last_name` → `Сотрудник`), убирает
+  дублирование `_shortName` / `_employeeName`.
+
+### Changed
+- **`AvatarInitials` применён** везде (`5a59de2`, `1e29a46`, `e5ee7e2`, `a4648a1`):
+  - клиенты: `clients_screen`, `client_profile_sheet`, `business_reviews_screen`;
+  - мастера: `service_detail_modal`, `master_slot_card`, `master_card`,
+    `booking_masters_step`, `booking_master_services_step`,
+    `booking_success_step`, `booking_master_assignment_step`;
+  - сотрудники: `employees_screen`, `schedule_view_screen`, `month_view_screen`,
+    `journal_screen`, `online_booking_screen`, `manual_notification_sheet`;
+  - чаты/уведомления: `chat_screen`, `notifications_screen`, `access_screen`;
+  - `create_booking_sheet`, `create_booking_for_client_sheet`.
+- **`formatPhoneDisplay` применён** в: `create_booking_sheet`, `chat_screen`,
+  `list_view_screen`, `booking_view_sheet`, `manual_notification_sheet`,
+  `clients_screen`, `client_profile_sheet`, `business_reviews_screen`,
+  `booking_confirm_step`, `access_screen`, `journal_screen`, `profile_screen`.
+- **`schedule_view_screen`**, **`month_view_screen`** — убраны локальные
+  `_shortName` / `_employeeName`, используются `extractName` / `extractShortName`.
+
+### Fixed
+- **Overflow в попапе отложенной отправки** (`e5ee7e2`) —
+  `manual_notification_sheet`: `Container` → `Material` (ListTile ink
+  splashes), `Flexible + ListView` + `maxHeight 70%` (overflow 49px).
+- **`?` вместо инициалов** (`a4648a1`) — в `schedule_view_screen`
+  использовался `e['name']` без fallback на `first_name`/`last_name`.
+
+---
+
 ## [2026-10-13]
 
 ### Added

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -1034,8 +1035,8 @@ void initState() {
                 }),
               ],
 
-              // Выход
-              _buildLogoutItem(),
+              // Назад к списку проектов
+              _buildBackItem(),
             ],
           ),
         ),
@@ -1109,26 +1110,40 @@ void initState() {
     );
   }
 
-  Widget _buildLogoutItem() {
+  Widget _buildBackItem() {
     return Material(
       color: Colors.transparent,
       child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
+          AuthService.saveLastScreen('business');
           Navigator.pushReplacementNamed(context, '/business');
         },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFDD1847),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFDD1847).withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Row(
             children: [
-              _buildSvgIcon('assets/logout.svg',
-                  size: 20, color: const Color(0xFF1A1A1A)),
+              const Icon(Icons.arrow_back_ios_new,
+                  size: 18, color: Colors.white),
               const SizedBox(width: 12),
               const Text(
-                'Выйти',
+                'Все проекты',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1A1A1A),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
               ),
             ],

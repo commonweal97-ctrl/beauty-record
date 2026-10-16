@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../services/api_service.dart';
+import '../../../services/auth_service.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/user_provider.dart';
 import '../client/client_dashboard_screen.dart';
@@ -35,9 +36,14 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
     _loadProjects();
 
     if (widget.initialProjectId != null && widget.initialProjectId! > 0) {
+      // Открывается конкретный проект — setProjectId сам сохранит
+      // last_screen='business_project'.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _openJournal(widget.initialProjectId!);
       });
+    } else {
+      // Список проектов — запоминаем, чтобы вернуть пользователя сюда.
+      AuthService.saveLastScreen('business');
     }
   }
 

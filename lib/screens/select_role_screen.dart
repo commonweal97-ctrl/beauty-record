@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../providers/user_provider.dart';
 import 'client/client_dashboard_screen.dart';
 import 'business/business_dashboard_screen.dart';
@@ -56,12 +57,14 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> with SingleTickerPr
 
   Future<void> _goToClient() async {
     await context.read<UserProvider>().setRole('client');
+    await AuthService.saveLastScreen('client');
     if (!mounted) return;
     _navigate(const ClientDashboardScreen());
   }
 
   Future<void> _goToBusiness() async {
     await context.read<UserProvider>().setRole('salon_owner');
+    await AuthService.saveLastScreen('business');
     if (!mounted) return;
     _navigate(const BusinessDashboardScreen());
   }

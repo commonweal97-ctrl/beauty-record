@@ -138,6 +138,8 @@ class UserProvider extends ChangeNotifier {
   /// Установить последний проект (для бизнеса).
   Future<void> setProjectId(int projectId) async {
     await AuthService.saveLastProjectId(projectId);
+    // Дублируем в last_screen — для правильной навигации при авто-входе.
+    await AuthService.saveLastScreen('business_project', projectId: projectId);
     _lastProjectId = projectId;
     AppLogger.debug('UserProvider.setProjectId: $projectId');
     notifyListeners();

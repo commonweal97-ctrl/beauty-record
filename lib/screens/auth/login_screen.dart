@@ -63,12 +63,25 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final check = await ApiService.get('/api/auth/check-session');
       if (check['success'] == true && mounted) {
-        // Пользователь в сессии — проверяем последний выбор
-        final lastRole = await AuthService.getLastRole();
+        // Источник истины — сервер: актуальная роль + список проектов.
+        // Не доверяем SharedPreferences (last_role/last_project_id могут устареть —
+        // проект удалён, роль изменилась). Баг: перекидывало на project_id,
+        // которого уже нет.
+        final state = await ApiService.get('/api/auth/my-state');
         if (!mounted) return;
-        
-        if (lastRole == 'client') {
-          // Сразу в ЛК клиента
+
+        final data = state['data'] as Map<String, dynamic>?;
+        final role = data?['role'] as String?;
+        final projects = (data?['projects'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+        final lastScreen = await AuthService.getLastScreen();
+        final lastScreenProjectId = await AuthService.getLastScreenProjectId();
+        if (!mounted) return;
+
+        // 1. Клиент → ЛК клиента
+        if (role == 'client') {
+          await AuthService.saveLastScreen('client');
+          if (!mounted) return;
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
@@ -79,23 +92,55 @@ class _LoginScreenState extends State<LoginScreen> {
           );
           return;
         }
-        
-        if (lastRole == 'salon_owner') {
-          final lastProjectId = await AuthService.getLastProjectId();
-          if (!mounted) return;
-          
-          if (lastProjectId != null && lastProjectId > 0) {
-            // Сразу в журнал проекта
+
+        // 2. Бизнес — проверяем проекты
+        if (role == 'salon_owner') {
+          if (projects.isEmpty) {
+            // Проектов нет — на выбор роли
+            await AuthService.saveLastScreen('select_role');
+            if (!mounted) return;
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
                 transitionDuration: const Duration(milliseconds: 200),
-                pageBuilder: (_, _, _) => BusinessDashboardScreen(initialProjectId: lastProjectId),
+                pageBuilder: (_, _, _) => SelectRoleScreen(),
                 transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
               ),
             );
-          } else {
-            // Список проектов
+            return;
+          }
+
+          // Если last_screen=select_role — уважаем выбор пользователя
+          if (lastScreen == 'select_role') {
+            await AuthService.saveLastScreen('select_role');
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 200),
+                pageBuilder: (_, _, _) => SelectRoleScreen(),
+                transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+              ),
+            );
+            return;
+          }
+
+          // Определяем projectId: last_screen_project_id, если он в списке
+          int? targetProjectId;
+          if (lastScreen == 'business_project' && lastScreenProjectId != null) {
+            final exists = projects.any((p) => p['id'] == lastScreenProjectId);
+            if (exists) targetProjectId = lastScreenProjectId;
+          }
+
+          // Если бизнес и проект не выбран явно — берём первый проект
+          if (targetProjectId == null && projects.length == 1) {
+            targetProjectId = projects[0]['id'] as int?;
+          }
+
+          // Если несколько проектов и last_screen=business — список
+          if (targetProjectId == null && projects.length > 1) {
+            await AuthService.saveLastScreen('business');
+            if (!mounted) return;
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
@@ -104,11 +149,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
               ),
             );
+            return;
           }
-          return;
+
+          // Иначе — конкретный проект
+          if (targetProjectId != null) {
+            await AuthService.saveLastScreen('business_project', projectId: targetProjectId);
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 200),
+                pageBuilder: (_, _, _) => BusinessDashboardScreen(initialProjectId: targetProjectId),
+                transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+              ),
+            );
+            return;
+          }
         }
-        
-        // Нет сохраненного выбора — показываем выбор
+
+        // 3. Роль не определена / нестандартная — на выбор роли
+        await AuthService.saveLastScreen('select_role');
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(

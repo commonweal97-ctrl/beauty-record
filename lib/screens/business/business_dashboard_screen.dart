@@ -1,5 +1,6 @@
 // lib/screens/business/business_dashboard_screen.dart
 import 'dart:async';
+import '../select_role_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -171,7 +172,33 @@ class _BusinessDashboardScreenState extends State<BusinessDashboardScreen> {
               height: 88,
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12)]),
               child: Row(children: [
-                const SizedBox(width: 20),
+                const SizedBox(width: 12),
+                // Кнопка «назад» — возврат к выбору роли (клиент/бизнес).
+                // Ведёт на SelectRoleScreen — логичный "родитель" бизнес-дашборда.
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      AuthService.saveLastScreen('select_role');
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => SelectRoleScreen()),
+                      );
+                    },
+                    child: Container(
+                      width: 44, height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF666666)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 SvgPicture.asset('assets/LogoZapis.svg', height: 48),
                 const Spacer(),
                 Material(

@@ -118,6 +118,13 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('biometric_enabled');
     await prefs.remove('biometric_user_id');
+    // Навигационное состояние — чтобы при следующем входе не перекинуло
+    // на удалённый проект или старую роль (баг: заходило в project_id,
+    // которого уже нет).
+    await prefs.remove('last_role');
+    await prefs.remove('last_project_id');
+    await prefs.remove('last_screen');
+    await prefs.remove('last_screen_project_id');
   }
 
   // Сохранение последнего выбранного режима
@@ -142,5 +149,32 @@ class AuthService {
   static Future<int?> getLastProjectId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('last_project_id');
+  }
+
+  // ========== ПОСЛЕДНИЙ ЭКРАН ==========
+  //
+  // last_screen = 'select_role' | 'client' | 'business' | 'business_project'
+  // last_screen_project_id = int (только для business_project)
+
+  /// Сохранить последний экран, на котором был пользователь.
+  /// Используется при авто-входе, чтобы вернуть пользователя туда же.
+  static Future<void> saveLastScreen(String screen, {int? projectId}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_screen', screen);
+    if (projectId != null) {
+      await prefs.setInt('last_screen_project_id', projectId);
+    } else {
+      await prefs.remove('last_screen_project_id');
+    }
+  }
+
+  static Future<String?> getLastScreen() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('last_screen');
+  }
+
+  static Future<int?> getLastScreenProjectId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('last_screen_project_id');
   }
 }

@@ -536,7 +536,11 @@ class ApiService {
     return null;
   }
 
-  static Future<List<String>> dadataAddress(String query) async {
+  /// Полный вариант: возвращает структурированные подсказки адреса.
+  /// from_bound: street — начинаем с улиц (а не с "территорий"/округов),
+  /// чтобы "Брянск, проспект" давало улицы Брянска, а не "тер ГО По проспекту".
+  /// to_bound: house — доходим до домов, если пользователь ввёл номер.
+  static Future<List<Map<String, String>>> dadataAddressFull(String query) async {
     try {
       final uri = Uri.parse('https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address');
       final response = await http.post(
@@ -545,14 +549,36 @@ class ApiService {
           'Content-Type': 'application/json',
           'Authorization': 'Token c5ef8181057b91fbe37bbdedf3f635832e8f51ad',
         },
-        body: jsonEncode({'query': query, 'count': 5}),
+        body: jsonEncode({
+          'query': query,
+          'count': 15,
+          'from_bound': {'value': 'street'},
+          'to_bound': {'value': 'house'},
+        }),
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return (data['suggestions'] as List?)?.map((s) => s['value'].toString()).toList() ?? [];
+        return (data['suggestions'] as List? ?? []).map<Map<String, String>>((s) {
+          return {
+            'value': (s['value'] ?? '').toString(),
+            'unrestricted_value': (s['unrestricted_value'] ?? '').toString(),
+            'postal_code': (s['data']?['postal_code'] ?? '').toString(),
+            'region': (s['data']?['region_with_type'] ?? '').toString(),
+            'city': (s['data']?['city'] ?? '').toString(),
+            'street': (s['data']?['street_with_type'] ?? '').toString(),
+          };
+        }).toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.debug('api_service.dadataAddressFull: $e');
+    }
     return [];
+  }
+
+  /// Краткий вариант: только строки `value` (для полей, где нужен только текст).
+  static Future<List<String>> dadataAddress(String query) async {
+    final full = await dadataAddressFull(query);
+    return full.map((m) => m['value'] ?? '').where((s) => s.isNotEmpty).toList();
   }
 
   // ==================== УТИЛИТЫ ====================

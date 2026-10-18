@@ -92,7 +92,6 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
     {'code': 'TRY', 'symbol': '₺', 'name': 'Турецкая лира', 'flag': '🇹🇷'},
   ];
 
-  static const _dadataToken = 'c5ef8181057b91fbe37bbdedf3f635832e8f51ad';
 
 
 
@@ -148,33 +147,17 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
 
   Future<void> _fetchAddressSuggestions(String query) async {
     try {
-      final response = await http.post(
-        Uri.parse('https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Token $_dadataToken',
-        },
-        body: jsonEncode({'query': query, 'count': 3}),
-      );
+      // Унифицировано с ApiService: from_bound=street + count=15.
+      // "Брянск, проспект" → улицы Брянска (пр-кт Героев, пр-кт Ленина...),
+      // а не "тер ГО По проспекту Ленина".
+      final suggestions = await ApiService.dadataAddressFull(query);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final suggestions = (data['suggestions'] as List?)?.map<Map<String, String>>((s) {
-          return {
-            'value': s['value'] as String,
-            'postal_code': s['data']?['postal_code']?.toString() ?? '',
-            'region': s['data']?['region_with_type']?.toString() ?? '',
-          };
-        }).toList() ?? [];
-
-        if (mounted && _addressCtrl.text.trim().length >= 3) {
-          setState(() => _addressSuggestions = suggestions);
-          if (_addressFocusNode.hasFocus && suggestions.isNotEmpty) {
-            _showOverlay();
-          } else {
-            _removeOverlay();
-          }
+      if (mounted && _addressCtrl.text.trim().length >= 3) {
+        setState(() => _addressSuggestions = suggestions);
+        if (_addressFocusNode.hasFocus && suggestions.isNotEmpty) {
+          _showOverlay();
+        } else {
+          _removeOverlay();
         }
       }
     } catch (e) {

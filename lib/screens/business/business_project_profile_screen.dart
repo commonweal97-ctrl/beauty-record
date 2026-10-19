@@ -1480,21 +1480,16 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
                         child: _scheduleActionBtn('Изменить', () async {
                           if (selectedDays.isEmpty) return;
                           
-                          final start = await showTimePickerSheet(
+                          final range = await showTimeRangePickerSheet(
                             ctx,
-                            initialTime: const TimeOfDay(hour: 9, minute: 0),
-                            title: 'Начало работы',
+                            startTime: const TimeOfDay(hour: 9, minute: 0),
+                            endTime: const TimeOfDay(hour: 18, minute: 0),
+                            title: 'Рабочее время',
                           );
                           
-                          if (start == null || !ctx.mounted) return;
-                          
-                          final end = await showTimePickerSheet(
-                            ctx,
-                            initialTime: const TimeOfDay(hour: 18, minute: 0),
-                            title: 'Конец работы',
-                          );
-                          
-                          if (end == null || !ctx.mounted) return;
+                          if (range == null || !ctx.mounted) return;
+                          final start = range.start;
+                          final end = range.end;
                           final ts = '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}–${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
                           setModalState(() {
                             for (final d in selectedDays) {

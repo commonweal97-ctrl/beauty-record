@@ -78,7 +78,87 @@ class _LoginScreenState extends State<LoginScreen> {
         final lastScreenProjectId = await AuthService.getLastScreenProjectId();
         if (!mounted) return;
 
-        // 1. Клиент → ЛК клиента
+        // ПРИОРИТЕТ 1: lastScreen — вернуть туда же, где пользователь был.
+        // role/projects — только для валидации.
+
+        // select_role — всегда на выбор роли
+        if (lastScreen == 'select_role') {
+          await AuthService.saveLastScreen('select_role');
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 200),
+              pageBuilder: (_, _, _) => SelectRoleScreen(),
+              transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+            ),
+          );
+          return;
+        }
+
+        // client — ЛК клиента
+        if (lastScreen == 'client') {
+          await AuthService.saveLastScreen('client');
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 200),
+              pageBuilder: (_, _, _) => ClientDashboardScreen(),
+              transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+            ),
+          );
+          return;
+        }
+
+        // business (список) — список проектов
+        if (lastScreen == 'business') {
+          await AuthService.saveLastScreen('business');
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 200),
+              pageBuilder: (_, _, _) => BusinessDashboardScreen(),
+              transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+            ),
+          );
+          return;
+        }
+
+        // business_project — конкретный проект (если он ещё есть в списке)
+        if (lastScreen == 'business_project' && lastScreenProjectId != null) {
+          final exists = projects.any((p) => p['id'] == lastScreenProjectId);
+          if (exists) {
+            await AuthService.saveLastScreen('business_project', projectId: lastScreenProjectId);
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 200),
+                pageBuilder: (_, _, _) => BusinessDashboardScreen(initialProjectId: lastScreenProjectId),
+                transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+              ),
+            );
+            return;
+          }
+          // Проект удалён — fallback на список
+          await AuthService.saveLastScreen('business');
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 200),
+              pageBuilder: (_, _, _) => BusinessDashboardScreen(),
+              transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+            ),
+          );
+          return;
+        }
+
+        // ПРИОРИТЕТ 2: lastScreen = null (первый заход) — по role.
+
+        // Клиент → ЛК клиента
         if (role == 'client') {
           await AuthService.saveLastScreen('client');
           if (!mounted) return;
@@ -93,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
-        // 2. Бизнес — проверяем проекты
+        // Бизнес — проверяем проекты
         if (role == 'salon_owner') {
           if (projects.isEmpty) {
             // Проектов нет — на выбор роли

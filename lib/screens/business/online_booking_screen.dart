@@ -11,7 +11,12 @@ import '../../core/app_logger.dart';
 
 class OnlineBookingScreen extends StatefulWidget {
   final int projectId;
-  const OnlineBookingScreen({super.key, required this.projectId});
+  final void Function(String page)? onNavigate;
+  const OnlineBookingScreen({
+    super.key,
+    required this.projectId,
+    this.onNavigate,
+  });
 
   @override
   State<OnlineBookingScreen> createState() => _OnlineBookingScreenState();
@@ -433,7 +438,11 @@ _conditionItem(
     );
   }
 
-  void _navigateTo(String page) {}
+  void _navigateTo(String page) {
+    // Переключение вкладки в родителе (JournalScreen), а не новый экран.
+    // Так сохраняется header/sidebar и навигация «как из меню».
+    widget.onNavigate?.call(page);
+  }
 
   void _showOnlineSettings() {
     showModalBottomSheet(

@@ -673,6 +673,10 @@ void initState() {
         projectId: widget.projectId,
         page: item.page,
         title: item.title,
+        onNavigate: (page) {
+          final idx = _navItems.indexWhere((it) => it.page == page);
+          if (idx >= 0) _navigateTo(idx);
+        },
       );
     }
 

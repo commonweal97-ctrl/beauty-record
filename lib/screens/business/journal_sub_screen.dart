@@ -16,7 +16,14 @@ class JournalSubScreen extends StatelessWidget {
   final int projectId;
   final String page;
   final String title;
-  const JournalSubScreen({super.key, required this.projectId, required this.page, required this.title});
+  final void Function(String page)? onNavigate;
+  const JournalSubScreen({
+    super.key,
+    required this.projectId,
+    required this.page,
+    required this.title,
+    this.onNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +64,7 @@ class JournalSubScreen extends StatelessWidget {
     }
 
     if (page == 'online') {
-      return OnlineBookingScreen(projectId: projectId);
+      return OnlineBookingScreen(projectId: projectId, onNavigate: onNavigate);
     }
 
     if (page == 'notifications') {

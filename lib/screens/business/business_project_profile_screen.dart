@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../widgets/toast.dart';
 import '../../core/app_logger.dart';
 import '../../widgets/common/phone_input.dart';
+import '../../widgets/common/time_picker_sheet.dart';
 
 class BusinessProjectProfileScreen extends StatefulWidget {
   final int projectId;
@@ -1479,52 +1480,18 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
                         child: _scheduleActionBtn('Изменить', () async {
                           if (selectedDays.isEmpty) return;
                           
-                          final start = await showTimePicker(
-                            context: ctx,
+                          final start = await showTimePickerSheet(
+                            ctx,
                             initialTime: const TimeOfDay(hour: 9, minute: 0),
-                            helpText: 'Начало работы',
-                            cancelText: 'Отмена',
-                            confirmText: 'Выбрать',
-                            hourLabelText: 'Час',
-                            minuteLabelText: 'Минута',
-                            builder: (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: ColorScheme.light(
-                                    primary: const Color(0xFFDD1847),
-                                    onPrimary: Colors.white,
-                                    surface: Colors.white,
-                                    onSurface: Colors.black,
-                                  ),
-                                ),
-                                child: child!,
-                              );
-                            },
+                            title: 'Начало работы',
                           );
                           
                           if (start == null || !ctx.mounted) return;
                           
-                          final end = await showTimePicker(
-                            context: ctx,
+                          final end = await showTimePickerSheet(
+                            ctx,
                             initialTime: const TimeOfDay(hour: 18, minute: 0),
-                            helpText: 'Конец работы',
-                            cancelText: 'Отмена',
-                            confirmText: 'Выбрать',
-                            hourLabelText: 'Час',
-                            minuteLabelText: 'Минута',
-                            builder: (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: ColorScheme.light(
-                                    primary: const Color(0xFFDD1847),
-                                    onPrimary: Colors.white,
-                                    surface: Colors.white,
-                                    onSurface: Colors.black,
-                                  ),
-                                ),
-                                child: child!,
-                              );
-                            },
+                            title: 'Конец работы',
                           );
                           
                           if (end == null || !ctx.mounted) return;

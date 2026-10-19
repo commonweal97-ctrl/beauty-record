@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
+import '../../widgets/common/time_picker_sheet.dart';
 
 class FixedTimeSettingsSheet extends StatefulWidget {
   final int employeeId;
@@ -421,49 +422,19 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
   }
 
   Future<void> _pickFrom() async {
-    final t = await showTimePicker(
-      context: context,
+    final t = await showTimePickerSheet(
+      context,
       initialTime: _from,
-      helpText: 'Начало',
-      cancelText: 'Отмена',
-      confirmText: 'Выбрать',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFFDD1847),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      title: 'Начало',
     );
     if (t != null) setState(() => _from = t);
   }
 
   Future<void> _pickTo() async {
-    final t = await showTimePicker(
-      context: context,
+    final t = await showTimePickerSheet(
+      context,
       initialTime: _to,
-      helpText: 'Конец',
-      cancelText: 'Отмена',
-      confirmText: 'Выбрать',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFFDD1847),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      title: 'Конец',
     );
     if (t != null) setState(() => _to = t);
   }

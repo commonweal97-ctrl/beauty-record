@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
+import '../../widgets/common/time_picker_sheet.dart';
 
 class EmployeeScheduleScreen extends StatefulWidget {
   final int employeeId;
@@ -396,43 +397,17 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
   }
 
   Future<void> _pickStartTime() async {
-    final t = await showTimePicker(
-      context: context,
+    final t = await showTimePickerSheet(
+      context,
       initialTime: _startTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFFDD1847),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (t != null) setState(() => _startTime = t);
   }
 
   Future<void> _pickEndTime() async {
-    final t = await showTimePicker(
-      context: context,
+    final t = await showTimePickerSheet(
+      context,
       initialTime: _endTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFFDD1847),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (t != null) setState(() => _endTime = t);
   }

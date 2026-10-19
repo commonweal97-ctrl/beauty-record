@@ -5,6 +5,7 @@ import '../../../widgets/cached_image.dart';
 import '../../../utils/name_utils.dart';
 import '../../../widgets/common/avatar_initials.dart';
 import '../../../widgets/toast.dart';
+import '../../widgets/common/time_picker_sheet.dart';
 
 class ScheduleViewScreen extends StatefulWidget {
   final int projectId;
@@ -1114,25 +1115,9 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
   Widget _buildTimePicker(TimeOfDay time, Function(TimeOfDay) onChanged) {
     return GestureDetector(
       onTap: () async {
-        final result = await showTimePicker(
-          context: context,
+        final result = await showTimePickerSheet(
+          context,
           initialTime: time,
-          builder: (context, child) {
-            return Localizations.override(
-              context: context,
-              locale: const Locale('ru'),
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: Color(0xFFDD1847),
-                    surface: Colors.white,
-                    onSurface: Colors.black,
-                  ), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
-                ),
-                child: child!,
-              ),
-            );
-          },
         );
         if (result != null) onChanged(result);
       },

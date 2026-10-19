@@ -8,6 +8,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/common/avatar_initials.dart';
 import '../../../widgets/toast.dart';
+import '../../widgets/common/time_picker_sheet.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final int projectId;
@@ -4000,27 +4001,13 @@ class _NotificationTypeSettingsScreenState
       const SizedBox(height: 16),
       GestureDetector(
         onTap: () async {
-          final time = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay(
-              hour: int.parse(sendTime.split(':')[0]),
-              minute:
-                  int.parse(sendTime.split(':')[1]),
-            ),
-            builder: (context, child) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: ColorScheme.light(
-                    primary: const Color(0xFFDD1847),
-                    onPrimary: Colors.white,
-                    surface: Colors.white,
-                    onSurface: Colors.black,
-                  ),
-                ),
-                child: child!,
-              );
-            },
-          );
+          final time = await showTimePickerSheet(
+              context,
+              initialTime: TimeOfDay(
+                hour: int.parse(sendTime.split(':')[0]),
+                minute: int.parse(sendTime.split(':')[1]),
+              ),
+            );
           if (time != null) {
             setState(() {
               _settings['send_time'] =
@@ -4094,26 +4081,13 @@ class _NotificationTypeSettingsScreenState
       const SizedBox(height: 12),
       GestureDetector(
         onTap: () async {
-          final time = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay(
-              hour: int.parse(sendTime.split(':')[0]),
-              minute: int.parse(sendTime.split(':')[1]),
-            ),
-            builder: (context, child) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: ColorScheme.light(
-                    primary: const Color(0xFFDD1847),
-                    onPrimary: Colors.white,
-                    surface: Colors.white,
-                    onSurface: Colors.black,
-                  ),
-                ),
-                child: child!,
-              );
-            },
-          );
+          final time = await showTimePickerSheet(
+              context,
+              initialTime: TimeOfDay(
+                hour: int.parse(sendTime.split(':')[0]),
+                minute: int.parse(sendTime.split(':')[1]),
+              ),
+            );
           if (time != null) {
             setState(() {
               _settings['send_time'] =

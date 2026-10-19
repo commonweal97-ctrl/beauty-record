@@ -1126,28 +1126,17 @@ void initState() {
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFDD1847),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFDD1847).withValues(alpha: 0.25),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
           child: Row(
             children: [
               const Icon(Icons.arrow_back_ios_new,
-                  size: 18, color: Colors.white),
+                  size: 18, color: Color(0xFFDD1847)),
               const SizedBox(width: 12),
               const Text(
                 'Все проекты',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: Color(0xFFDD1847),
                 ),
               ),
             ],
@@ -1380,6 +1369,26 @@ void initState() {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
+            // Если мастера скрыты переключателем — показать кнопку вернуть.
+            if (!_showAllEmployees) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _toggleEmployeesVisibility,
+                icon: const Icon(Icons.visibility, size: 18),
+                label: const Text(
+                  'Показать всех мастеров',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFDD1847),
+                  side: const BorderSide(color: Color(0xFFDD1847)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

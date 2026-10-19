@@ -401,7 +401,7 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
                                               radius: 18,
                                             ),
                                           )
-                                        : AvatarInitials(name: (e['name'] ?? '').toString(), size: 36, bgColor: const Color(0xFFF0F0F0)),
+                                        : AvatarInitials(name: extractName(e), size: 36, bgColor: const Color(0xFFF0F0F0)),
                                     const SizedBox(height: 4),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 4),

@@ -15,6 +15,7 @@ import '../../core/app_logger.dart';
 import '../../widgets/common/phone_input.dart';
 import '../../widgets/common/avatar_initials.dart';
 import '../../utils/phone_display.dart';
+import '../../utils/api_errors.dart';
 
 // ==================== ОТДЕЛЬНЫЙ ВИДЖЕТ ДЛЯ ПОЛЯ ЦЕНЫ ====================
 class _PriceField extends StatefulWidget {
@@ -273,6 +274,11 @@ class _EmployeeFormSheet extends StatefulWidget {
 class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
+  // Структурированные ошибки API + ключи для скролла к первому полю с ошибкой.
+  ApiErrors? _errors;
+  final _firstNameKey = GlobalKey();
+  final _lastNameKey = GlobalKey();
+  final _emailKey = GlobalKey();
   final _aboutCtrl = TextEditingController();
   final _positionCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -601,12 +607,37 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   }
 
   // ========== СОХРАНЕНИЕ ==========
+  /// Скролл к первому полю с ошибкой (для inline-валидации).
+  void _scrollToFirstError() {
+    final order = <String, GlobalKey>{
+      'first_name': _firstNameKey,
+      'last_name': _lastNameKey,
+      'email': _emailKey,
+    };
+    for (final field in ['first_name', 'last_name', 'email']) {
+      if (_errors?[field] != null) {
+        final ctx = order[field]?.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(ctx,
+              duration: const Duration(milliseconds: 300),
+              alignment: 0.2);
+        }
+        return;
+      }
+    }
+  }
+
   Future<void> _save() async {
-    if (_firstNameCtrl.text.trim().isEmpty) {
-      showToast(context, 'Введите имя', isError: true);
+    // Локальная валидация → inline-ошибки (не toast).
+    final localErrors = <String, String>{};
+    if (_firstNameCtrl.text.trim().isEmpty) localErrors['first_name'] = 'Введите имя';
+    if (_lastNameCtrl.text.trim().isEmpty) localErrors['last_name'] = 'Введите фамилию';
+    if (localErrors.isNotEmpty) {
+      setState(() => _errors = ApiErrors(fields: localErrors));
+      _scrollToFirstError();
       return;
     }
-    setState(() => _saving = true);
+    setState(() { _saving = true; _errors = null; });
     try {
       final servicePricesToSend = <String, Map<String, dynamic>>{};
       for (final entry in _employeeServicePrices.entries) {
@@ -649,8 +680,9 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
         widget.onSaved();
         showToast(context, _isEdit ? 'Сотрудник обновлён' : 'Сотрудник добавлен');
       } else if (mounted) {
-        final msg = result['message'] ?? 'Ошибка сохранения';
-        showToast(context, msg, isError: true);
+        // Серверные ошибки валидации → inline-ошибки под полями.
+        setState(() => _errors = ApiErrors.fromResponse(result));
+        _scrollToFirstError();
       }
     } catch (e) {
       if (mounted) showToast(context, 'Ошибка сохранения', isError: true);
@@ -1151,7 +1183,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
   Widget _buildDeleteButton() {
     return SizedBox(width: double.infinity, child: OutlinedButton.icon(
       onPressed: () async {
-        final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(title: const Text('Удалить сотрудника?'), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')), TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Удалить', style: TextStyle(color: Colors.red)))]));
+        final confirm = await _showDeleteEmployeeDialog(context);
         if (confirm == true) {
           final result = await ApiService.post('/api/employee/delete', {
             'employee_id': widget.employee!['id'], 
@@ -1171,8 +1203,156 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
     ));
   }
 
-  Widget _field(TextEditingController ctrl, String hint, {TextInputType? keyboardType, int maxLines = 1}) {
-    return TextField(controller: ctrl, keyboardType: keyboardType, maxLines: maxLines, decoration: InputDecoration(hintText: hint, filled: true, fillColor: const Color(0xFFF8F8F8), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E0E0))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E0E0))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDD1847))), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14)));
+  /// Красивый диалог подтверждения удаления сотрудника.
+  /// Скругление 24, круглая красная иконка сверху, кнопки в стиле проекта.
+  Future<bool?> _showDeleteEmployeeDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Красная иконка в круге
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF44336).withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline,
+                  color: Color(0xFFF44336),
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              const Text(
+                'Удалить сотрудника?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              const Text(
+                'Сотрудник будет удалён из проекта.\nДействие нельзя отменить.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: Color(0xFF666666),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        side: const BorderSide(color: Color(0xFFE5E5E5)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Отмена',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF666666),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: const Color(0xFFF44336),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Удалить',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(TextEditingController ctrl, String hint, {TextInputType? keyboardType, int maxLines = 1, String? errorText, Key? fieldKey}) {
+    final hasError = errorText != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Сообщение об ошибке — НАД полем (а не под ним).
+        if (hasError) ...[
+          Row(
+            children: [
+              const Icon(Icons.error_outline, size: 14, color: Color(0xFFF44336)),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  errorText,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFF44336),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+        ],
+        TextField(
+          key: fieldKey,
+          controller: ctrl,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hint,
+            filled: true,
+            fillColor: const Color(0xFFF8F8F8),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? const Color(0xFFF44336) : const Color(0xFFE0E0E0))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? const Color(0xFFF44336) : const Color(0xFFE0E0E0))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? const Color(0xFFF44336) : const Color(0xFFDD1847))),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildPhotosSection() {
@@ -1215,14 +1395,14 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
                 if (_avatarFile != null || _avatarUrl.isNotEmpty) Positioned(bottom: -5, right: -5, child: GestureDetector(onTap: _deleteAvatar, child: Container(width: 28, height: 28, decoration: BoxDecoration(color: const Color(0xFFF44336), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)), child: const Icon(Icons.close, color: Colors.white, size: 14)))),
               ])),
               const SizedBox(width: 16),
-              Expanded(child: Column(children: [_field(_firstNameCtrl, 'Имя'), const SizedBox(height: 8), _field(_lastNameCtrl, 'Фамилия')])),
+              Expanded(child: Column(children: [_field(_firstNameCtrl, 'Имя', errorText: _errors?['first_name'], fieldKey: _firstNameKey), const SizedBox(height: 8), _field(_lastNameCtrl, 'Фамилия', errorText: _errors?['last_name'], fieldKey: _lastNameKey)])),
             ]),
             const SizedBox(height: 20), _field(_aboutCtrl, 'Расскажите о сотруднике...', maxLines: 3), const SizedBox(height: 20),
             _buildPhotosSection(), const SizedBox(height: 20),
             _buildSelectRow('Категория', _category, _showCategoryPicker), const SizedBox(height: 20),
             _field(_positionCtrl, 'Должность'), const SizedBox(height: 20),
             _buildPhoneField(), const SizedBox(height: 20),
-            _field(_emailCtrl, 'Email', keyboardType: TextInputType.emailAddress), const SizedBox(height: 20),
+            _field(_emailCtrl, 'Email', keyboardType: TextInputType.emailAddress, errorText: _errors?['email'], fieldKey: _emailKey), const SizedBox(height: 20),
             if (_isEdit) ...[
               _buildSelectRow('Доступ', _accessStatus, _openAccessSettings),
               const SizedBox(height: 20),

@@ -69,6 +69,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final displayServices = _filteredServices;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
+      floatingActionButton: displayServices.length >= 2
+          ? FloatingActionButton(
+              heroTag: 'services_magic',
+              backgroundColor: const Color(0xFFDD1847),
+              elevation: 6,
+              shape: const CircleBorder(),
+              onPressed: () => _showMagicDemo(context, displayServices),
+              child: const Icon(Icons.auto_fix_high, color: Colors.white, size: 26),
+            )
+          : null,
       body: _loading
           ? _buildSkeleton()
           : Column(children: [
@@ -127,8 +137,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
                                   child: const Icon(Icons.question_mark, size: 14, color: Colors.white),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              const Text('Зажмите и перетащите для изменения порядка', style: TextStyle(fontSize: 12, color: Color(0xFF999999))),
                             ]),
                           ),
                           Expanded(
@@ -229,6 +237,21 @@ class _ServicesScreenState extends State<ServicesScreen> {
         ]),
       ),
     );
+  }
+
+  void _showMagicDemo(BuildContext context, List<Map<String, dynamic>> services) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => _MagicDemoOverlay(
+        services: services.take(2).toList(),
+        buildCard: (s) => _buildServiceCard(s),
+        onClose: () {
+          if (entry.mounted) entry.remove();
+        },
+      ),
+    );
+    overlay.insert(entry);
   }
 
   Widget _buildServiceCard(Map<String, dynamic> s, {Key? key}) {
@@ -1423,6 +1446,186 @@ class _TimeWheelPickerState extends State<_TimeWheelPicker> {
               ),
             ),
           ]),
+        ),
+      ),
+    );
+  }
+}
+
+
+// ===== Magic demo overlay: затемнение + 2 карточки + анимация перетаскивания =====
+class _MagicDemoOverlay extends StatefulWidget {
+  final List<Map<String, dynamic>> services;
+  final Widget Function(Map<String, dynamic>) buildCard;
+  final VoidCallback onClose;
+
+  const _MagicDemoOverlay({
+    required this.services,
+    required this.buildCard,
+    required this.onClose,
+  });
+
+  @override
+  State<_MagicDemoOverlay> createState() => _MagicDemoOverlayState();
+}
+
+class _MagicDemoOverlayState extends State<_MagicDemoOverlay> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _shift;
+
+  static const double _travelDistance = 120.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat();
+
+    // Плавное «туда-обратно»: 0 → вниз, 0.5 → вниз, 1.0 → обратно вверх.
+    _shift = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 50,
+      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 10),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 40,
+      ),
+    ]).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final top = widget.services[0];
+    final below = widget.services.length > 1 ? widget.services[1] : null;
+
+    return Material(
+      color: Colors.transparent,
+      child: GestureDetector(
+        onTap: widget.onClose,
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.65),
+          child: SafeArea(
+            child: Stack(
+              children: [
+                // Подсказка сверху
+                Positioned(
+                  top: 24,
+                  left: 24,
+                  right: 24,
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.auto_fix_high, color: Color(0xFFDD1847), size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Зажмите и перетащите, чтобы изменить порядок',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A1A1A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Карточки по центру
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // Нижняя (вторая) карточка — на месте
+                        if (below != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 96),
+                            child: Opacity(
+                              opacity: 0.55,
+                              child: IgnorePointer(child: widget.buildCard(below)),
+                            ),
+                          ),
+
+                        // Верхняя (первая) — анимированно ездит вниз-вверх
+                        AnimatedBuilder(
+                          animation: _shift,
+                          builder: (_, child) => Positioned(
+                            top: _shift.value * _travelDistance,
+                            left: 0,
+                            right: 0,
+                            child: child!,
+                          ),
+                          child: IgnorePointer(child: widget.buildCard(top)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Кнопка закрыть (крестик)
+                Positioned(
+                  top: 24,
+                  right: 16,
+                  child: GestureDetector(
+                    onTap: widget.onClose,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close, color: Color(0xFF1A1A1A), size: 22),
+                    ),
+                  ),
+                ),
+
+                // Подсказка снизу
+                Positioned(
+                  bottom: 32,
+                  left: 24,
+                  right: 24,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        'Нажмите в любом месте, чтобы закрыть',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

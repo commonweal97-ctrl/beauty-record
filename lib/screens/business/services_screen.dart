@@ -101,9 +101,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
               ),
               if (_categories.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.only(top: 20),
                   child: SizedBox(
-                    height: 36,
+                    height: 46,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -119,29 +119,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     ? _buildEmpty()
                     : Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                            child: Row(children: [
-                              GestureDetector(
-                                onTap: () => showDialog(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                    title: const Text('Как изменить порядок?'),
-                                    content: const Text('Зажмите услугу пальцем и перетащите в нужное место.'),
-                                    actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Понятно'))],
-                                  ),
-                                ),
-                                child: Container(
-                                  width: 22, height: 22,
-                                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey[300]),
-                                  child: const Icon(Icons.question_mark, size: 14, color: Colors.white),
-                                ),
-                              ),
-                            ]),
-                          ),
                           Expanded(
                             child: ReorderableListView.builder(
-                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                               itemCount: displayServices.length,
                               onReorderItem: (oldIndex, newIndex) {
                                 final item = displayServices.removeAt(oldIndex);
@@ -184,16 +164,37 @@ class _ServicesScreenState extends State<ServicesScreen> {
   Widget _categoryChip(String label, String? value) {
     final selected = _selectedCategory == value;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 10),
       child: GestureDetector(
         onTap: () => setState(() => _selectedCategory = value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFDD1847) : const Color(0xFFF5F5F5),
-            borderRadius: BorderRadius.circular(18),
+            color: selected ? const Color(0xFFDD1847) : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? const Color(0xFFDD1847) : const Color(0xFFE5E5E5),
+              width: 1,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFDD1847).withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
-          child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: selected ? Colors.white : const Color(0xFF666666))),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+              color: selected ? Colors.white : const Color(0xFF1A1A1A),
+            ),
+          ),
         ),
       ),
     );
@@ -1469,32 +1470,26 @@ class _MagicDemoOverlay extends StatefulWidget {
   State<_MagicDemoOverlay> createState() => _MagicDemoOverlayState();
 }
 
-class _MagicDemoOverlayState extends State<_MagicDemoOverlay> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _shift;
+class _MagicDemoOverlayState extends State<_MagicDemoOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
 
-  static const double _travelDistance = 120.0;
+  static const double _cardHeight = 84.0;
+  static const double _gap = 12.0;
+  static const double _swapDistance = _cardHeight + _gap;
 
   @override
   void initState() {
     super.initState();
+    // Полный цикл 3 сек:
+    //  0.0–0.30: swap (первая вниз, вторая вверх)
+    //  0.30–0.40: пауза (видно результат)
+    //  0.40–0.70: обратный swap
+    //  0.70–1.0: пауза
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 3000),
     )..repeat();
-
-    // Плавное «туда-обратно»: 0 → вниз, 0.5 → вниз, 1.0 → обратно вверх.
-    _shift = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 50,
-      ),
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 10),
-      TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 40,
-      ),
-    ]).animate(_controller);
   }
 
   @override
@@ -1505,94 +1500,64 @@ class _MagicDemoOverlayState extends State<_MagicDemoOverlay> with SingleTickerP
 
   @override
   Widget build(BuildContext context) {
+    if (widget.services.length < 2) {
+      return const SizedBox.shrink();
+    }
     final top = widget.services[0];
-    final below = widget.services.length > 1 ? widget.services[1] : null;
+    final below = widget.services[1];
 
     return Material(
       color: Colors.transparent,
       child: GestureDetector(
         onTap: widget.onClose,
         child: Container(
-          color: Colors.black.withValues(alpha: 0.65),
+          color: Colors.black.withValues(alpha: 0.75),
           child: SafeArea(
             child: Stack(
               children: [
-                // Подсказка сверху
+                // Подсказка сверху (Flexible — чтобы не переполнялось)
                 Positioned(
-                  top: 24,
-                  left: 24,
-                  right: 24,
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.auto_fix_high, color: Color(0xFFDD1847), size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'Зажмите и перетащите, чтобы изменить порядок',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A1A1A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Карточки по центру
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Stack(
-                      clipBehavior: Clip.none,
+                  top: 16,
+                  left: 16,
+                  right: 64, // место под крестик
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Нижняя (вторая) карточка — на месте
-                        if (below != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 96),
-                            child: Opacity(
-                              opacity: 0.55,
-                              child: IgnorePointer(child: widget.buildCard(below)),
+                        const Icon(Icons.auto_fix_high, color: Color(0xFFDD1847), size: 20),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Зажмите и перетащите, чтобы изменить порядок',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1A1A1A),
                             ),
                           ),
-
-                        // Верхняя (первая) — анимированно ездит вниз-вверх
-                        AnimatedBuilder(
-                          animation: _shift,
-                          builder: (_, child) => Positioned(
-                            top: _shift.value * _travelDistance,
-                            left: 0,
-                            right: 0,
-                            child: child!,
-                          ),
-                          child: IgnorePointer(child: widget.buildCard(top)),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                // Кнопка закрыть (крестик)
+                // Крестик справа сверху
                 Positioned(
-                  top: 24,
+                  top: 16,
                   right: 16,
                   child: GestureDetector(
                     onTap: widget.onClose,
                     child: Container(
                       width: 40,
                       height: 40,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
@@ -1601,28 +1566,56 @@ class _MagicDemoOverlayState extends State<_MagicDemoOverlay> with SingleTickerP
                   ),
                 ),
 
-                // Подсказка снизу
-                Positioned(
-                  bottom: 32,
-                  left: 24,
-                  right: 24,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        'Нажмите в любом месте, чтобы закрыть',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white70,
-                        ),
-                      ),
+                // Карточки по центру — реальный swap
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, _) {
+                        final t = _controller.value;
+                        // 0.0–0.30: свап туда
+                        // 0.40–0.70: свап обратно
+                        double progress = 0.0;
+                        if (t < 0.30) {
+                          progress = (t / 0.30).clamp(0.0, 1.0);
+                        } else if (t < 0.40) {
+                          progress = 1.0; // пауза
+                        } else if (t < 0.70) {
+                          progress = 1.0 - ((t - 0.40) / 0.30).clamp(0.0, 1.0);
+                        } else {
+                          progress = 0.0; // пауза
+                        }
+                        final curve = Curves.easeInOut.transform(progress);
+                        final shift = curve * _swapDistance;
+
+                        return SizedBox(
+                          height: _cardHeight * 2 + _gap,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              // Нижняя карточка: опускается наверх (при swap — едет вверх)
+                              Positioned(
+                                top: _cardHeight + _gap - shift,
+                                left: 0,
+                                right: 0,
+                                child: IgnorePointer(child: widget.buildCard(below)),
+                              ),
+                              // Верхняя карточка: едет вниз
+                              Positioned(
+                                top: shift,
+                                left: 0,
+                                right: 0,
+                                child: IgnorePointer(child: widget.buildCard(top)),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
+
               ],
             ),
           ),

@@ -233,7 +233,7 @@ child: _moderationStatus == 'pending'
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Причина отклонения',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFDC2626), letterSpacing: 1)),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFDC2626), letterSpacing: 1)),
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -251,7 +251,7 @@ child: _moderationStatus == 'pending'
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Ссылка на онлайн-запись', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      const Text('Ссылка на онлайн-запись', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -263,7 +263,7 @@ child: _moderationStatus == 'pending'
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: const Color(0xFFE0E0E0)),
                               ),
-                              child: Text(_bookingUrl!, style: const TextStyle(fontSize: 13, color: Color(0xFF374151))),
+                              child: Text(_bookingUrl!, style: const TextStyle(fontSize: 14, color: Color(0xFF374151))),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -318,7 +318,7 @@ child: _moderationStatus == 'pending'
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Для активации онлайн-записи необходимы:',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A))),
                       const SizedBox(height: 12),
                       _conditionItem('Профиль проекта', 'Добавьте фото профиля, адрес проекта', _hasProfile,
                           () => _navigateTo('profile')),
@@ -403,8 +403,11 @@ _conditionItem(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                  if (!isDone) Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF999999))),
+                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  if (!isDone) Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(subtitle, style: const TextStyle(fontSize: 13, height: 1.3, color: Color(0xFF888888))),
+                  ),
                 ],
               ),
             ),
@@ -430,7 +433,7 @@ _conditionItem(
           children: [
             Icon(icon, size: 20, color: const Color(0xFF666666)),
             const SizedBox(width: 12),
-            Expanded(child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
             const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
           ],
         ),
@@ -530,7 +533,7 @@ _conditionItem(
                       },
                     ),
                     const SizedBox(height: 20),
-                    const Text('Рейтинг и отзывы', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    const Text('Рейтинг и отзывы', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 10),
                     _settingsDropdown(
                       'Специалисты',
@@ -591,9 +594,9 @@ _conditionItem(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 if (desc.isNotEmpty) const SizedBox(height: 2),
-                if (desc.isNotEmpty) Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
+                if (desc.isNotEmpty) Text(desc, style: const TextStyle(fontSize: 14, color: Color(0xFF888888))),
               ],
             ),
           ),
@@ -629,9 +632,9 @@ _conditionItem(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   if (desc.isNotEmpty) const SizedBox(height: 2),
-                  if (desc.isNotEmpty) Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
+                  if (desc.isNotEmpty) Text(desc, style: const TextStyle(fontSize: 14, color: Color(0xFF888888))),
                 ],
               ),
             ),
@@ -652,9 +655,9 @@ _conditionItem(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 if (desc.isNotEmpty) const SizedBox(height: 2),
-                if (desc.isNotEmpty) Text(desc, style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
+                if (desc.isNotEmpty) Text(desc, style: const TextStyle(fontSize: 14, color: Color(0xFF888888))),
               ],
             ),
           ),
@@ -773,7 +776,7 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  const Text('Сотрудники', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
+                  const Text('Сотрудники', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A))),
                   const SizedBox(height: 8),
                   ..._employees.map((emp) {
                     final empId = emp['id'].toString();
@@ -800,7 +803,7 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
                                   )
                                 : AvatarInitials(name: name, size: 40, textColor: const Color(0xFF666666)),
                             const SizedBox(width: 12),
-                            Expanded(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+                            Expanded(child: Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
@@ -849,7 +852,7 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
               children: [
                 GestureDetector(onTap: () => setState(() => _editingEmployee = null), child: const Icon(Icons.arrow_back)),
                 const SizedBox(width: 12),
-                Expanded(child: Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+                Expanded(child: Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
             ),
@@ -868,7 +871,7 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Без ограничений', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                            const Text('Без ограничений', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
                             const Text(
                               'Отключите, чтобы задать минимальное время до записи',
@@ -897,7 +900,7 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Нельзя записаться на услугу раньше чем за:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      const Text('Нельзя записаться на услугу раньше чем за:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -1137,9 +1140,9 @@ class _FixedTimeEmployeesSheetState extends State<_FixedTimeEmployeesSheet> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                          Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                                           if (emp['position'] != null && emp['position'].toString().isNotEmpty)
-                                            Text(emp['position'].toString(), style: const TextStyle(fontSize: 12, color: Color(0xFF888888))),
+                                            Text(emp['position'].toString(), style: const TextStyle(fontSize: 14, color: Color(0xFF888888))),
                                         ],
                                       ),
                                     ),
@@ -1317,7 +1320,7 @@ class _ConsentSettingsSheetState extends State<_ConsentSettingsSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Запрашивать согласие у клиентов', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                  const Text('Запрашивать согласие у клиентов', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                                   const SizedBox(height: 2),
                                   const Text('При онлайн-записи клиенту единоразово будет предложено подтвердить согласие',
                                       style: TextStyle(fontSize: 11, color: Color(0xFF999999))),
@@ -1337,7 +1340,7 @@ class _ConsentSettingsSheetState extends State<_ConsentSettingsSheet> {
                           children: [
                             Row(
                               children: [
-                                const Text('Текст согласия', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                                const Text('Текст согласия', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                                 const Spacer(),
                                 TextButton(
                                   onPressed: _enabled ? _fillDefault : null,
@@ -1673,7 +1676,7 @@ class _OnlineDesignSheetState extends State<_OnlineDesignSheet> {
       decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),

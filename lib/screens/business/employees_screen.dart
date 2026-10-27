@@ -1524,14 +1524,26 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
           controller: ctrl,
           keyboardType: keyboardType,
           maxLines: maxLines,
-          decoration: InputDecoration(
-            hintText: hint,
-            filled: true,
-            fillColor: const Color(0xFFF8F8F8),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? const Color(0xFFF44336) : const Color(0xFFE0E0E0))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? const Color(0xFFF44336) : const Color(0xFFE0E0E0))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? const Color(0xFFF44336) : const Color(0xFFDD1847))),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: AppCard.inputDecoration(hint: hint).copyWith(
+            errorText: null, // inline-ошибка рисуется сверху через Column — здесь не дублируем
+            border: hasError
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFF44336), width: 1.5),
+                  )
+                : null,
+            enabledBorder: hasError
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFF44336), width: 1.5),
+                  )
+                : null,
+            focusedBorder: hasError
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFF44336), width: 1.5),
+                  )
+                : null,
           ),
         ),
       ],

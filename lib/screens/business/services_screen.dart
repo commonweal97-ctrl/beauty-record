@@ -8,6 +8,9 @@ import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/app_card.dart';
+import '../../../widgets/common/time_picker_sheet.dart';
+import '../../../widgets/common/avatar_initials.dart';
+import '../../../utils/name_utils.dart';
 
 class ServicesScreen extends StatefulWidget {
   final int projectId;
@@ -17,8 +20,10 @@ class ServicesScreen extends StatefulWidget {
   State<ServicesScreen> createState() => _ServicesScreenState();
 }
 
-class _ServicesScreenState extends State<ServicesScreen> {
+class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStateMixin {
   List<Map<String, dynamic>> _services = [];
+  int? _highlightServiceId;
+  bool _highlightSuccess = false;
   List<String> _categories = [];
   String? _selectedCategory;
   bool _loading = true;
@@ -31,8 +36,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
+  Future<void> _load({bool silent = false, int? highlightId}) async {
+    if (!silent) setState(() => _loading = true);
     try {
       final results = await Future.wait([
         ApiService.get('/api/service/list?project_id=${widget.projectId}'),
@@ -45,6 +50,21 @@ class _ServicesScreenState extends State<ServicesScreen> {
           _categories = results[1]['success'] == true ? List<String>.from(results[1]['data'] ?? []) : [];
           _loading = false;
         });
+        if (highlightId != null) {
+          setState(() {
+            _highlightServiceId = highlightId;
+            _highlightSuccess = false;
+          });
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) setState(() => _highlightSuccess = true);
+          await Future.delayed(const Duration(milliseconds: 900));
+          if (mounted) {
+            setState(() {
+              _highlightServiceId = null;
+              _highlightSuccess = false;
+            });
+          }
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
@@ -335,10 +355,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
       ),
       child: GestureDetector(
       onTap: () => _openServiceModal(service: s),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
         margin: const EdgeInsets.only(bottom: AppCard.margin),
         padding: const EdgeInsets.all(AppCard.padding),
-        decoration: AppCard.decoration,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppCard.radius),
+          boxShadow: AppCard.shadow,
+        ),
         child: Row(children: [
           Container(
             width: 52, height: 52,
@@ -396,7 +421,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: _highlightSuccess && _highlightServiceId == sid
+                ? const Icon(Icons.check_circle, key: ValueKey('check'), color: Color(0xFF4CAF50), size: 24)
+                : const Icon(Icons.chevron_right, key: ValueKey('chevron'), color: Color(0xFFCCCCCC)),
+          ),
         ]),
       ),
       ),
@@ -419,19 +449,27 @@ class _ServicesScreenState extends State<ServicesScreen> {
     }
   }
 
-  void _openServiceModal({Map<String, dynamic>? service}) {
-    showModalBottomSheet(
+  Future<void> _openServiceModal({Map<String, dynamic>? service}) async {
+    final savedId = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionAnimationController: AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 320),
+        reverseDuration: const Duration(milliseconds: 240),
+      ),
       builder: (_) => _ServiceFormSheet(
         projectId: widget.projectId,
         service: service,
         categories: _categories,
-        onSaved: _load,
+        onSaved: () {},
       ),
     );
+    await Future.delayed(const Duration(milliseconds: 260));
+    if (mounted) _load(silent: true, highlightId: savedId);
   }
 }
 
@@ -506,6 +544,7 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   (s['employee_ids'] as List?)?.map((e) => int.tryParse(e.toString()) ?? 0).where((e) => e > 0) ?? []
 );
 
+        debugPrint('SERVICE-EDIT: id=${s['id']}, employee_ids=${s['employee_ids']}, employee_prices=${s['employee_prices']}');
         _employeePrices = {};
         if (s['employee_prices'] != null) {
           final raw = s['employee_prices'];
@@ -543,10 +582,14 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   Future<void> _loadEmployees() async {
     try {
       final r = await ApiService.get('/api/employee/list?project_id=${widget.projectId}');
+      debugPrint('LOAD-EMP: success=${r['success']}, count=${(r['data'] as List?)?.length ?? 0}, msg=${r['message']}, ids=${(r['data'] as List?)?.map((e) => e['id']).toList()}');
       if (r['success'] == true && mounted) {
         setState(() => _allEmployees = List<Map<String, dynamic>>.from(r['data'] ?? []));
+        debugPrint('LOAD-EMP: firstEmp=${_allEmployees.isNotEmpty ? _allEmployees[0] : "?"}');
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('LOAD-EMP: ERROR = $e');
+    }
   }
 
   Future<void> _loadResources() async {
@@ -600,12 +643,24 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
       if (data['employee_prices'] != null && mounted) {
         setState(() {
           _employeePrices = {};
-          (data['employee_prices'] as Map).forEach((k, v) {
-            final empId = int.tryParse(k.toString()) ?? 0;
-            if (empId > 0 && v is Map) {
-              _employeePrices[empId] = Map<String, dynamic>.from(v);
+          final raw = data['employee_prices'];
+          if (raw is Map) {
+            raw.forEach((k, v) {
+              final empId = int.tryParse(k.toString()) ?? 0;
+              if (empId > 0 && v is Map) {
+                _employeePrices[empId] = Map<String, dynamic>.from(v);
+              }
+            });
+          } else if (raw is List) {
+            for (final item in raw) {
+              if (item is Map) {
+                final empId = int.tryParse((item['employee_id'] ?? item['id'] ?? '').toString()) ?? 0;
+                if (empId > 0) {
+                  _employeePrices[empId] = Map<String, dynamic>.from(item);
+                }
+              }
             }
-          });
+          }
           for (final empId in _employeePrices.keys) {
             if (!_employeeIds.contains(empId)) {
               _employeeIds.add(empId);
@@ -747,14 +802,16 @@ for (final entry in _employeePrices.entries) {
         }
 
         if (!mounted) return;
-        Navigator.pop(context);
+        Navigator.pop(context, serviceId);
         widget.onSaved();
+        return;  // ← не доходим до setState в конце
       } else if (mounted) {
         showToast(context, result['message'] ?? 'Ошибка сохранения', isError: true);
       }
     } catch (e) {
       if (mounted) showToast(context, 'Ошибка: $e', isError: true);
     }
+    // Сюда попадаем только при ошибке (модалка ещё открыта).
     if (mounted) setState(() => _saving = false);
   }
 
@@ -1340,7 +1397,82 @@ for (final entry in _employeePrices.entries) {
                 const SizedBox(height: 14),
                 
                 _block('Сотрудники', [
-                  _row('Сотрудники', _employeeIds.isEmpty ? 'Все сотрудники' : 'Выбрано: ${_employeeIds.length}', _showEmployeePicker),
+                  if (_employeeIds.isEmpty)
+                    _row('Сотрудники', 'Все сотрудники', _showEmployeePicker)
+                  else ...[
+                    ..._employeeIds.map<Widget>((empId) {
+                      final emp = _allEmployees.firstWhere(
+                        (e) => e['id'] == empId,
+                        orElse: () => {'id': empId, 'name': 'Сотрудник #$empId'},
+                      );
+                      final price = _employeePrices[empId];
+                      final name = extractName(emp);
+                      final priceVal = price?['price'];
+                      final isFree = price?['is_free'] == true;
+                      final priceFrom = price?['price_from'] == true;
+                      final duration = price?['duration'] as int?;
+                      final online = price?['online_booking'] != false;
+                      final avatar = emp['avatar']?.toString();
+                      return GestureDetector(
+                        key: ValueKey('emp_$empId'),
+                        onTap: () => _showEmployeePriceEdit(empId),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8F8F8),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: (avatar != null && avatar.isNotEmpty)
+                                    ? CachedNetworkImage(imageUrl: '$_baseUrl$avatar', width: 40, height: 40, fit: BoxFit.cover)
+                                    : AvatarInitials(name: name, size: 40),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      [
+                                        if (isFree) 'Бесплатно'
+                                        else if (priceVal != null) '${priceFrom ? 'от ' : ''}$priceVal ₽'
+                                        else 'цена по услуге',
+                                        if (duration != null) _formatDuration(duration),
+                                        if (!online) 'офлайн',
+                                      ].join(' · '),
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.edit_outlined, size: 16, color: Color(0xFFCCCCCC)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: _showEmployeePicker,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add, size: 16, color: Color(0xFFDD1847)),
+                            SizedBox(width: 6),
+                            Text('Добавить сотрудника', style: TextStyle(fontSize: 13, color: Color(0xFFDD1847), fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ]),
                 
                 const SizedBox(height: 14),
@@ -1397,6 +1529,31 @@ for (final entry in _employeePrices.entries) {
     );
   }
 
+  Future<void> _showEmployeePriceEdit(int empId) async {
+    final emp = _allEmployees.firstWhere(
+      (e) => e['id'] == empId,
+      orElse: () => {'id': empId, 'name': 'Сотрудник'},
+    );
+    final prices = _employeePrices[empId] ?? {};
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _EmployeePriceSheet(
+        empId: empId,
+        empName: (emp['name'] ?? '').toString(),
+        prices: prices,
+        defaultDuration: _duration,
+        onChanged: (updated) {
+          setState(() {
+            _employeePrices[empId] = updated;
+          });
+        },
+      ),
+    );
+  }
+
   Widget _block(String title, List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1430,6 +1587,238 @@ for (final entry in _employeePrices.entries) {
     return TextField(
       controller: ctrl, maxLines: maxLines,
       decoration: AppCard.inputDecoration(hint: hint),
+    );
+  }
+}
+
+// ==================== ОКНО РЕДАКТИРОВАНИЯ ЦЕНЫ СОТРУДНИКА ====================
+class _EmployeePriceSheet extends StatefulWidget {
+  final int empId;
+  final String empName;
+  final Map<String, dynamic> prices;
+  final int defaultDuration;
+  final void Function(Map<String, dynamic>) onChanged;
+
+  const _EmployeePriceSheet({
+    required this.empId,
+    required this.empName,
+    required this.prices,
+    required this.defaultDuration,
+    required this.onChanged,
+  });
+
+  @override
+  State<_EmployeePriceSheet> createState() => _EmployeePriceSheetState();
+}
+
+class _EmployeePriceSheetState extends State<_EmployeePriceSheet> {
+  late TextEditingController _priceCtrl;
+  late bool _isFree;
+  late bool _priceFrom;
+  int? _duration;
+  late bool _onlineBooking;
+
+  @override
+  void initState() {
+    super.initState();
+    _priceCtrl = TextEditingController(text: (widget.prices['price'] ?? '').toString());
+    _isFree = widget.prices['is_free'] == true;
+    _priceFrom = widget.prices['price_from'] == true;
+    _duration = widget.prices['duration'] as int?;
+    _onlineBooking = widget.prices['online_booking'] != false;
+  }
+
+  @override
+  void dispose() {
+    _priceCtrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    widget.onChanged({
+      'price': _isFree ? null : _priceCtrl.text.trim(),
+      'is_free': _isFree,
+      'price_from': _priceFrom,
+      'duration': _duration,
+      'online_booking': _onlineBooking,
+    });
+    Navigator.pop(context);
+  }
+
+  String _fmtDuration(int? m) {
+    if (m == null) return 'Общая длительность';
+    final h = m ~/ 60;
+    final mm = m % 60;
+    if (h > 0 && mm > 0) return '$h ч $mm мин';
+    if (h > 0) return '$h ч';
+    return '$mm мин';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.arrow_back),
+                ),
+                const Spacer(),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    widget.empName,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('Онлайн-запись', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                    const Spacer(),
+                    Switch(
+                      value: _onlineBooking,
+                      onChanged: (v) => setState(() => _onlineBooking = v),
+                      activeThumbColor: const Color(0xFFDD1847),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text('Бесплатно', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                    const Spacer(),
+                    Switch(
+                      value: _isFree,
+                      onChanged: (v) => setState(() => _isFree = v),
+                      activeThumbColor: const Color(0xFFDD1847),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (!_isFree) ...[
+                  Row(
+                    children: [
+                      const Text('Цена, ₽', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => setState(() => _priceFrom = !_priceFrom),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _priceFrom ? const Color(0xFFDD1847) : const Color(0xFFF0F0F0),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'от',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: _priceFrom ? Colors.white : const Color(0xFF888888),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 140,
+                        child: TextField(
+                          controller: _priceCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: AppCard.inputDecoration(hint: '0'),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                GestureDetector(
+                  onTap: () {
+                    final current = _duration ?? widget.defaultDuration;
+                    showTimePickerSheet(
+                      context,
+                      initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
+                      title: 'Длительность для сотрудника',
+                    ).then((t) {
+                      if (t != null) {
+                        setState(() => _duration = t.hour * 60 + t.minute);
+                      }
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F8F8),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('Длительность', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                        const Spacer(),
+                        Text(_fmtDuration(_duration), style: const TextStyle(fontSize: 14, color: Color(0xFF888888))),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.chevron_right, size: 16, color: Color(0xFFCCCCCC)),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_duration != null) ...[
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _duration = null),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.close, size: 14, color: Color(0xFF999999)),
+                        SizedBox(width: 4),
+                        Text('Сбросить (использовать длительность услуги)', style: TextStyle(fontSize: 12, color: Color(0xFF999999))),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDD1847),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Сохранить', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

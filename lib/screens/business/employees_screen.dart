@@ -213,13 +213,25 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
     final phone = e['phone']?.toString() ?? '';
     final email = e['email']?.toString() ?? '';
     final avatar = e['avatar']?.toString();
-    return GestureDetector(
-      onTap: () => _openEmployeeModal(employee: e),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppCard.margin),
-        padding: const EdgeInsets.all(AppCard.padding),
-        decoration: AppCard.decoration,
-        child: Row(children: [
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppCard.margin),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppCard.radius),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppCard.radius),
+            boxShadow: AppCard.shadow,
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppCard.radius),
+            onTap: () => _openEmployeeModal(employee: e),
+            child: Container(
+              padding: const EdgeInsets.all(AppCard.padding),
+              child: Row(children: [
           Container(
             width: 56, height: 56,
             decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF8F8F8)),
@@ -242,7 +254,10 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
             ]),
           ),
           const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
-        ]),
+              ]),
+            ),
+          ),
+        ),
       ),
     );
   }

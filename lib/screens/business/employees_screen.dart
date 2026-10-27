@@ -16,6 +16,7 @@ import '../../widgets/common/phone_input.dart';
 import '../../widgets/common/avatar_initials.dart';
 import '../../utils/phone_display.dart';
 import '../../utils/api_errors.dart';
+import '../../../core/app_card.dart';
 
 // ==================== ОТДЕЛЬНЫЙ ВИДЖЕТ ДЛЯ ПОЛЯ ЦЕНЫ ====================
 class _PriceField extends StatefulWidget {
@@ -215,9 +216,9 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
     return GestureDetector(
       onTap: () => _openEmployeeModal(employee: e),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+        margin: const EdgeInsets.only(bottom: AppCard.margin),
+        padding: const EdgeInsets.all(AppCard.padding),
+        decoration: AppCard.decoration,
         child: Row(children: [
           Container(
             width: 56, height: 56,

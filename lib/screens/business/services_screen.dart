@@ -7,6 +7,7 @@ import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/app_card.dart';
 
 class ServicesScreen extends StatefulWidget {
   final int projectId;
@@ -37,6 +38,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         ApiService.get('/api/service/list?project_id=${widget.projectId}'),
         ApiService.get('/api/service/categories?project_id=${widget.projectId}'),
       ]);
+      debugPrint('SERVICES-LOAD: list_success=${results[0]['success']}, list_count=${(results[0]['data'] as List?)?.length ?? 0}, msg=${results[0]['message']}');
       if (mounted) {
         setState(() {
           _services = results[0]['success'] == true ? List<Map<String, dynamic>>.from(results[0]['data'] ?? []) : [];
@@ -289,13 +291,54 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final priceFrom = s['price_from'] == true;
     final price = double.tryParse(s['price']?.toString() ?? '0') ?? 0;
     final duration = s['duration'] as int? ?? 60;
-    return GestureDetector(
-      key: key,
+    final sid = s['id'] as int;
+    return Dismissible(
+      key: key ?? ValueKey('service_$sid'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Удалить услугу?'),
+            content: Text('«${s['name']}» будет удалена.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Удалить', style: TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (_) => _deleteService(sid),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF44336),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline, color: Colors.white, size: 24),
+            SizedBox(width: 8),
+            Text('Удалить', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+          ],
+        ),
+      ),
+      child: GestureDetector(
       onTap: () => _openServiceModal(service: s),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF0F0F0)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+        margin: const EdgeInsets.only(bottom: AppCard.margin),
+        padding: const EdgeInsets.all(AppCard.padding),
+        decoration: AppCard.decoration,
         child: Row(children: [
           Container(
             width: 52, height: 52,
@@ -316,10 +359,64 @@ class _ServicesScreenState extends State<ServicesScreen> {
               ),
             ]),
           ),
+          // Индикатор онлайн/офлайн
+          Container(
+            margin: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: (s['online_booking'] ?? true) == true
+                  ? const Color(0xFFE8F5E9)
+                  : const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  (s['online_booking'] ?? true) == true
+                      ? Icons.public
+                      : Icons.public_off,
+                  size: 12,
+                  color: (s['online_booking'] ?? true) == true
+                      ? const Color(0xFF4CAF50)
+                      : const Color(0xFF999999),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  (s['online_booking'] ?? true) == true ? 'Онлайн' : 'Офлайн',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: (s['online_booking'] ?? true) == true
+                        ? const Color(0xFF4CAF50)
+                        : const Color(0xFF999999),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
           const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
         ]),
       ),
+      ),
     );
+  }
+
+  Future<void> _deleteService(int serviceId) async {
+    final result = await ApiService.post('/api/service/delete', {
+      'service_id': serviceId,
+      'project_id': widget.projectId,
+    });
+    if (result['success'] == true) {
+      setState(() => _services.removeWhere((s) => s['id'] == serviceId));
+      if (mounted) showToast(context, 'Услуга удалена');
+    } else {
+      if (mounted) {
+        showToast(context, result['message'] ?? 'Ошибка удаления', isError: true);
+        _load();
+      }
+    }
   }
 
   void _openServiceModal({Map<String, dynamic>? service}) {
@@ -479,6 +576,8 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
 
   Future<void> _loadServiceData() async {
     final result = await ApiService.get('/api/service/get?id=${widget.service?['id']}&project_id=${widget.projectId}');
+
+      debugPrint('SERVICES-LOAD: success=${result['success']}, count=${(result['data'] as List?)?.length ?? 0}, message=${result['message']}');
     if (result['success'] == true && mounted) {
       final data = result['data'];
       setState(() {
@@ -681,7 +780,7 @@ for (final entry in _employeePrices.entries) {
           padding: const EdgeInsets.all(20),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const Text('Категория', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             ..._allCategories.map((c) => ListTile(
                   title: Text(c),
                   trailing: _category == c ? const Icon(Icons.check, color: Color(0xFFDD1847)) : null,
@@ -789,7 +888,6 @@ for (final entry in _employeePrices.entries) {
                             decoration: BoxDecoration(
                               color: isSelected ? const Color(0xFFFDF2F5) : const Color(0xFFF8F8F8),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: isSelected ? const Color(0xFFDD1847) : const Color(0xFFE8E8E8), width: isSelected ? 2 : 1),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -911,8 +1009,10 @@ for (final entry in _employeePrices.entries) {
             onChanged: (v) => _updateEmployeePrice(empId, v),
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             decoration: InputDecoration(
-              filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE8E8E8))),
+              filled: true, fillColor: const Color(0xFFF8F8F8),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFDD1847), width: 1.5)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               isDense: true,
             ),
@@ -947,14 +1047,14 @@ for (final entry in _employeePrices.entries) {
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE8E8E8))),
+          decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(8)),
           child: Row(children: [
             const Icon(Icons.access_time, size: 16, color: Color(0xFF999999)),
             const SizedBox(width: 6),
             Expanded(child: Text(prices['duration'] != null ? _formatDuration(prices['duration'] as int) : 'Общая длительность услуги', style: const TextStyle(fontSize: 12, color: Color(0xFF333333)))),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE0E0E0)), borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 1))]),
               child: Text(prices['duration'] != null ? 'Изменить' : 'Установить', style: const TextStyle(fontSize: 10, color: Color(0xFF666666))),
             ),
           ]),
@@ -1203,7 +1303,7 @@ for (final entry in _employeePrices.entries) {
                     ]),
                   ),
                 ]),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 
                 _block('Стоимость', [
                   Row(children: [const Text('Бесплатно'), const Spacer(), Switch(value: _isFree, onChanged: (v) => setState(() => _isFree = v), activeThumbColor: const Color(0xFFDD1847))]),
@@ -1231,31 +1331,31 @@ for (final entry in _employeePrices.entries) {
                     ]),
                   ],
                 ]),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 
                 _block('Время услуги', [
                   _row('Длительность', _formatDuration(_duration), () => _showTimePicker('Длительность', _duration, (m) => setState(() => _duration = m))),
                   _row('Перерыв после записи', _breakAfter > 0 ? _formatDuration(_breakAfter) : 'Нет', () => _showTimePicker('Перерыв', _breakAfter, (m) => setState(() => _breakAfter = m))),
                 ]),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 
                 _block('Сотрудники', [
                   _row('Сотрудники', _employeeIds.isEmpty ? 'Все сотрудники' : 'Выбрано: ${_employeeIds.length}', _showEmployeePicker),
                 ]),
                 
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 _block('Ресурсы', [
                   _row('Ресурсы', _resourceStates.values.where((v) => v).isEmpty ? 'Не выбрано' : 'Выбрано: ${_resourceStates.values.where((v) => v).length}', _showResourcePicker),
                 ]),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 _block('Онлайн-запись', [
                   Row(children: [const Text('Онлайн-запись'), const Spacer(), Switch(value: _onlineBooking, onChanged: (v) => setState(() => _onlineBooking = v), activeThumbColor: const Color(0xFFDD1847))]),
                 ]),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 _block('Примеры работ', [_buildWorkPhotos()]),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 _field(_descCtrl, 'Описание услуги...', maxLines: 3),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 if (_isEdit)
                   SizedBox(
                     width: double.infinity,
@@ -1329,13 +1429,7 @@ for (final entry in _employeePrices.entries) {
   Widget _field(TextEditingController ctrl, String hint, {int maxLines = 1}) {
     return TextField(
       controller: ctrl, maxLines: maxLines,
-      decoration: InputDecoration(
-        hintText: hint, filled: true, fillColor: const Color(0xFFF8F8F8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E0E0))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFDD1847))),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
+      decoration: AppCard.inputDecoration(hint: hint),
     );
   }
 }

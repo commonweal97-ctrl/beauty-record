@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
@@ -94,7 +95,13 @@ class EmployeesScreen extends StatefulWidget {
 
 class _EmployeesScreenState extends State<EmployeesScreen> {
   List<Map<String, dynamic>> _employees = [];
-  bool _loading = true;
+  bool _loading = false;
+  bool _loaded = false;
+  bool _showSkeleton = false;
+  Timer? _skeletonTimer;
+  int? _highlightEmployeeId;
+  bool _highlightSuccess = false;
+  final Map<int, GlobalKey> _employeeKeys = {};
 
   static const String _baseUrl = 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai';
 
@@ -104,22 +111,90 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
+  Future<void> _load({int? highlightId}) async {
+    setState(() {
+      _loading = true;
+      _showSkeleton = false;
+    });
+    _skeletonTimer?.cancel();
+    // Anti-flicker: показываем skeleton только если загрузка длится > 250ms
+    _skeletonTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted && _loading) setState(() => _showSkeleton = true);
+    });
     try {
       final result = await ApiService.get('/api/employee/list?project_id=${widget.projectId}');
-      if (result['success'] == true && mounted) {
-        setState(() {
+      _skeletonTimer?.cancel();
+      if (!mounted) return;
+      setState(() {
+        if (result['success'] == true) {
           _employees = List<Map<String, dynamic>>.from(result['data'] ?? []);
-          _loading = false;
+        }
+        _loading = false;
+        _loaded = true;
+        _showSkeleton = false;
+      });
+      if (highlightId != null) {
+        setState(() {
+          _highlightEmployeeId = highlightId;
+          _highlightSuccess = false;
         });
-      } else if (mounted) {
-        setState(() => _loading = false);
+        await Future.delayed(const Duration(milliseconds: 60));
+        if (mounted) _scrollToEmployee(highlightId);
+        await Future.delayed(const Duration(milliseconds: 400));
+        if (mounted) setState(() => _highlightSuccess = true);
+        await Future.delayed(const Duration(milliseconds: 1400));
+        if (mounted) {
+          setState(() {
+            _highlightEmployeeId = null;
+            _highlightSuccess = false;
+          });
+        }
       }
     } catch (e) {
       debugPrint('Ошибка загрузки сотрудников: $e');
-      if (mounted) setState(() => _loading = false);
+      _skeletonTimer?.cancel();
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _loaded = true;
+        _showSkeleton = false;
+      });
     }
+  }
+
+  void _scrollToEmployee(int employeeId) {
+    final key = _employeeKeys[employeeId];
+    final ctx = key?.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+        alignment: 0.5,
+      );
+    }
+  }
+
+  Future<void> _deleteEmployee(int employeeId) async {
+    final result = await ApiService.post('/api/employee/delete', {
+      'employee_id': employeeId,
+      'project_id': widget.projectId,
+    });
+    if (!mounted) return;
+    if (result['success'] == true) {
+      setState(() {
+        _employees.removeWhere((e) => (e['id'] is int ? e['id'] as int : int.tryParse(e['id'].toString()) ?? 0) == employeeId);
+      });
+    } else {
+      showToast(context, result['message'] ?? 'Ошибка удаления', isError: true);
+      await _load();
+    }
+  }
+
+  @override
+  void dispose() {
+    _skeletonTimer?.cancel();
+    super.dispose();
   }
 
   String _getPosition(Map<String, dynamic> e) {
@@ -133,11 +208,9 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      body: _loading
-          ? _buildSkeleton()
-          : _employees.isEmpty
-              ? _buildEmpty()
-              : _buildList(),
+      body: !_loaded
+          ? (_showSkeleton ? _buildSkeleton() : const SizedBox.shrink())
+          : (_employees.isEmpty ? _buildEmpty() : _buildList()),
     );
   }
 
@@ -213,67 +286,162 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
     final phone = e['phone']?.toString() ?? '';
     final email = e['email']?.toString() ?? '';
     final avatar = e['avatar']?.toString();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppCard.margin),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppCard.radius),
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppCard.radius),
-            boxShadow: AppCard.shadow,
+    final eid = e['id'] is int ? e['id'] as int : int.tryParse(e['id'].toString()) ?? 0;
+    final keyForCard = _employeeKeys.putIfAbsent(eid, () => GlobalKey());
+    final isHighlight = _highlightEmployeeId == eid;
+    final isSuccess = _highlightSuccess && isHighlight;
+
+    final employeeKey = ValueKey('employee_$eid');
+    return Dismissible(
+      key: employeeKey,
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Удалить сотрудника?'),
+            content: Text('«$name» будет удалён из проекта.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Удалить', style: TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w600)),
+              ),
+            ],
           ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppCard.radius),
-            onTap: () => _openEmployeeModal(employee: e),
-            child: Container(
-              padding: const EdgeInsets.all(AppCard.padding),
-              child: Row(children: [
-          Container(
-            width: 56, height: 56,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF8F8F8)),
-            clipBehavior: Clip.antiAlias,
-            child: avatar != null && avatar.isNotEmpty
-                ? CachedNetworkImage(imageUrl: '$_baseUrl$avatar', fit: BoxFit.cover)
-                : AvatarInitials(name: name, size: 56),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFF0F0F0), borderRadius: BorderRadius.circular(20)), child: Text(position, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF666666)))),
-              const SizedBox(height: 8),
-              Wrap(spacing: 16, runSpacing: 4, children: [
-                if (phone.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.phone, size: 14, color: Color(0xFF999999)), const SizedBox(width: 4), Text(formatPhoneDisplay(phone), style: const TextStyle(fontSize: 13, color: Color(0xFF666666)))]),
-                if (email.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.email_outlined, size: 14, color: Color(0xFF999999)), const SizedBox(width: 4), Flexible(child: Text(email, style: const TextStyle(fontSize: 13, color: Color(0xFF666666)), overflow: TextOverflow.ellipsis))]),
-              ]),
-            ]),
-          ),
-          const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
-              ]),
-            ),
-          ),
+        );
+      },
+      onDismissed: (_) => _deleteEmployee(eid),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: AppCard.margin),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF44336),
+          borderRadius: BorderRadius.circular(AppCard.radius),
+        ),
+        alignment: Alignment.centerRight,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline, color: Colors.white, size: 24),
+            SizedBox(width: 8),
+            Text('Удалить', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+          ],
         ),
       ),
+      child: AnimatedScale(
+      key: keyForCard,
+      scale: isHighlight ? 1.03 : 1.0,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: AppCard.margin),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppCard.radius),
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              child: Ink(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppCard.radius),
+                  boxShadow: AppCard.shadow,
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppCard.radius),
+                  onTap: () => _openEmployeeModal(employee: e),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppCard.padding),
+                    child: Row(children: [
+                      Container(
+                        width: 56, height: 56,
+                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFF8F8F8)),
+                        clipBehavior: Clip.antiAlias,
+                        child: avatar != null && avatar.isNotEmpty
+                            ? CachedNetworkImage(imageUrl: '$_baseUrl$avatar', fit: BoxFit.cover)
+                            : AvatarInitials(name: name, size: 56),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3), decoration: BoxDecoration(color: const Color(0xFFF0F0F0), borderRadius: BorderRadius.circular(20)), child: Text(position, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF666666)))),
+                          const SizedBox(height: 8),
+                          Wrap(spacing: 16, runSpacing: 4, children: [
+                            if (phone.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.phone, size: 14, color: Color(0xFF999999)), const SizedBox(width: 4), Text(formatPhoneDisplay(phone), style: const TextStyle(fontSize: 13, color: Color(0xFF666666)))]),
+                            if (email.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.email_outlined, size: 14, color: Color(0xFF999999)), const SizedBox(width: 4), Flexible(child: Text(email, style: const TextStyle(fontSize: 13, color: Color(0xFF666666)), overflow: TextOverflow.ellipsis))]),
+                          ]),
+                        ]),
+                      ),
+                      const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
+            // Бейдж «Сохранено» — аккуратный, только контур.
+            Positioned(
+              top: -10,
+              right: 14,
+              child: IgnorePointer(
+                child: AnimatedSlide(
+                  offset: isSuccess ? Offset.zero : const Offset(0, -0.4),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedOpacity(
+                    opacity: isSuccess ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 250),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF4CAF50), width: 1.2),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check, size: 13, color: Color(0xFF4CAF50)),
+                          SizedBox(width: 4),
+                          Text('Сохранено', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32))),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
     );
   }
 
-  void _openEmployeeModal({Map<String, dynamic>? employee}) {
-    showModalBottomSheet(
+  Future<void> _openEmployeeModal({Map<String, dynamic>? employee}) async {
+    final savedId = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (_) => _EmployeeFormSheet(
         projectId: widget.projectId,
         employee: employee,
-        onSaved: _load,
+        onSaved: () {},
       ),
-    ).then((_) => _load());
+    );
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
+    await _load(highlightId: savedId);
   }
 }
 
@@ -689,12 +857,11 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       final result = await ApiService.post('/api/employee/save', body);
       
       if (result['success'] == true && mounted) {
-        final empId = result['employee_id'] ?? widget.employee?['id'];
+        final empId = result['employee_id'] ?? result['data']?['id'] ?? widget.employee?['id'];
         if (_avatarFile != null && empId != null) await _uploadAvatar(empId);
         if (!mounted) return;
-        Navigator.pop(context);
-        widget.onSaved();
-        showToast(context, _isEdit ? 'Сотрудник обновлён' : 'Сотрудник добавлен');
+        Navigator.pop(context, empId);
+        return;
       } else if (mounted) {
         // Серверные ошибки валидации → inline-ошибки под полями.
         setState(() => _errors = ApiErrors.fromResponse(result));

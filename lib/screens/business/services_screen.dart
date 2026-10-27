@@ -24,6 +24,7 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
   List<Map<String, dynamic>> _services = [];
   int? _highlightServiceId;
   bool _highlightSuccess = false;
+  final Map<int, GlobalKey> _serviceKeys = {};
   List<String> _categories = [];
   String? _selectedCategory;
   bool _loading = true;
@@ -43,11 +44,14 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
         ApiService.get('/api/service/list?project_id=${widget.projectId}'),
         ApiService.get('/api/service/categories?project_id=${widget.projectId}'),
       ]);
-      debugPrint('SERVICES-LOAD: list_success=${results[0]['success']}, list_count=${(results[0]['data'] as List?)?.length ?? 0}, msg=${results[0]['message']}');
       if (mounted) {
         setState(() {
-          _services = results[0]['success'] == true ? List<Map<String, dynamic>>.from(results[0]['data'] ?? []) : [];
-          _categories = results[1]['success'] == true ? List<String>.from(results[1]['data'] ?? []) : [];
+          _services = results[0]['success'] == true
+              ? List<Map<String, dynamic>>.from(results[0]['data'] ?? [])
+              : [];
+          _categories = results[1]['success'] == true
+              ? List<String>.from(results[1]['data'] ?? [])
+              : [];
           _loading = false;
         });
         if (highlightId != null) {
@@ -55,9 +59,11 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
             _highlightServiceId = highlightId;
             _highlightSuccess = false;
           });
-          await Future.delayed(const Duration(milliseconds: 500));
+          await Future.delayed(const Duration(milliseconds: 60));
+          if (mounted) _scrollToService(highlightId);
+          await Future.delayed(const Duration(milliseconds: 400));
           if (mounted) setState(() => _highlightSuccess = true);
-          await Future.delayed(const Duration(milliseconds: 900));
+          await Future.delayed(const Duration(milliseconds: 1400));
           if (mounted) {
             setState(() {
               _highlightServiceId = null;
@@ -71,9 +77,27 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
     }
   }
 
+  void _scrollToService(int serviceId) {
+    final key = _serviceKeys[serviceId];
+    final ctx = key?.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+        alignment: 0.5,
+      );
+    }
+  }
+
   List<Map<String, dynamic>> get _filteredServices {
     if (_selectedCategory == null) return _services;
     return _services.where((s) => s['category'] == _selectedCategory).toList();
+  }
+
+  int _countFor(String? category) {
+    if (category == null) return _services.length;
+    return _services.where((s) => s['category'] == category).length;
   }
 
   String _formatDuration(int minutes) {
@@ -85,13 +109,19 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
     return '0 мин';
   }
 
+  String get _activeFilterLabel {
+    if (_selectedCategory == null) return 'Все услуги';
+    return _selectedCategory!;
+  }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     final displayServices = _filteredServices;
+    final total = _services.length;
+    final shown = displayServices.length;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      floatingActionButton: displayServices.length >= 2
+      floatingActionButton: shown >= 2
           ? FloatingActionButton(
               heroTag: 'services_magic',
               backgroundColor: const Color(0xFFDD1847),
@@ -136,37 +166,47 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
                     ),
                   ),
                 ),
+              // Строка-счётчик под фильтрами
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                child: Row(children: [
+                  Expanded(
+                    child: Text(
+                      _activeFilterLabel,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF666666)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    _selectedCategory == null
+                        ? '$total услуг'
+                        : '$shown из $total',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+                  ),
+                ]),
+              ),
               Expanded(
-                child: displayServices.isEmpty
+                child: shown == 0
                     ? _buildEmpty()
                     : Column(
                         children: [
                           Expanded(
                             child: ReorderableListView.builder(
-                              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                              itemCount: displayServices.length,
+                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+                              itemCount: shown,
                               onReorderItem: (oldIndex, newIndex) async {
-                                // ReorderableListView: newIndex — позиция ДО удаления.
-                                // При перетаскивании вниз newIndex на 1 больше реальной.
-                                // movedId — что тащим. targetId — элемент, на чьё место
-                                // встаёт moved (в отфильтрованном списке БЕЗ сдвига).
                                 final movedId = displayServices[oldIndex]['id'];
                                 final targetId = displayServices[newIndex]['id'];
-                                debugPrint('REORDER: old=$oldIndex new=$newIndex moved=$movedId target=$targetId');
                                 final fullOld = _services.indexWhere((e) => e['id'] == movedId);
                                 final fullTarget = _services.indexWhere((e) => e['id'] == targetId);
                                 if (fullOld < 0 || fullTarget < 0) return;
-                                // Удаляем moved из полного списка.
                                 final item = _services.removeAt(fullOld);
-                                // Находим target заново (индексы сдвинулись после удаления).
                                 final insertAt = _services.indexWhere((e) => e['id'] == targetId);
-                                // Если тащим вниз — вставляем ПОСЛЕ target; если вверх — ПЕРЕД target.
                                 final insertPos = (oldIndex < newIndex) ? insertAt + 1 : insertAt;
                                 _services.insert(insertPos, item);
                                 for (var i = 0; i < _services.length; i++) {
                                   _services[i]['sort_order'] = i;
                                 }
-                                debugPrint('REORDER-END: all_ids=${_services.map((e) => e['id']).toList()}');
                                 setState(() {});
                                 final orders = _services.asMap().entries.map((e) => {
                                   'id': e.value['id'],
@@ -201,8 +241,28 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
                                   child: child,
                                 );
                               },
-                              itemBuilder: (_, i) => _buildServiceCard(displayServices[i], key: ValueKey(displayServices[i]['id'])),
+                              itemBuilder: (_, i) => _buildServiceCard(
+                                displayServices[i],
+                                index: i,
+                                total: shown,
+                                key: ValueKey(displayServices[i]['id']),
+                              ),
                             ),
+                          ),
+                          // Финишер списка
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                            child: Row(children: [
+                              const Expanded(child: Divider(color: Color(0xFFEEEEEE), height: 1)),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  'Показано $shown из $total',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
+                                ),
+                              ),
+                              const Expanded(child: Divider(color: Color(0xFFEEEEEE), height: 1)),
+                            ]),
                           ),
                         ],
                       ),
@@ -210,16 +270,17 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
             ]),
     );
   }
-  
+
   Widget _categoryChip(String label, String? value) {
     final selected = _selectedCategory == value;
+    final count = _countFor(value);
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: GestureDetector(
         onTap: () => setState(() => _selectedCategory = value),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           decoration: BoxDecoration(
             color: selected ? const Color(0xFFDD1847) : Colors.white,
             borderRadius: BorderRadius.circular(14),
@@ -237,13 +298,34 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
                   ]
                 : null,
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-              color: selected ? Colors.white : const Color(0xFF1A1A1A),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected ? Colors.white : const Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                decoration: BoxDecoration(
+                  color: selected ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFF0F0F0),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : const Color(0xFF999999),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -296,7 +378,7 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
     entry = OverlayEntry(
       builder: (_) => _MagicDemoOverlay(
         services: services.take(2).toList(),
-        buildCard: (s) => _buildServiceCard(s),
+        buildCard: (s) => _buildServiceCard(s, index: 0, total: 2),
         onClose: () {
           if (entry.mounted) entry.remove();
         },
@@ -305,13 +387,17 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
     overlay.insert(entry);
   }
 
-  Widget _buildServiceCard(Map<String, dynamic> s, {Key? key}) {
+  Widget _buildServiceCard(Map<String, dynamic> s, {int index = 0, int total = 1, Key? key}) {
     final photo = s['photo_url']?.toString();
     final isFree = s['is_free'] == true;
     final priceFrom = s['price_from'] == true;
     final price = double.tryParse(s['price']?.toString() ?? '0') ?? 0;
     final duration = s['duration'] as int? ?? 60;
     final sid = s['id'] as int;
+    final keyForCard = _serviceKeys.putIfAbsent(sid, () => GlobalKey());
+    final isHighlight = _highlightServiceId == sid;
+    final isSuccess = _highlightSuccess && isHighlight;
+
     return Dismissible(
       key: key ?? ValueKey('service_$sid'),
       direction: DismissDirection.endToStart,
@@ -323,10 +409,7 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
             title: const Text('Удалить услугу?'),
             content: Text('«${s['name']}» будет удалена.'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Отмена'),
-              ),
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 child: const Text('Удалить', style: TextStyle(color: Color(0xFFDD1847), fontWeight: FontWeight.w600)),
@@ -339,10 +422,7 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF44336),
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: BoxDecoration(color: const Color(0xFFF44336), borderRadius: BorderRadius.circular(16)),
         alignment: Alignment.centerRight,
         child: const Row(
           mainAxisSize: MainAxisSize.min,
@@ -354,81 +434,131 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
         ),
       ),
       child: GestureDetector(
-      onTap: () => _openServiceModal(service: s),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 500),
-        margin: const EdgeInsets.only(bottom: AppCard.margin),
-        padding: const EdgeInsets.all(AppCard.padding),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppCard.radius),
-          boxShadow: AppCard.shadow,
-        ),
-        child: Row(children: [
-          Container(
-            width: 52, height: 52,
-            decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
-            clipBehavior: Clip.antiAlias,
-            child: photo != null && photo.isNotEmpty
-                ? CachedNetworkImage(imageUrl: '$_baseUrl$photo', fit: BoxFit.cover)
-                : const Icon(Icons.spa, size: 22, color: Color(0xFF999999)),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(s['name'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(
-                isFree ? 'Бесплатно' : '${priceFrom ? 'от ' : ''}${price.toStringAsFixed(0)} ₽ · ${_formatDuration(duration)}',
-                style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
-              ),
-            ]),
-          ),
-          // Индикатор онлайн/офлайн
-          Container(
-            margin: const EdgeInsets.only(left: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: (s['online_booking'] ?? true) == true
-                  ? const Color(0xFFE8F5E9)
-                  : const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  (s['online_booking'] ?? true) == true
-                      ? Icons.public
-                      : Icons.public_off,
-                  size: 12,
-                  color: (s['online_booking'] ?? true) == true
-                      ? const Color(0xFF4CAF50)
-                      : const Color(0xFF999999),
+        onTap: () => _openServiceModal(service: s),
+        child: AnimatedScale(
+          key: keyForCard,
+          scale: isHighlight ? 1.03 : 1.0,
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutCubic,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: AppCard.margin),
+                padding: const EdgeInsets.all(AppCard.padding),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppCard.radius),
+                  boxShadow: AppCard.shadow,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  (s['online_booking'] ?? true) == true ? 'Онлайн' : 'Офлайн',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: (s['online_booking'] ?? true) == true
-                        ? const Color(0xFF4CAF50)
-                        : const Color(0xFF999999),
+                child: Row(children: [
+                  Container(
+                    width: 52, height: 52,
+                    decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
+                    clipBehavior: Clip.antiAlias,
+                    child: photo != null && photo.isNotEmpty
+                        ? CachedNetworkImage(imageUrl: '$_baseUrl$photo', fit: BoxFit.cover)
+                        : const Icon(Icons.spa, size: 22, color: Color(0xFF999999)),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(s['name'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        isFree ? 'Бесплатно' : '${priceFrom ? 'от ' : ''}${price.toStringAsFixed(0)} ₽ · ${_formatDuration(duration)}',
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+                      ),
+                    ]),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (s['online_booking'] ?? true) == true
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          (s['online_booking'] ?? true) == true ? Icons.public : Icons.public_off,
+                          size: 12,
+                          color: (s['online_booking'] ?? true) == true
+                              ? const Color(0xFF4CAF50)
+                              : const Color(0xFF999999),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          (s['online_booking'] ?? true) == true ? 'Онлайн' : 'Офлайн',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: (s['online_booking'] ?? true) == true
+                                ? const Color(0xFF4CAF50)
+                                : const Color(0xFF999999),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC), size: 20),
+                      if (total > 1)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            '${index + 1}/$total',
+                            style: const TextStyle(fontSize: 10, color: Color(0xFFCCCCCC), fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                    ],
+                  ),
+                ]),
+              ),
+              Positioned(
+                top: -10,
+                right: 14,
+                child: IgnorePointer(
+                  child: AnimatedSlide(
+                    offset: isSuccess ? Offset.zero : const Offset(0, -0.4),
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    child: AnimatedOpacity(
+                      opacity: isSuccess ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 250),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFF4CAF50), width: 1.2),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check, size: 13, color: Color(0xFF4CAF50)),
+                            SizedBox(width: 4),
+                            Text(
+                              'Сохранено',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: _highlightSuccess && _highlightServiceId == sid
-                ? const Icon(Icons.check_circle, key: ValueKey('check'), color: Color(0xFF4CAF50), size: 24)
-                : const Icon(Icons.chevron_right, key: ValueKey('chevron'), color: Color(0xFFCCCCCC)),
-          ),
-        ]),
-      ),
+        ),
       ),
     );
   }
@@ -439,7 +569,10 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
       'project_id': widget.projectId,
     });
     if (result['success'] == true) {
-      setState(() => _services.removeWhere((s) => s['id'] == serviceId));
+      setState(() {
+        _services.removeWhere((s) => s['id'] == serviceId);
+        _serviceKeys.remove(serviceId);
+      });
       if (mounted) showToast(context, 'Услуга удалена');
     } else {
       if (mounted) {
@@ -469,7 +602,8 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
       ),
     );
     await Future.delayed(const Duration(milliseconds: 260));
-    if (mounted) _load(silent: true, highlightId: savedId);
+    if (!mounted) return;
+    _load(silent: true, highlightId: savedId);
   }
 }
 
@@ -499,7 +633,9 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   bool _saving = false;
 
   List<Map<String, dynamic>> _allEmployees = [];
-  
+  bool _editDataLoaded = false;
+  List<String> _categoriesFromServer = [];
+
   Set<int> _employeeIds = {};
   Map<int, Map<String, dynamic>> _employeePrices = {};
   final Map<int, bool> _expandedEmployees = {};
@@ -513,7 +649,7 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
   static const String _baseUrl = 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai';
 
   bool get _isEdit => widget.service != null;
-  List<String> get _allCategories => ['Без категории', ...widget.categories];
+  List<String> get _allCategories => ['Без категории', ..._categoriesFromServer];
 
   String _formatDuration(int minutes) {
     final h = minutes ~/ 60;
@@ -563,11 +699,11 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
           }
         }
         }
-    _loadResources();
-    _loadEmployees();
     if (_isEdit) {
-      _loadServiceData();
-      _loadEmployeePrices();
+      _loadEditData();
+    } else {
+      _editDataLoaded = true;
+      _categoriesFromServer = List<String>.from(widget.categories);
     }
   }
 
@@ -579,100 +715,100 @@ class _ServiceFormSheetState extends State<_ServiceFormSheet> {
     super.dispose();
   }
 
-  Future<void> _loadEmployees() async {
+  // ========== ЕДИНЫЙ ЗАПРОС: GET /api/service/edit-data ==========
+  Future<void> _loadEditData() async {
     try {
-      final r = await ApiService.get('/api/employee/list?project_id=${widget.projectId}');
-      debugPrint('LOAD-EMP: success=${r['success']}, count=${(r['data'] as List?)?.length ?? 0}, msg=${r['message']}, ids=${(r['data'] as List?)?.map((e) => e['id']).toList()}');
-      if (r['success'] == true && mounted) {
-        setState(() => _allEmployees = List<Map<String, dynamic>>.from(r['data'] ?? []));
-        debugPrint('LOAD-EMP: firstEmp=${_allEmployees.isNotEmpty ? _allEmployees[0] : "?"}');
+      final r = await ApiService.get(
+        '/api/service/edit-data?id=${widget.service!['id']}&project_id=${widget.projectId}',
+      );
+      if (r['success'] != true || !mounted) {
+        if (mounted) setState(() => _editDataLoaded = true);
+        return;
       }
-    } catch (e) {
-      debugPrint('LOAD-EMP: ERROR = $e');
-    }
-  }
+      final d = Map<String, dynamic>.from(r['data'] ?? {});
+      final svc = Map<String, dynamic>.from(d['service'] ?? {});
+      setState(() {
+        _photoUrl = svc['photo_url'] ?? _photoUrl;
 
-  Future<void> _loadResources() async {
-    try {
-      final r = await ApiService.get('/api/resource/list?project_id=${widget.projectId}');
-      if (r['success'] == true && mounted) {
-        final list = List<Map<String, dynamic>>.from(r['data'] ?? []);
+        _employeePrices = {};
+        final rawPrices = svc['employee_prices'];
+        if (rawPrices is Map) {
+          rawPrices.forEach((k, v) {
+            final empId = int.tryParse(k.toString()) ?? 0;
+            if (empId > 0 && v is Map) {
+              _employeePrices[empId] = Map<String, dynamic>.from(v);
+            }
+          });
+        }
+        _employeeIds = Set<int>.from(
+          (svc['employee_ids'] as List?)
+                  ?.map((e) => int.tryParse(e.toString()) ?? 0)
+                  .where((e) => e > 0) ??
+              [],
+        );
+
+        final photos = d['work_photos'] as List?;
+        if (photos != null) {
+          _existingWorkPhotos = photos
+              .where((p) => (p['photo_url'] ?? '').isNotEmpty)
+              .map((p) => {'url': p['photo_url'] ?? '', 'id': p['id']})
+              .toList();
+        }
+
+        _allEmployees = List<Map<String, dynamic>>.from(d['employees'] ?? []);
+
+        _resources = List<Map<String, dynamic>>.from(d['resources'] ?? []);
         _resourceStates = {};
-        for (final res in list) {
-          final rid = res['id'] is int ? res['id'] as int : int.tryParse(res['id'].toString()) ?? 0;
+        for (final res in _resources) {
+          final rid = int.tryParse(res['id'].toString()) ?? 0;
           _resourceStates[rid] = false;
         }
-        if (_isEdit) {
-          final serviceId = widget.service?['id'];
-          final resStates = await ApiService.get('/api/resource/get-for-service?service_id=$serviceId&project_id=${widget.projectId}');
-          if (resStates['success'] == true) {
-            final states = resStates['data'] as List? ?? [];
-            for (final s in states) {
-              _resourceStates[s['resource_id']] = s['is_active'] == 1;
-            }
-          }
+        final states = d['resources_for_service'];
+        if (states is Map) {
+          states.forEach((k, v) {
+            final rid = int.tryParse(k.toString()) ?? 0;
+            if (rid > 0) _resourceStates[rid] = v == true;
+          });
         }
-        setState(() => _resources = list);
-      }
-    } catch (_) {}
-  }
 
-  Future<void> _loadServiceData() async {
-    final result = await ApiService.get('/api/service/get?id=${widget.service?['id']}&project_id=${widget.projectId}');
+        _categoriesFromServer =
+            List<String>.from(d['categories'] ?? _categoriesFromServer);
 
-      debugPrint('SERVICES-LOAD: success=${result['success']}, count=${(result['data'] as List?)?.length ?? 0}, message=${result['message']}');
-    if (result['success'] == true && mounted) {
-      final data = result['data'];
-      setState(() {
-        _photoUrl = data['photo_url'] ?? '';
-        final photos = data['work_photos'] as List?;
-        if (photos != null && photos.isNotEmpty) {
-          _existingWorkPhotos = photos.where((p) => (p['photo_url'] ?? '').isNotEmpty).map((p) {
-            return {'url': p['photo_url'] ?? p['url'] ?? '', 'id': p['id']};
-          }).toList();
-        }
+        _editDataLoaded = true;
       });
+    } catch (e) {
+      debugPrint('EDIT-DATA ERROR: \$e');
+      if (mounted) setState(() => _editDataLoaded = true);
     }
   }
 
-  Future<void> _loadEmployeePrices() async {
-  try {
-    final result = await ApiService.get('/api/service/get?id=${widget.service!['id']}&project_id=${widget.projectId}');
-    if (result['success'] == true) {
-      final data = result['data'];
-      if (data['employee_prices'] != null && mounted) {
-        setState(() {
-          _employeePrices = {};
-          final raw = data['employee_prices'];
-          if (raw is Map) {
-            raw.forEach((k, v) {
-              final empId = int.tryParse(k.toString()) ?? 0;
-              if (empId > 0 && v is Map) {
-                _employeePrices[empId] = Map<String, dynamic>.from(v);
-              }
-            });
-          } else if (raw is List) {
-            for (final item in raw) {
-              if (item is Map) {
-                final empId = int.tryParse((item['employee_id'] ?? item['id'] ?? '').toString()) ?? 0;
-                if (empId > 0) {
-                  _employeePrices[empId] = Map<String, dynamic>.from(item);
-                }
-              }
-            }
-          }
-          for (final empId in _employeePrices.keys) {
-            if (!_employeeIds.contains(empId)) {
-              _employeeIds.add(empId);
-            }
-          }
-        });
-      }
-    }
-  } catch (_) {
-    // ignore: empty_catches — некритичная ошибка загрузки цен
+  Widget _employeesSkeletonRow() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F8),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: const [
+          SkeletonBox(width: 40, height: 40, radius: 10),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 120, height: 14),
+                SizedBox(height: 6),
+                SkeletonBox(width: 80, height: 12),
+              ],
+            ),
+          ),
+          SkeletonBox(width: 16, height: 16),
+        ],
+      ),
+    );
   }
-}
 
   // ========== МЕТОДЫ ДЛЯ ПЕРСОНАЛЬНЫХ НАСТРОЕК ==========
   
@@ -927,11 +1063,20 @@ for (final entry in _employeePrices.entries) {
                 ]),
               ),
               Expanded(
-                child: _allEmployees.isEmpty
-                    ? const Center(child: Text('Нет сотрудников', style: TextStyle(color: Color(0xFF999999))))
-                    : ListView(
+                child: (!_editDataLoaded)
+                    ? ListView(
                         padding: const EdgeInsets.all(16),
-                        children: _allEmployees.map((emp) {
+                        children: [
+                          _employeesSkeletonRow(),
+                          _employeesSkeletonRow(),
+                          _employeesSkeletonRow(),
+                        ],
+                      )
+                    : _allEmployees.isEmpty
+                        ? const Center(child: Text('Нет сотрудников', style: TextStyle(color: Color(0xFF999999))))
+                        : ListView(
+                            padding: const EdgeInsets.all(16),
+                            children: _allEmployees.map((emp) {
                           final empId = emp['id'] as int;
                           final isSelected = _employeeIds.contains(empId);
                           final prices = _employeePrices[empId] ?? {};
@@ -1139,7 +1284,6 @@ for (final entry in _employeePrices.entries) {
   }
 
   void _showResourcePicker() async {
-    await _loadResources();
     if (!mounted) return;
     
     final localStates = Map<int, bool>.from(_resourceStates);
@@ -1399,7 +1543,11 @@ for (final entry in _employeePrices.entries) {
                 _block('Сотрудники', [
                   if (_employeeIds.isEmpty)
                     _row('Сотрудники', 'Все сотрудники', _showEmployeePicker)
-                  else ...[
+                  else if (!_editDataLoaded) ...[
+                    _employeesSkeletonRow(),
+                    _employeesSkeletonRow(),
+                    _employeesSkeletonRow(),
+                  ] else ...[
                     ..._employeeIds.map<Widget>((empId) {
                       final emp = _allEmployees.firstWhere(
                         (e) => e['id'] == empId,

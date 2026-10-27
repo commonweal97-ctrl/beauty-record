@@ -965,31 +965,51 @@ for (final entry in _employeePrices.entries) {
   void _showCategoryPicker() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => GestureDetector(
-        onTap: () => FocusScope.of(ctx).unfocus(),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('Категория', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            ..._allCategories.map((c) => ListTile(
-                  title: Text(c),
-                  trailing: _category == c ? const Icon(Icons.check, color: Color(0xFFDD1847)) : null,
-                  onTap: () {
-                    setState(() => _category = c);
-                    Navigator.pop(ctx);
-                  },
-                )),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.add, color: Color(0xFFDD1847)),
-              title: const Text('Создать категорию', style: TextStyle(color: Color(0xFFDD1847))),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showCreateCategory();
-              },
+      builder: (ctx) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(ctx).size.height * 0.55,
+          child: Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+              child: Row(children: [
+                const Expanded(
+                  child: Text('Категория', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ]),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                children: [
+                  ..._allCategories.map((c) => ListTile(
+                        title: Text(c),
+                        trailing: _category == c
+                            ? const Icon(Icons.check, color: Color(0xFFDD1847))
+                            : null,
+                        onTap: () {
+                          setState(() => _category = c);
+                          Navigator.pop(ctx);
+                        },
+                      )),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.add, color: Color(0xFFDD1847)),
+                    title: const Text('Создать категорию', style: TextStyle(color: Color(0xFFDD1847))),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showCreateCategory();
+                    },
+                  ),
+                ],
+              ),
             ),
           ]),
         ),
@@ -1001,32 +1021,97 @@ for (final entry in _employeePrices.entries) {
     final ctrl = TextEditingController();
     showDialog(
       context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
       builder: (ctx) => GestureDetector(
         onTap: () => FocusScope.of(ctx).unfocus(),
-        child: AlertDialog(
-          title: const Text('Новая категория'),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
-            decoration: const InputDecoration(hintText: 'Название категории'),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
-            TextButton(
-              onPressed: () {
-                if (ctrl.text.trim().isNotEmpty) {
-                  setState(() {
-                    widget.categories.add(ctrl.text.trim());
-                    _category = ctrl.text.trim();
-                  });
-                  Navigator.pop(ctx);
-                }
-              },
-              child: const Text('Создать'),
+        child: Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Иконка в красном кружке
+                Center(
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDD1847).withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.category_outlined, color: Color(0xFFDD1847), size: 26),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Заголовок
+                const Text(
+                  'Новая категория',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Введите название — оно появится в списке фильтров',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF888888)),
+                ),
+                const SizedBox(height: 20),
+                // Поле в стиле AppCard
+                TextField(
+                  controller: ctrl,
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  textCapitalization: TextCapitalization.sentences,
+                  onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
+                  decoration: AppCard.inputDecoration(hint: 'Например: «Брови»'),
+                ),
+                const SizedBox(height: 20),
+                // Кнопки
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF666666),
+                          side: const BorderSide(color: Color(0xFFE0E0E0)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('Отмена', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (ctrl.text.trim().isNotEmpty) {
+                            setState(() {
+                              widget.categories.add(ctrl.text.trim());
+                              _category = ctrl.text.trim();
+                            });
+                            Navigator.pop(ctx);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDD1847),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Text('Создать', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1492,7 +1577,10 @@ for (final entry in _employeePrices.entries) {
                         onTap: _showCategoryPicker,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE0E0E0))),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8F8F8),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           child: Row(children: [
                             const Text('Категория: ', style: TextStyle(fontSize: 14, color: Color(0xFF888888))),
                             Flexible(child: Text(_category, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis)),

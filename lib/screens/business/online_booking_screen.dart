@@ -12,10 +12,12 @@ import '../../core/app_logger.dart';
 class OnlineBookingScreen extends StatefulWidget {
   final int projectId;
   final void Function(String page)? onNavigate;
+  final void Function(String page)? onNavigateEdit;
   const OnlineBookingScreen({
     super.key,
     required this.projectId,
     this.onNavigate,
+    this.onNavigateEdit,
   });
 
   @override
@@ -333,7 +335,7 @@ _conditionItem(
   'Предстоящие записи',
   'Добавьте ранее запланированные записи. Онлайн-запись будет учитывать занятое на них время.',
   null, // null = опционально
-  () {},
+  () => _navigateTo('journal'), // журнал — там записи
 ),
                     ],
                   ),
@@ -379,7 +381,7 @@ _conditionItem(
     final isOptional = done == null;
     final isDone = done == true;
     return GestureDetector(
-      onTap: (isDone || isOptional) ? null : onTap,
+      onTap: isDone ? null : onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(10)),
@@ -442,9 +444,13 @@ _conditionItem(
   }
 
   void _navigateTo(String page) {
-    // Переключение вкладки в родителе (JournalScreen), а не новый экран.
-    // Так сохраняется header/sidebar и навигация «как из меню».
-    widget.onNavigate?.call(page);
+    // Если передан onNavigateEdit — открываем страницу редактирования
+    // с кнопкой «Назад» (без сайдбара), иначе — переключаем вкладку.
+    if (widget.onNavigateEdit != null) {
+      widget.onNavigateEdit!.call(page);
+    } else {
+      widget.onNavigate?.call(page);
+    }
   }
 
   void _showOnlineSettings() {

@@ -28,12 +28,15 @@ class JournalScreen extends StatefulWidget {
   State<JournalScreen> createState() => _JournalScreenState();
 }
 
-class _JournalScreenState extends State<JournalScreen> {
+class _JournalScreenState extends State<JournalScreen> with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _project;
   List<Map<String, dynamic>> _allProjects = [];
   List<Map<String, dynamic>> _employees = [];
   List<Map<String, dynamic>>? _allEmployees;
   List<Map<String, dynamic>> _records = [];
+  int? _selectedEmployeeId; // фильтр по мастеру (из месяца)
+  late AnimationController _filterPulseCtrl;
+  late Animation<double> _filterPulse;
   List<Map<String, dynamic>> _occupiedTime = [];
   List<Map<String, dynamic>> _monthDates = [];
   DateTime _selectedDate = DateTime.now();
@@ -453,6 +456,9 @@ class _JournalScreenState extends State<JournalScreen> {
   }
 
   List<Map<String, dynamic>> get _filteredEmployees {
+    if (_selectedEmployeeId != null) {
+      return _employees.where((e) => e['id'] == _selectedEmployeeId).toList();
+    }
     if (_showAllEmployees) return _employees;
     return _employees
         .where((e) =>
@@ -479,19 +485,40 @@ class _JournalScreenState extends State<JournalScreen> {
   }
 
   void _openFilterModal() {
+    // Видимые мастера: если установлен _selectedEmployeeId — только он; иначе — все.
+    final all = _allEmployees ?? _employees;
+    final visibleIds = _selectedEmployeeId != null
+        ? <int>{_selectedEmployeeId!}
+        : all.map((e) => e['id'] as int).toSet();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _FilterEmployeeSheet(
-        employees: _allEmployees ?? _employees,
-        visibleIds: _employees.map((e) => e['id'] as int).toSet(),
+        employees: all,
+        visibleIds: visibleIds,
         onApply: (visibleIds) {
+          _allEmployees ??= List.from(_employees);
+          final totalCount = _allEmployees!.length;
+          final selectedCount = visibleIds.length;
           setState(() {
-            _allEmployees ??= List.from(_employees);
-            _employees = _allEmployees!.where((e) => visibleIds.contains(e['id'])).toList();
-            _showAllEmployees = visibleIds.length == _allEmployees!.length;
+            if (selectedCount == totalCount) {
+              // Все выбраны → снять фильтр месяца.
+              _selectedEmployeeId = null;
+              _showAllEmployees = true;
+              _employees = List.from(_allEmployees!);
+            } else if (selectedCount == 1) {
+              // Один выбран → фильтр по мастеру (из месяца).
+              _selectedEmployeeId = visibleIds.first;
+              _showAllEmployees = false;
+              _employees = List.from(_allEmployees!);
+            } else {
+              // Несколько → фильтр по нескольким, _selectedEmployeeId = null.
+              _selectedEmployeeId = null;
+              _employees = _allEmployees!.where((e) => visibleIds.contains(e['id'])).toList();
+              _showAllEmployees = false;
+            }
           });
           _dataReady = false;
           Future.wait([_loadRecords(), _loadOccupiedTime()]).then((_) {
@@ -580,6 +607,14 @@ class _JournalScreenState extends State<JournalScreen> {
     @override
 void initState() {
     super.initState();
+    _filterPulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _filterPulse = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _filterPulseCtrl, curve: Curves.easeInOut),
+    );
+    _filterPulseCtrl.repeat(reverse: true);
     _selectedDate = DateTime(
         DateTime.now().year, DateTime.now().month, DateTime.now().day);
     _loadAll();
@@ -599,6 +634,7 @@ void initState() {
 
     @override
   void dispose() {
+    _filterPulseCtrl.dispose();
     _dateScrollController.removeListener(_checkAndLoadAdjacentDates);
     _dateScrollController.dispose();
     _reviewsTimer?.cancel();
@@ -677,6 +713,28 @@ void initState() {
           final idx = _navItems.indexWhere((it) => it.page == page);
           if (idx >= 0) _navigateTo(idx);
         },
+        onNavigateEdit: (page) {
+          // 'journal' — вернуться на сам журнал (без страницы редактирования).
+          if (page == 'journal') {
+            // Просто переключаемся на журнал (без popUntil — он закрывает лишнее).
+            setState(() => _currentTabIndex = -1);
+            return;
+          }
+          final item = _navItems.firstWhere(
+            (it) => it.page == page,
+            orElse: () => _navItems.first,
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => _EditPageWrapper(
+                projectId: widget.projectId,
+                page: item.page,
+                title: item.title,
+              ),
+            ),
+          );
+        },
       );
     }
 
@@ -724,16 +782,44 @@ void initState() {
               const SizedBox(width: 12),
               GestureDetector(
                 onTap: _openFilterModal,
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: _buildSvgIcon('assets/slider.svg', size: 20),
-                  ),
+                child: AnimatedBuilder(
+                  animation: _filterPulse,
+                  builder: (context, child) {
+                    final active = _selectedEmployeeId != null;
+                    final pulse = active ? _filterPulse.value : 0.0;
+                    return Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: active
+                              ? Color.lerp(const Color(0xFFDD1847),
+                                  const Color(0xFFDD1847).withValues(alpha: 0.2), pulse)!
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                        boxShadow: active
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFFDD1847)
+                                      .withValues(alpha: 0.35 * (1 - pulse)),
+                                  blurRadius: 4 + 10 * pulse,
+                                  spreadRadius: 1 + 3 * pulse,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Center(
+                        child: _buildSvgIcon(
+                          'assets/slider.svg',
+                          size: 20,
+                          color: active ? const Color(0xFFDD1847) : null,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -839,11 +925,24 @@ void initState() {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
-                  child: CachedAvatar(
-                    url: _project?['profile_photo'],
-                    size: 28,
-                    radius: 6,
-                  ),
+                  child: (_project?['profile_photo'] != null &&
+                          _project!['profile_photo'].toString().isNotEmpty)
+                      ? CachedAvatar(
+                          url: _project!['profile_photo'],
+                          size: 28,
+                          radius: 6,
+                        )
+                      : Container(
+                          width: 28,
+                          height: 28,
+                          color: Colors.grey[200],
+                          child: SvgPicture.asset(
+                            'assets/photo-none.svg',
+                            width: 16,
+                            height: 16,
+                            fit: BoxFit.scaleDown,
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -932,11 +1031,24 @@ void initState() {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(6),
-                                  child: CachedAvatar(
-                                    url: p['profile_photo'],
-                                    size: 32,
-                                    radius: 6,
-                                  ),
+                                  child: (p['profile_photo'] != null &&
+                                          p['profile_photo'].toString().isNotEmpty)
+                                      ? CachedAvatar(
+                                          url: p['profile_photo'],
+                                          size: 32,
+                                          radius: 6,
+                                        )
+                                      : Container(
+                                          width: 32,
+                                          height: 32,
+                                          color: Colors.grey[200],
+                                          child: SvgPicture.asset(
+                                            'assets/photo-none.svg',
+                                            width: 18,
+                                            height: 18,
+                                            fit: BoxFit.scaleDown,
+                                          ),
+                                        ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -1421,10 +1533,15 @@ void initState() {
       return _buildNoOneWorks();
     }
 
+    // Фильтр записей по выбранному мастеру (из месяца).
+    final displayRecords = _selectedEmployeeId != null
+        ? _records.where((r) => r['employee_id'] == _selectedEmployeeId).toList()
+        : _records;
+
     final hasWorkingEmployees = displayEmployees.any((e) {
       if (e['is_working'] == false) return true;
       final empRecords =
-          _records.where((r) => r['employee_id'] == e['id']).toList();
+          displayRecords.where((r) => r['employee_id'] == e['id']).toList();
       if (empRecords.isNotEmpty) return true;
       final empOccupied =
           _occupiedTime.where((o) => o['employee_id'] == e['id']).toList();
@@ -1640,7 +1757,7 @@ void initState() {
                               displayEmployees.asMap().entries.map((entry) {
                             final index = entry.key;
                             final e = entry.value;
-                            final empRecords = _records
+                            final empRecords = displayRecords
                                 .where((r) => r['employee_id'] == e['id'])
                                 .toList();
                             final empOccupied = _occupiedTime
@@ -2017,7 +2134,18 @@ void initState() {
     );
   }
 
-  Widget _buildMonthView() => MonthViewScreen(projectId: widget.projectId);
+  Widget _buildMonthView() => MonthViewScreen(
+        projectId: widget.projectId,
+        onDayTap: (employeeId, date) {
+          setState(() {
+            _currentTabIndex = -1;
+            _selectedDate = date;
+            _selectedEmployeeId = employeeId;
+            _view = 'day'; // переключить таб Месяц → День
+          });
+          _loadRecords();
+        },
+      );
 
   Widget _buildListView() => ListViewScreen(
   projectId: widget.projectId,
@@ -2457,6 +2585,47 @@ class _FilterEmployeeSheetState extends State<_FilterEmployeeSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ===== Обёртка для страницы редактирования (из онлайн-записи) =====
+// Открывается как отдельный экран со стрелкой «Назад» (без сайдбара).
+class _EditPageWrapper extends StatelessWidget {
+  final int projectId;
+  final String page;
+  final String title;
+  const _EditPageWrapper({
+    required this.projectId,
+    required this.page,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
+      ),
+      body: JournalSubScreen(
+        projectId: projectId,
+        page: page,
+        title: title,
       ),
     );
   }

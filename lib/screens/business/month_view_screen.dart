@@ -8,7 +8,13 @@ import '../../../widgets/common/avatar_initials.dart';
 class MonthViewScreen extends StatefulWidget {
   final int projectId;
   final Function(DateTime)? onDateSelected;
-  const MonthViewScreen({super.key, required this.projectId, this.onDateSelected});
+  final Function(int employeeId, DateTime date)? onDayTap;
+  const MonthViewScreen({
+    super.key,
+    required this.projectId,
+    this.onDateSelected,
+    this.onDayTap,
+  });
 
   @override
   State<MonthViewScreen> createState() => _MonthViewScreenState();
@@ -179,9 +185,11 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
               child: Stack(
                 children: [
                   // СКРОЛЯЩАЯСЯ ЧАСТЬ (даты и индикаторы)
-                  GestureDetector(
-                    onPanUpdate: (details) {
-                      _scrollController.jumpTo(_scrollController.offset - details.delta.dx);
+                  // Listener вместо GestureDetector(onPanUpdate): не участвует
+                  // в gesture arena → не перехватывает tap на ячейках.
+                  Listener(
+                    onPointerMove: (event) {
+                      _scrollController.jumpTo(_scrollController.offset - event.delta.dx);
                     },
                     child: SingleChildScrollView(
                       controller: _scrollController,
@@ -259,8 +267,16 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
                                   ...List.generate(_dates.length, (i) {
                                     final load = i < loads.length ? loads[i] : 0;
                                     final fillPercent = (load / 3.0).clamp(0.0, 1.0);
-                                    
-                                    return Container(
+                                    final empId = (e['id'] is int) ? e['id'] as int : int.tryParse('${e['id']}') ?? 0;
+                                    final date = _dates[i];
+
+                                    return GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        widget.onDayTap?.call(empId, date);
+                                        widget.onDateSelected?.call(date);
+                                      },
+                                      child: Container(
                                       width: 85,
                                       height: 70,
                                       decoration: const BoxDecoration(
@@ -329,6 +345,7 @@ class _MonthViewScreenState extends State<MonthViewScreen> with TickerProviderSt
                                           ),
                                         ],
                                       ),
+                                    ),
                                     );
                                   }),
                                 ],

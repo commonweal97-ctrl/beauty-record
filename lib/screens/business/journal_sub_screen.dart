@@ -17,12 +17,14 @@ class JournalSubScreen extends StatelessWidget {
   final String page;
   final String title;
   final void Function(String page)? onNavigate;
+  final void Function(String page)? onNavigateEdit;
   const JournalSubScreen({
     super.key,
     required this.projectId,
     required this.page,
     required this.title,
     this.onNavigate,
+    this.onNavigateEdit,
   });
 
   @override
@@ -64,7 +66,11 @@ class JournalSubScreen extends StatelessWidget {
     }
 
     if (page == 'online') {
-      return OnlineBookingScreen(projectId: projectId, onNavigate: onNavigate);
+      return OnlineBookingScreen(
+        projectId: projectId,
+        onNavigate: onNavigate,
+        onNavigateEdit: onNavigateEdit,
+      );
     }
 
     if (page == 'notifications') {

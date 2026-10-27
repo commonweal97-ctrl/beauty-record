@@ -236,6 +236,7 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
     setState(() => _loading = true);
     try {
       final result = await ApiService.get('/api/project-profile/get?project_id=${widget.projectId}');
+      debugPrint('PROFILE-LOAD: success=${result['success']}, msg=${result['message']}, has_data=${result['data'] != null}');
       if (result['success'] == true && mounted) {
         final d = result['data'];
         debugPrint('schedule KEY EXISTS: ${d.containsKey('schedule')}');
@@ -365,6 +366,11 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
     } catch (e) {
       debugPrint('Ошибка загрузки профиля: $e');
       if (mounted) setState(() => _loading = false);
+    }
+    // Если _load завершился без success — сбросить _loading (иначе вечный скелетон).
+    // Причина: API вернул 401/403 (не авторизован / нет доступа к проекту).
+    if (mounted && _loading) {
+      setState(() => _loading = false);
     }
   }
 

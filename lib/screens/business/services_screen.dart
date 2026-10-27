@@ -123,18 +123,46 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             child: ReorderableListView.builder(
                               padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                               itemCount: displayServices.length,
-                              onReorderItem: (oldIndex, newIndex) {
-                                final item = displayServices.removeAt(oldIndex);
-                                displayServices.insert(newIndex, item);
+                              onReorderItem: (oldIndex, newIndex) async {
+                                // ReorderableListView: newIndex — позиция ДО удаления.
+                                // При перетаскивании вниз newIndex на 1 больше реальной.
+                                // movedId — что тащим. targetId — элемент, на чьё место
+                                // встаёт moved (в отфильтрованном списке БЕЗ сдвига).
+                                final movedId = displayServices[oldIndex]['id'];
+                                final targetId = displayServices[newIndex]['id'];
+                                debugPrint('REORDER: old=$oldIndex new=$newIndex moved=$movedId target=$targetId');
+                                final fullOld = _services.indexWhere((e) => e['id'] == movedId);
+                                final fullTarget = _services.indexWhere((e) => e['id'] == targetId);
+                                if (fullOld < 0 || fullTarget < 0) return;
+                                // Удаляем moved из полного списка.
+                                final item = _services.removeAt(fullOld);
+                                // Находим target заново (индексы сдвинулись после удаления).
+                                final insertAt = _services.indexWhere((e) => e['id'] == targetId);
+                                // Если тащим вниз — вставляем ПОСЛЕ target; если вверх — ПЕРЕД target.
+                                final insertPos = (oldIndex < newIndex) ? insertAt + 1 : insertAt;
+                                _services.insert(insertPos, item);
+                                for (var i = 0; i < _services.length; i++) {
+                                  _services[i]['sort_order'] = i;
+                                }
+                                debugPrint('REORDER-END: all_ids=${_services.map((e) => e['id']).toList()}');
                                 setState(() {});
-                                final orders = displayServices.asMap().entries.map((e) => {
+                                final orders = _services.asMap().entries.map((e) => {
                                   'id': e.value['id'],
                                   'sort_order': e.key,
                                 }).toList();
-                                ApiService.post('/api/service/update-order', {
-                                  'project_id': widget.projectId,
-                                  'orders': orders,
-                                });
+                                try {
+                                  final r = await ApiService.post('/api/service/update-order', {
+                                    'project_id': widget.projectId,
+                                    'orders': orders,
+                                  });
+                                  if (!mounted) return;
+                                  if (r['success'] != true) {
+                                    showToast(this.context, 'Не удалось сохранить порядок', isError: true);
+                                  }
+                                } catch (_) {
+                                  if (!mounted) return;
+                                  showToast(this.context, 'Ошибка сохранения порядка', isError: true);
+                                }
                               },
                               proxyDecorator: (child, index, animation) {
                                 return AnimatedBuilder(

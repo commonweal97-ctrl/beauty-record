@@ -378,7 +378,15 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
     entry = OverlayEntry(
       builder: (_) => _MagicDemoOverlay(
         services: services.take(2).toList(),
-        buildCard: (s) => _buildServiceCard(s, index: 0, total: 2),
+        buildCard: (s) {
+          final eid = s['id'] is int ? s['id'] as int : int.tryParse(s['id'].toString()) ?? 0;
+          return _buildServiceCard(
+            s,
+            index: 0,
+            total: 2,
+            cardKey: ValueKey('magic_$eid'),  // уникальный ключ — не конфликтует с основным списком
+          );
+        },
         onClose: () {
           if (entry.mounted) entry.remove();
         },
@@ -387,14 +395,14 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
     overlay.insert(entry);
   }
 
-  Widget _buildServiceCard(Map<String, dynamic> s, {int index = 0, int total = 1, Key? key}) {
+  Widget _buildServiceCard(Map<String, dynamic> s, {int index = 0, int total = 1, Key? key, Key? cardKey}) {
     final photo = s['photo_url']?.toString();
     final isFree = s['is_free'] == true;
     final priceFrom = s['price_from'] == true;
     final price = double.tryParse(s['price']?.toString() ?? '0') ?? 0;
     final duration = s['duration'] as int? ?? 60;
     final sid = s['id'] as int;
-    final keyForCard = _serviceKeys.putIfAbsent(sid, () => GlobalKey());
+    final keyForCard = cardKey ?? _serviceKeys.putIfAbsent(sid, () => GlobalKey());
     final isHighlight = _highlightServiceId == sid;
     final isSuccess = _highlightSuccess && isHighlight;
 

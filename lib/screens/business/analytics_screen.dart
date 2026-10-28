@@ -74,7 +74,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     super.dispose();
   }
 
-  void _load() async {
+  Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final result = await ApiService.get(
@@ -421,12 +421,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 ],
               ),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Заголовок + период
+          : RefreshIndicator(
+              color: const Color(0xFFDD1847),
+              onRefresh: () async { await _load(); },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Заголовок + период
                   _buildHeader(periodDate),
                   const SizedBox(height: 16),
 
@@ -459,6 +463,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   // Клиенты
                   _buildClientsRow(d),
                 ],
+              ),
               ),
             ),
     );

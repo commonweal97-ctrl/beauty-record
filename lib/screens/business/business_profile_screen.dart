@@ -32,7 +32,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     _loadProfile();
   }
 
-  void _loadProfile() async {
+  Future<void> _loadProfile() async {
     try {
       final result = await ApiService.get('/api/profile');
       if (result['success'] == true && mounted) {
@@ -128,13 +128,17 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                 const SkeletonBox(height: 48, radius: 12),
               ]),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(children: [
-                GestureDetector(
-                  onTap: () {},
-                  child: CachedAvatar(url: _avatar, size: 100, radius: 50),
-                ),
+          : RefreshIndicator(
+              color: const Color(0xFFDD1847),
+              onRefresh: () async { await _loadProfile(); },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(children: [
+                  GestureDetector(
+                    onTap: () {},
+                    child: CachedAvatar(url: _avatar, size: 100, radius: 50),
+                  ),
                 const SizedBox(height: 24),
                 _sectionTitle('Имя и фамилия'),
                 const SizedBox(height: 8),
@@ -184,7 +188,8 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                   child: const Text('Выйти из аккаунта', style: TextStyle(color: Color(0xFF999999))),
                 ),
               ]),
-            ),
+              ),
+          ),
     );
   }
 

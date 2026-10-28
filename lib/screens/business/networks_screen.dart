@@ -25,7 +25,7 @@ class _NetworksScreenState extends State<NetworksScreen> {
     _load();
   }
 
-  void _load() async {
+  Future<void> _load() async {
     try {
       final result = await ApiService.get('/api/network/list');
       if (result['success'] == true && mounted) {
@@ -84,24 +84,32 @@ class _NetworksScreenState extends State<NetworksScreen> {
 
       body: _loading
           ? ListView.builder(padding: const EdgeInsets.all(16), itemCount: 3, itemBuilder: (_, _) => _buildSkeleton())
-          : _networks.isEmpty
-              ? _buildEmpty()
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _networks.length + 1,
-                  itemBuilder: (_, i) {
-                    if (i == 0) {
-                      return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Row(children: [
-                        Expanded(child: Text('Сети', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.grey[900]))),
-                        GestureDetector(onTap: () => _showCreateDialog(), child: Container(width: 40, height: 40, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFDD1847), Color(0xFFC1163D)]), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.add, color: Colors.white))),
-                      ]),
-                    );
-                    }
-                    return _buildCard(_networks[i - 1]);
-                  },
-                ),
+          : RefreshIndicator(
+              color: const Color(0xFFDD1847),
+              onRefresh: () async { await _load(); },
+              child: _networks.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [SizedBox(height: 400, child: _buildEmpty())],
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _networks.length + 1,
+                      itemBuilder: (_, i) {
+                        if (i == 0) {
+                          return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Row(children: [
+                            Expanded(child: Text('Сети', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.grey[900]))),
+                            GestureDetector(onTap: () => _showCreateDialog(), child: Container(width: 40, height: 40, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFDD1847), Color(0xFFC1163D)]), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.add, color: Colors.white))),
+                          ]),
+                        );
+                        }
+                        return _buildCard(_networks[i - 1]);
+                      },
+                    ),
+            ),
     );
   }
 

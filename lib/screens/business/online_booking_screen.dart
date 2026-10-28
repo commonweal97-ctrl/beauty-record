@@ -219,8 +219,12 @@ child: _moderationStatus == 'pending'
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(24),
+          child: RefreshIndicator(
+            color: const Color(0xFFDD1847),
+            onRefresh: () async { await _loadAll(); },
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(24),
             children: [
               if (_moderationStatus == 'rejected' && _moderationComment != null)
                 Container(
@@ -371,6 +375,7 @@ _conditionItem(
                   ),
                 ),
             ],
+            ),
           ),
         ),
       ],

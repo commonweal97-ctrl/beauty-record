@@ -42,7 +42,6 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
   DateTime _selectedDate = DateTime.now();
   DateTime? _savedDate;
   String _view = 'day';
-  bool _loading = true;
   bool _sidebarOpen = false;
   bool _showAllEmployees = true;
   final _dateScrollController = ScrollController();
@@ -54,6 +53,8 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
 
   bool _dataReady = false;
   bool _datesInitialized = false;
+  bool _showSkeleton = false;
+  Timer? _skeletonTimer;
 
   bool _allOff = false;
 
@@ -129,27 +130,29 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
     _selectedDate = today;
     _savedDate = today;
 
-    await Future.wait([
-      _loadInitialDates(),
-      _loadProject(),
-    ]);
+    try {
+      // Фаза 1: даты + проект (батчинг)
+      await Future.wait([
+        _loadInitialDates(),
+        _loadProject(),
+      ]);
 
-    if (mounted) {
-      setState(() {
-        _loading = false;
-      });
-    }
+      // Фаза 2: записи + расписание + занятое (батчинг)
+      await Future.wait([
+        _loadSchedule(),
+        _loadRecords(),
+        _loadOccupiedTime(),
+      ]);
 
-    await Future.wait([
-      _loadSchedule(),
-      _loadRecords(),
-      _loadOccupiedTime(),
-    ]);
-
-    if (mounted) {
+      // ОДИН setState в конце — карусель + список появляются одновременно
+      if (!mounted) return;
       setState(() {
         _dataReady = true;
       });
+    } catch (e, st) {
+      AppLogger.error('_loadAll', e, st);
+      if (!mounted) return;
+      // error state — можно показать toast (пока нет)
     }
   }
 
@@ -177,26 +180,44 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
     _selectedDate = today;
     _savedDate = today;
 
-    final monthsToLoad = <DateTime>[];
-    monthsToLoad.add(DateTime(today.year, today.month, 1));
-    monthsToLoad.add(DateTime(today.year, today.month - 1, 1));
-    monthsToLoad.add(DateTime(today.year, today.month + 1, 1));
-    monthsToLoad.add(DateTime(today.year, today.month - 2, 1));
-    monthsToLoad.add(DateTime(today.year, today.month + 2, 1));
+    final monthsToLoad = <DateTime>[
+      DateTime(today.year, today.month, 1),
+      DateTime(today.year, today.month - 1, 1),
+      DateTime(today.year, today.month + 1, 1),
+      DateTime(today.year, today.month - 2, 1),
+      DateTime(today.year, today.month + 2, 1),
+    ];
 
-    await Future.wait(monthsToLoad.map((m) => _loadMonthDates(m.year, m.month)));
+    // Батчинг: параллельно фетчим ВСЕ месяцы БЕЗ setState (чистая _fetchMonthDates)
+    final results = await Future.wait(
+      monthsToLoad.map((m) => _fetchMonthDates(m.year, m.month)),
+    );
 
-    _datesInitialized = true;
-
-    // Ждем несколько кадров, чтобы ListView успел привязаться к контроллеру
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _dateScrollController.hasClients) {
-            _scrollToToday();
-          }
-        });
+    // Склеиваем, дедуплицируем, сортируем
+    final existing = <String>{};
+    final allDates = <Map<String, dynamic>>[];
+    for (final r in results) {
+      for (final d in r) {
+        final date = d['date'] as String?;
+        if (date != null && existing.add(date)) allDates.add(d);
       }
+    }
+    allDates.sort((a, b) => (a['date'] as String).compareTo(b['date'] as String));
+
+    // ОДИН setState после всех месяцев — карусель перестраивается 1 раз
+    if (!mounted) return;
+    setState(() {
+      _monthDates = allDates;
+      _loadedMonths.addAll(monthsToLoad.map((m) => '${m.year}-${m.month}'));
+      _datesInitialized = true;
+    });
+
+    // Автоскролл к сегодня — после привязки ListView к контроллеру
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _dateScrollController.hasClients) _scrollToToday();
+      });
     });
   }
 
@@ -275,6 +296,20 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
             _occupiedTime = List<Map<String, dynamic>>.from(result['data'] ?? []));
       }
     } catch (_) {}
+  }
+
+  /// Чистая функция: API-запрос без setState. Возвращает список дат месяца.
+  Future<List<Map<String, dynamic>>> _fetchMonthDates(int year, int month) async {
+    try {
+      final result = await ApiService.get(
+          '/api/booking/month-dates?project_id=${widget.projectId}&year=$year&month=$month');
+      if (result['success'] == true) {
+        return List<Map<String, dynamic>>.from(result['dates'] ?? []);
+      }
+    } catch (e) {
+      AppLogger.debug('❌ _fetchMonthDates($year/$month): $e');
+    }
+    return [];
   }
 
   Future<void> _loadMonthDates(int year, int month) async {
@@ -617,6 +652,10 @@ void initState() {
     _filterPulseCtrl.repeat(reverse: true);
     _selectedDate = DateTime(
         DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    _skeletonTimer?.cancel();
+    _skeletonTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted && !_datesInitialized) setState(() => _showSkeleton = true);
+    });
     _loadAll();
     _dateScrollController.addListener(_checkAndLoadAdjacentDates);
     _loadUnansweredReviews();
@@ -634,6 +673,7 @@ void initState() {
 
     @override
   void dispose() {
+    _skeletonTimer?.cancel();
     _filterPulseCtrl.dispose();
     _dateScrollController.removeListener(_checkAndLoadAdjacentDates);
     _dateScrollController.dispose();
@@ -739,19 +779,8 @@ void initState() {
     }
 
     // Иначе показываем журнал
-    if (_loading && _project == null && _monthDates.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SkeletonCircle(size: 60),
-            const SizedBox(height: 16),
-            const SkeletonBox(height: 14, width: 160),
-            const SizedBox(height: 8),
-            const SkeletonBox(height: 12, width: 120),
-          ],
-        ),
-      );
+    if (!_datesInitialized) {
+      return _showSkeleton ? _buildJournalSkeleton() : const SizedBox.shrink();
     }
 
     return Column(
@@ -1287,6 +1316,70 @@ void initState() {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildJournalSkeleton() {
+    return Column(
+      children: [
+        Container(
+          color: const Color(0xFFF5F5F5),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 6, bottom: 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: List.generate(7, (i) => Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            )),
+          ),
+        ),
+        const Expanded(
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+                SkeletonBox(height: 72),
+                SizedBox(height: 10),
+                SkeletonBox(height: 72),
+                SizedBox(height: 10),
+                SkeletonBox(height: 72),
+                SizedBox(height: 10),
+                SkeletonBox(height: 72),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

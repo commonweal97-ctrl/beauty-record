@@ -59,7 +59,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
     });
   }
 
-  void _load() async {
+  Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final params = <String, String>{'project_id': widget.projectId.toString()};
@@ -120,11 +120,18 @@ class _ClientsScreenState extends State<ClientsScreen> {
         ),
         // Скроллируемый контент (включая группы)
         Expanded(
-          child: _loading
+          child: RefreshIndicator(
+            color: const Color(0xFFDD1847),
+            onRefresh: () async { await _load(); },
+            child: _loading
               ? _buildLoader()
               : _clients.isEmpty && _groups.isEmpty
-                  ? _buildEmptyState()
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [SizedBox(height: 400, child: _buildEmptyState())],
+                    )
                   : SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,6 +150,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                         ],
                       ),
                     ),
+          ),
         ),
       ],
     );

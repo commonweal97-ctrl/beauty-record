@@ -133,141 +133,142 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
           : null,
       body: _loading
           ? _buildSkeleton()
-          : Column(children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                child: Row(children: [
-                  const Expanded(child: Text('Услуги', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600))),
-                  GestureDetector(
-                    onTap: () => _openServiceModal(),
-                    child: Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFFDD1847), Color(0xFFC1163D)]),
-                        borderRadius: BorderRadius.circular(12),
+          : RefreshIndicator(
+              color: const Color(0xFFDD1847),
+              onRefresh: () async { await _load(); },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Шапка «Услуги» + кнопка +
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                      child: Row(children: [
+                        const Expanded(child: Text('Услуги', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600))),
+                        GestureDetector(
+                          onTap: () => _openServiceModal(),
+                          child: Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(colors: [Color(0xFFDD1847), Color(0xFFC1163D)]),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.add, color: Colors.white, size: 20),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  // Фильтры (chips)
+                  if (_categories.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: SizedBox(
+                          height: 46,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            children: [
+                              _categoryChip('Все', null),
+                              ..._categories.map((c) => _categoryChip(c, c)),
+                            ],
+                          ),
+                        ),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 20),
+                    ),
+                  // Счётчик под фильтрами
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                      child: Row(children: [
+                        Expanded(
+                          child: Text(
+                            _activeFilterLabel,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF666666)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          _selectedCategory == null ? '$total услуг' : '$shown из $total',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+                        ),
+                      ]),
                     ),
                   ),
-                ]),
-              ),
-              if (_categories.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: SizedBox(
-                    height: 46,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      children: [
-                        _categoryChip('Все', null),
-                        ..._categories.map((c) => _categoryChip(c, c)),
-                      ],
+                  // Список / Empty
+                  if (shown == 0)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _buildEmpty(),
+                    )
+                  else ...[
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                      sliver: SliverReorderableList(
+                        itemCount: shown,
+                        onReorderItem: (oldIndex, newIndex) async {
+                          final movedId = displayServices[oldIndex]['id'];
+                          final targetId = displayServices[newIndex]['id'];
+                          final fullOld = _services.indexWhere((e) => e['id'] == movedId);
+                          final fullTarget = _services.indexWhere((e) => e['id'] == targetId);
+                          if (fullOld < 0 || fullTarget < 0) return;
+                          final item = _services.removeAt(fullOld);
+                          final insertAt = _services.indexWhere((e) => e['id'] == targetId);
+                          final insertPos = (oldIndex < newIndex) ? insertAt + 1 : insertAt;
+                          _services.insert(insertPos, item);
+                          for (var i = 0; i < _services.length; i++) {
+                            _services[i]['sort_order'] = i;
+                          }
+                          setState(() {});
+                          final orders = _services.asMap().entries.map((e) => {
+                            'id': e.value['id'],
+                            'sort_order': e.key,
+                          }).toList();
+                          try {
+                            final r = await ApiService.post('/api/service/update-order', {
+                              'project_id': widget.projectId,
+                              'orders': orders,
+                            });
+                            if (!mounted) return;
+                            if (r['success'] != true) {
+                              showToast(this.context, 'Не удалось сохранить порядок', isError: true);
+                            }
+                          } catch (_) {
+                            if (!mounted) return;
+                            showToast(this.context, 'Ошибка сохранения порядка', isError: true);
+                          }
+                        },
+                        itemBuilder: (_, i) => _buildServiceCard(
+                          displayServices[i],
+                          index: i,
+                          total: shown,
+                          key: ValueKey(displayServices[i]['id']),
+                          reorderIndex: i,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              // Строка-счётчик под фильтрами
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                child: Row(children: [
-                  Expanded(
-                    child: Text(
-                      _activeFilterLabel,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF666666)),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text(
-                    _selectedCategory == null
-                        ? '$total услуг'
-                        : '$shown из $total',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
-                  ),
-                ]),
-              ),
-              Expanded(
-                child: shown == 0
-                    ? _buildEmpty()
-                    : Column(
-                        children: [
-                          Expanded(
-                            child: ReorderableListView.builder(
-                              padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
-                              itemCount: shown,
-                              onReorderItem: (oldIndex, newIndex) async {
-                                final movedId = displayServices[oldIndex]['id'];
-                                final targetId = displayServices[newIndex]['id'];
-                                final fullOld = _services.indexWhere((e) => e['id'] == movedId);
-                                final fullTarget = _services.indexWhere((e) => e['id'] == targetId);
-                                if (fullOld < 0 || fullTarget < 0) return;
-                                final item = _services.removeAt(fullOld);
-                                final insertAt = _services.indexWhere((e) => e['id'] == targetId);
-                                final insertPos = (oldIndex < newIndex) ? insertAt + 1 : insertAt;
-                                _services.insert(insertPos, item);
-                                for (var i = 0; i < _services.length; i++) {
-                                  _services[i]['sort_order'] = i;
-                                }
-                                setState(() {});
-                                final orders = _services.asMap().entries.map((e) => {
-                                  'id': e.value['id'],
-                                  'sort_order': e.key,
-                                }).toList();
-                                try {
-                                  final r = await ApiService.post('/api/service/update-order', {
-                                    'project_id': widget.projectId,
-                                    'orders': orders,
-                                  });
-                                  if (!mounted) return;
-                                  if (r['success'] != true) {
-                                    showToast(this.context, 'Не удалось сохранить порядок', isError: true);
-                                  }
-                                } catch (_) {
-                                  if (!mounted) return;
-                                  showToast(this.context, 'Ошибка сохранения порядка', isError: true);
-                                }
-                              },
-                              proxyDecorator: (child, index, animation) {
-                                return AnimatedBuilder(
-                                  animation: animation,
-                                  builder: (context, child) {
-                                    final elevation = Tween<double>(begin: 0, end: 4).animate(animation).value;
-                                    return Material(
-                                      elevation: elevation,
-                                      shadowColor: Colors.black26,
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: child,
-                                    );
-                                  },
-                                  child: child,
-                                );
-                              },
-                              itemBuilder: (_, i) => _buildServiceCard(
-                                displayServices[i],
-                                index: i,
-                                total: shown,
-                                key: ValueKey(displayServices[i]['id']),
-                              ),
+                    // Финишер
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+                        child: Row(children: [
+                          const Expanded(child: Divider(color: Color(0xFFEEEEEE), height: 1)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'Показано $shown из $total',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
                             ),
                           ),
-                          // Финишер списка
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                            child: Row(children: [
-                              const Expanded(child: Divider(color: Color(0xFFEEEEEE), height: 1)),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                child: Text(
-                                  'Показано $shown из $total',
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
-                                ),
-                              ),
-                              const Expanded(child: Divider(color: Color(0xFFEEEEEE), height: 1)),
-                            ]),
-                          ),
-                        ],
+                          const Expanded(child: Divider(color: Color(0xFFEEEEEE), height: 1)),
+                        ]),
                       ),
+                    ),
+                  ],
+                ],
               ),
-            ]),
+            ),
     );
   }
 
@@ -395,7 +396,7 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
     overlay.insert(entry);
   }
 
-  Widget _buildServiceCard(Map<String, dynamic> s, {int index = 0, int total = 1, Key? key, Key? cardKey}) {
+  Widget _buildServiceCard(Map<String, dynamic> s, {int index = 0, int total = 1, Key? key, Key? cardKey, int? reorderIndex}) {
     final photo = s['photo_url']?.toString();
     final isFree = s['is_free'] == true;
     final priceFrom = s['price_from'] == true;
@@ -406,7 +407,7 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
     final isHighlight = _highlightServiceId == sid;
     final isSuccess = _highlightSuccess && isHighlight;
 
-    return Dismissible(
+    final card = Dismissible(
       key: key ?? ValueKey('service_$sid'),
       direction: DismissDirection.endToStart,
       confirmDismiss: (_) async {
@@ -569,6 +570,13 @@ class _ServicesScreenState extends State<ServicesScreen> with TickerProviderStat
         ),
       ),
     );
+    return reorderIndex == null
+        ? card
+        : ReorderableDelayedDragStartListener(
+            key: ValueKey('reorder_$sid'),
+            index: reorderIndex,
+            child: card,
+          );
   }
 
   Future<void> _deleteService(int serviceId) async {

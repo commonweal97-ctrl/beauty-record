@@ -114,7 +114,11 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
         _buildFilters(),
         const SizedBox(height: 12),
         Expanded(
-          child: _loading ? _buildSkeletonList() : _buildReviewsList(),
+          child: RefreshIndicator(
+            color: const Color(0xFFDD1847),
+            onRefresh: () async { await _loadAll(); },
+            child: _loading ? _buildSkeletonList() : _buildReviewsList(),
+          ),
         ),
       ],
     );
@@ -284,9 +288,16 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
 
   Widget _buildReviewsList() {
     if (_reviews.isEmpty) {
-      return const Center(child: Text('Нет отзывов', style: TextStyle(color: Color(0xFF999999))));
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const SizedBox(height: 200),
+          const Center(child: Text('Нет отзывов', style: TextStyle(color: Color(0xFF999999)))),
+        ],
+      );
     }
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       itemCount: _reviews.length,
       itemBuilder: (_, i) => _buildReviewCard(_reviews[i]),

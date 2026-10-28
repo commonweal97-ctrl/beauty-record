@@ -210,7 +210,16 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: !_loaded
           ? (_showSkeleton ? _buildSkeleton() : const SizedBox.shrink())
-          : (_employees.isEmpty ? _buildEmpty() : _buildList()),
+          : RefreshIndicator(
+              color: const Color(0xFFDD1847),
+              onRefresh: () async { await _load(); },
+              child: _employees.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [SizedBox(height: 400, child: _buildEmpty())],
+                    )
+                  : _buildList(),
+            ),
     );
   }
 
@@ -271,6 +280,7 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
         ),
         Expanded(
           child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: _employees.length,
             itemBuilder: (_, i) => _buildEmployeeCard(_employees[i]),

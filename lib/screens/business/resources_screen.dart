@@ -79,20 +79,32 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                 ]),
               ),
               Expanded(
-                child: _resources.isEmpty
-                    ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        SvgPicture.asset('assets/beauty-salon-chair.svg', width: 48, height: 48, colorFilter: const ColorFilter.mode(Color(0xFFCCCCCC), BlendMode.srcIn)),
-                        const SizedBox(height: 16),
-                        const Text('Ресурсы не созданы', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF888888))),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () => _openResourceEditor(),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Создать ресурс'),
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDD1847), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                        ),
-                      ]))
+                child: RefreshIndicator(
+                  color: const Color(0xFFDD1847),
+                  onRefresh: () async { await _load(); },
+                  child: _resources.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: 400,
+                            child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              SvgPicture.asset('assets/beauty-salon-chair.svg', width: 48, height: 48, colorFilter: const ColorFilter.mode(Color(0xFFCCCCCC), BlendMode.srcIn)),
+                              const SizedBox(height: 16),
+                              const Text('Ресурсы не созданы', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF888888))),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () => _openResourceEditor(),
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('Создать ресурс'),
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDD1847), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                              ),
+                            ])),
+                          ),
+                        ],
+                      )
                     : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(24),
                         itemCount: _resources.length,
                         itemBuilder: (_, i) {
@@ -116,6 +128,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                             ),
                           );
                         }),
+                ),
               ),
             ]),
     );

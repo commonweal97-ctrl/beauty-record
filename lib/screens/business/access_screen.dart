@@ -164,10 +164,15 @@ class _AccessScreenState extends State<AccessScreen> {
         ]),
       ),
       Expanded(
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          itemCount: _accessList.length,
-          itemBuilder: (_, i) => _buildAccessCard(_accessList[i]),
+        child: RefreshIndicator(
+          color: const Color(0xFFDD1847),
+          onRefresh: () async { await _load(); },
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            itemCount: _accessList.length,
+            itemBuilder: (_, i) => _buildAccessCard(_accessList[i]),
+          ),
         ),
       ),
     ]);

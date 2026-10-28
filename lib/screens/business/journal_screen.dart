@@ -124,7 +124,7 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
     });
   }
 
-  void _loadAll() async {
+  Future<void> _loadAll() async {
     final today =
         DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     _selectedDate = today;
@@ -1762,16 +1762,20 @@ void initState() {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 48,
-                      decoration: const BoxDecoration(
-                        border: Border(
-                            right: BorderSide(color: Color(0xFFE0E0E0))),
-                      ),
+              child: RefreshIndicator(
+                color: const Color(0xFFDD1847),
+                onRefresh: () async { await _loadAll(); },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 48,
+                        decoration: const BoxDecoration(
+                          border: Border(
+                              right: BorderSide(color: Color(0xFFE0E0E0))),
+                        ),
                       child: Column(
                         children: List.generate(totalSlots, (i) {
                           final m = minStart + i * slotInterval;
@@ -2217,7 +2221,8 @@ void initState() {
                         ),
                       ),
                     ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -294,19 +294,24 @@ class _StatsTabState extends State<_StatsTab> {
     final sortedTypes = typeStats.entries.toList()
       ..sort((a, b) => b.value['total']!.compareTo(a.value['total']!));
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPeriodRow(),
-          const SizedBox(height: 16),
-          _buildMetricCards(sent, pending, skipped, total),
-          const SizedBox(height: 16),
-          _buildDonutChart(sent, pending, skipped, total),
-          const SizedBox(height: 12),
-          _buildTypeBars(sortedTypes),
-        ],
+    return RefreshIndicator(
+      color: const Color(0xFFDD1847),
+      onRefresh: () async { await _loadStats(); },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPeriodRow(),
+            const SizedBox(height: 16),
+            _buildMetricCards(sent, pending, skipped, total),
+            const SizedBox(height: 16),
+            _buildDonutChart(sent, pending, skipped, total),
+            const SizedBox(height: 12),
+            _buildTypeBars(sortedTypes),
+          ],
+        ),
       ),
     );
   }
@@ -1258,7 +1263,10 @@ Widget build(BuildContext context) {
         ),
         const SizedBox(height: 20),
         Expanded(
-          child: _loading
+          child: RefreshIndicator(
+            color: const Color(0xFFDD1847),
+            onRefresh: () async { _page = 1; _itemsCache.clear(); await _load(); },
+            child: _loading
               ? ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   itemCount: 5,
@@ -1289,8 +1297,15 @@ Widget build(BuildContext context) {
                   ),
                 )
               : _items.isEmpty
-                  ? const Center(child: Text('Нет уведомлений за этот период', style: TextStyle(color: Color(0xFF999999))))
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 200),
+                        Center(child: Text('Нет уведомлений за этот период', style: TextStyle(color: Color(0xFF999999)))),
+                      ],
+                    )
                   : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       itemCount: sortedKeys.length + (_totalPages > 1 ? 1 : 0),
                       itemBuilder: (_, sectionIndex) {
@@ -1340,6 +1355,7 @@ Widget build(BuildContext context) {
                         );
                       },
                     ),
+                  ),
         ),
       ],
     );
@@ -1746,10 +1762,14 @@ class _ChannelsTabState extends State<_ChannelsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        const Text('Каналы отправки',
+    return RefreshIndicator(
+      color: const Color(0xFFDD1847),
+      onRefresh: () async { await _load(); },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: [
+          const Text('Каналы отправки',
             style:
                 TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
@@ -1795,7 +1815,8 @@ class _ChannelsTabState extends State<_ChannelsTab> {
           statusOn: _internalEnabled,
           onTap: () => _showInternalSettingsModal(),
         ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -2773,10 +2794,14 @@ class _TypesTabState extends State<_TypesTab> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        const Text('Виды уведомлений',
+    return RefreshIndicator(
+      color: const Color(0xFFDD1847),
+      onRefresh: () async { await _loadAll(); },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        children: [
+          const Text('Виды уведомлений',
             style:
                 TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
@@ -2820,7 +2845,8 @@ class _TypesTabState extends State<_TypesTab> {
             _getTypeDesc('birthday'),
             _isTypeEnabled('birthday'),
             () => _openTypeSettings('birthday')),
-      ],
+        ],
+      ),
     );
   }
 

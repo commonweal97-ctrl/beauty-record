@@ -120,6 +120,17 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
 
 
 
+  bool _isOnlineClosed(Map<String, dynamic> emp, int day) {
+    final scheduleData = emp['schedule_data'];
+    if (scheduleData is Map<String, dynamic>) {
+      final daySchedule = scheduleData[day.toString()];
+      if (daySchedule is Map<String, dynamic> && daySchedule['online_booking'] == false) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   String _timeRange(Map<String, dynamic> emp, int day) {
     final scheduleData = emp['schedule_data'];
     
@@ -355,6 +366,17 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
+                                            // Иконка «онлайн закрыт»
+                                            if (_isOnlineClosed(e, _dates[i].day))
+                                              Positioned(
+                                                top: 4,
+                                                right: 4,
+                                                child: Icon(
+                                                  Icons.public_off,
+                                                  size: 14,
+                                                  color: const Color(0xFFDD1847).withValues(alpha: 0.55),
+                                                ),
+                                              ),
                                             // Индикатор записей (точка под временем)
                                             if (hasBookings)
                                               Positioned(
@@ -536,6 +558,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
   TimeOfDay _workStart = const TimeOfDay(hour: 10, minute: 0);
   TimeOfDay _workEnd = const TimeOfDay(hour: 20, minute: 0);
   bool _allDay = false;
+  bool _onlineBooking = true;
   final List<Map<String, String>> _breaks = [];
   
   DateTime? _periodStart;
@@ -631,6 +654,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
           'start_time': startStr,
           'end_time': endStr,
           'is_all_day': _allDay,
+          'online_booking': _onlineBooking,
           'breaks': breakData,
         };
         return ApiService.post('/api/employee/schedule/save', body);
@@ -704,6 +728,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
           'start_time': startStr,
           'end_time': endStr,
           'is_all_day': _allDay,
+          'online_booking': _onlineBooking,
           'breaks': breakData,
         };
         return ApiService.post('/api/employee/schedule/save', body);
@@ -778,6 +803,7 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
           'start_time': startStr,
           'end_time': endStr,
           'is_all_day': _allDay,
+          'online_booking': _onlineBooking,
           'breaks': breakData,
         };
         return ApiService.post('/api/employee/schedule/save', body);
@@ -1013,89 +1039,6 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
     );
   }
 
-  Widget _buildStepWeekdaysSettings() {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('Дни недели', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        Wrap(spacing: 8, children: [
-          _weekdayBtn('Пн', 1), _weekdayBtn('Вт', 2), _weekdayBtn('Ср', 3),
-          _weekdayBtn('Чт', 4), _weekdayBtn('Пт', 5), _weekdayBtn('Сб', 6), _weekdayBtn('Вс', 0),
-        ]),
-        const SizedBox(height: 24),
-        const Text('Период', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: _openPeriodCalendar,
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              const Icon(Icons.calendar_today, size: 20, color: Color(0xFF666666)),
-              const SizedBox(width: 12),
-              Expanded(child: Text(
-                '${_formatDate(_periodStart ?? DateTime.now())} - ${_noEndDate ? "Бессрочно" : _formatDate(_periodEnd ?? DateTime.now())}',
-                style: const TextStyle(fontSize: 15),
-              )),
-              const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 24),
-        const Text('Время работы', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        Row(children: [
-          _buildTimePicker(_workStart, (t) => setState(() => _workStart = t)),
-          const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—')),
-          _buildTimePicker(_workEnd, (t) => setState(() => _workEnd = t)),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Checkbox(value: _allDay, onChanged: (v) => setState(() => _allDay = v ?? false), activeColor: const Color(0xFFDD1847)),
-          const Text('Весь день', style: TextStyle(fontSize: 15)),
-        ]),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () => setState(() => _breaks.add({'start': '13:00', 'end': '14:00'})),
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Добавить перерыв'),
-          style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFDD1847), side: const BorderSide(color: Color(0xFFDD1847)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-        ),
-        ..._breaks.asMap().entries.map((entry) {
-          final i = entry.key;
-          final b = entry.value;
-          return Container(
-            margin: const EdgeInsets.only(top: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              Expanded(
-                child: Row(children: [
-                  _buildTimePicker(TimeOfDay(hour: int.parse(b['start']!.split(':')[0]), minute: int.parse(b['start']!.split(':')[1])),
-                    (t) => setState(() => _breaks[i]['start'] = _formatTime(t))),
-                  const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—')),
-                  _buildTimePicker(TimeOfDay(hour: int.parse(b['end']!.split(':')[0]), minute: int.parse(b['end']!.split(':')[1])),
-                    (t) => setState(() => _breaks[i]['end'] = _formatTime(t))),
-                ]),
-              ),
-              IconButton(icon: const Icon(Icons.close, size: 20, color: Colors.grey), onPressed: () => setState(() => _breaks.removeAt(i))),
-            ]),
-          );
-        }),
-        const SizedBox(height: 24),
-        SizedBox(
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _saveWeekdaysSchedule,
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDD1847), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text('Сохранить график', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _weekdayBtn(String label, int day) {
     final sel = _selectedWeekdays.contains(day);
     return GestureDetector(
@@ -1108,23 +1051,6 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
           border: Border.all(color: sel ? const Color(0xFFDD1847) : const Color(0xFFF0F0F0), width: 2),
         ),
         child: Center(child: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: sel ? Colors.white : const Color(0xFF666666)))),
-      ),
-    );
-  }
-
-  Widget _buildTimePicker(TimeOfDay time, Function(TimeOfDay) onChanged) {
-    return GestureDetector(
-      onTap: () async {
-        final result = await showTimePickerSheet(
-          context,
-          initialTime: time,
-        );
-        if (result != null) onChanged(result);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
-        child: Text(_formatTime(time), style: const TextStyle(fontSize: 16)),
       ),
     );
   }
@@ -1145,6 +1071,210 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
             _noEndDate = noEnd;
           });
         },
+      ),
+    );
+  }
+
+  Widget _buildStepWeekdaysSettings() {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      children: [
+        _buildSectionCard(
+          title: 'Дни недели',
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _weekdayBtn('Пн', 1), _weekdayBtn('Вт', 2), _weekdayBtn('Ср', 3),
+              _weekdayBtn('Чт', 4), _weekdayBtn('Пт', 5), _weekdayBtn('Сб', 6), _weekdayBtn('Вс', 0),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildSectionCard(
+          title: 'Период',
+          child: GestureDetector(
+            onTap: _openPeriodCalendar,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F8F8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                const Icon(Icons.calendar_today, size: 20, color: Color(0xFF666666)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${_formatDate(_periodStart ?? DateTime.now())} - ${_noEndDate ? "Бессрочно" : _formatDate(_periodEnd ?? DateTime.now())}',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC)),
+              ]),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildSectionCard(
+          title: 'Время работы',
+          child: Column(children: [
+            Row(children: [
+              _buildTimePicker(_workStart, (t) => setState(() => _workStart = t)),
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—', style: TextStyle(color: Color(0xFF999999)))),
+              _buildTimePicker(_workEnd, (t) => setState(() => _workEnd = t)),
+            ]),
+            const SizedBox(height: 12),
+            _buildSwitchCard(
+              icon: Icons.wb_sunny_outlined,
+              label: 'Весь день',
+              subtitle: 'С 00:00 до 23:59',
+              value: _allDay,
+              onChanged: (v) => setState(() => _allDay = v),
+            ),
+            const SizedBox(height: 8),
+            _buildSwitchCard(
+              icon: Icons.public,
+              label: 'Онлайн-запись',
+              subtitle: _onlineBooking ? 'Клиенты могут записаться' : 'Дни закрыты для онлайн',
+              value: _onlineBooking,
+              onChanged: (v) => setState(() => _onlineBooking = v),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        _buildSectionCard(
+          title: 'Перерывы',
+          child: Column(children: [
+            ..._breaks.asMap().entries.map((entry) {
+              final i = entry.key;
+              final b = entry.value;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F8F8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.access_time, size: 18, color: Color(0xFF999999)),
+                  const SizedBox(width: 8),
+                  Text('${b['start']} – ${b['end']}', style: const TextStyle(fontSize: 14)),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => setState(() => _breaks.removeAt(i)),
+                    child: const Icon(Icons.close, size: 18, color: Color(0xFF999999)),
+                  ),
+                ]),
+              );
+            }),
+            GestureDetector(
+              onTap: () => setState(() => _breaks.add({'start': '13:00', 'end': '14:00'})),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, size: 18, color: Color(0xFFDD1847)),
+                    SizedBox(width: 6),
+                    Text('Добавить перерыв', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
+                  ],
+                ),
+              ),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _loading ? null : _saveWeekdaysSchedule,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDD1847),
+              disabledBackgroundColor: const Color(0xFFDD1847).withValues(alpha: 0.5),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: _loading
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                : const Text('Сохранить', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF888888), letterSpacing: 0.3)),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSwitchCard({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: value ? const Color(0xFFFDF2F5) : const Color(0xFFF8F8F8),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(children: [
+        Icon(icon, size: 20, color: value ? const Color(0xFFDD1847) : const Color(0xFF999999)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF999999))),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: const Color(0xFFDD1847),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildTimePicker(TimeOfDay time, Function(TimeOfDay) onChanged) {
+    return GestureDetector(
+      onTap: () async {
+        final result = await showTimePickerSheet(
+          context,
+          initialTime: time,
+        );
+        if (result != null) onChanged(result);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
+        child: Text(_formatTime(time), style: const TextStyle(fontSize: 16)),
       ),
     );
   }
@@ -1267,6 +1397,10 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
           Checkbox(value: _allDay, onChanged: (v) => setState(() => _allDay = v ?? false), activeColor: const Color(0xFFDD1847)),
           const Text('Весь день', style: TextStyle(fontSize: 15)),
         ]),
+        Row(children: [
+          Checkbox(value: _onlineBooking, onChanged: (v) => setState(() => _onlineBooking = v ?? true), activeColor: const Color(0xFFDD1847)),
+          const Text('Онлайн-запись', style: TextStyle(fontSize: 15)),
+        ]),
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: () => setState(() => _breaks.add({'start': '13:00', 'end': '14:00'})),
@@ -1310,57 +1444,94 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
 
   Widget _buildStepTimeConfig() {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       children: [
-        const Text('Время работы', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        Row(children: [
-          _buildTimePicker(_workStart, (t) => setState(() => _workStart = t)),
-          const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—')),
-          _buildTimePicker(_workEnd, (t) => setState(() => _workEnd = t)),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Checkbox(value: _allDay, onChanged: (v) => setState(() => _allDay = v ?? false), activeColor: const Color(0xFFDD1847)),
-          const Text('Весь день', style: TextStyle(fontSize: 15)),
-        ]),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () => setState(() => _breaks.add({'start': '13:00', 'end': '14:00'})),
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Добавить перерыв'),
-          style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFDD1847), side: const BorderSide(color: Color(0xFFDD1847)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-        ),
-        ..._breaks.asMap().entries.map((entry) {
-          final i = entry.key;
-          final b = entry.value;
-          return Container(
-            margin: const EdgeInsets.only(top: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: const Color(0xFFF8F8F8), borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              Expanded(
-                child: Row(children: [
-                  _buildTimePicker(TimeOfDay(hour: int.parse(b['start']!.split(':')[0]), minute: int.parse(b['start']!.split(':')[1])),
-                    (t) => setState(() => _breaks[i]['start'] = _formatTime(t))),
-                  const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—')),
-                  _buildTimePicker(TimeOfDay(hour: int.parse(b['end']!.split(':')[0]), minute: int.parse(b['end']!.split(':')[1])),
-                    (t) => setState(() => _breaks[i]['end'] = _formatTime(t))),
-                ]),
-              ),
-              IconButton(icon: const Icon(Icons.close, size: 20, color: Colors.grey), onPressed: () => setState(() => _breaks.removeAt(i))),
+        _buildSectionCard(
+          title: 'Время работы',
+          child: Column(children: [
+            Row(children: [
+              _buildTimePicker(_workStart, (t) => setState(() => _workStart = t)),
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('—', style: TextStyle(color: Color(0xFF999999)))),
+              _buildTimePicker(_workEnd, (t) => setState(() => _workEnd = t)),
             ]),
-          );
-        }),
+            const SizedBox(height: 12),
+            _buildSwitchCard(
+              icon: Icons.wb_sunny_outlined,
+              label: 'Весь день',
+              subtitle: 'С 00:00 до 23:59',
+              value: _allDay,
+              onChanged: (v) => setState(() => _allDay = v),
+            ),
+            const SizedBox(height: 8),
+            _buildSwitchCard(
+              icon: Icons.public,
+              label: 'Онлайн-запись',
+              subtitle: _onlineBooking ? 'Клиенты могут записаться' : 'Дни закрыты для онлайн',
+              value: _onlineBooking,
+              onChanged: (v) => setState(() => _onlineBooking = v),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        _buildSectionCard(
+          title: 'Перерывы',
+          child: Column(children: [
+            ..._breaks.asMap().entries.map((entry) {
+              final i = entry.key;
+              final b = entry.value;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F8F8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.access_time, size: 18, color: Color(0xFF999999)),
+                  const SizedBox(width: 8),
+                  Text('${b['start']} – ${b['end']}', style: const TextStyle(fontSize: 14)),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => setState(() => _breaks.removeAt(i)),
+                    child: const Icon(Icons.close, size: 18, color: Color(0xFF999999)),
+                  ),
+                ]),
+              );
+            }),
+            GestureDetector(
+              onTap: () => setState(() => _breaks.add({'start': '13:00', 'end': '14:00'})),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, size: 18, color: Color(0xFFDD1847)),
+                    SizedBox(width: 6),
+                    Text('Добавить перерыв', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFDD1847))),
+                  ],
+                ),
+              ),
+            ),
+          ]),
+        ),
         const SizedBox(height: 24),
         SizedBox(
+          width: double.infinity,
           height: 52,
           child: ElevatedButton(
-            onPressed: _saveTimeConfig,
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDD1847), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text('Применить', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+            onPressed: _loading ? null : _saveTimeConfig,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDD1847),
+              disabledBackgroundColor: const Color(0xFFDD1847).withValues(alpha: 0.5),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: _loading
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                : const Text('Применить', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
           ),
         ),
+        const SizedBox(height: 16),
       ],
     );
   }

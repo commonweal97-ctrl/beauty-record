@@ -364,6 +364,7 @@ class _DayConfigSheet extends StatefulWidget {
 class _DayConfigSheetState extends State<_DayConfigSheet> {
   bool _isWorking = true;
   bool _isAllDay = false;
+  bool _onlineBooking = true;
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 18, minute: 0);
   bool _saving = false;
@@ -384,6 +385,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
         'end_time': _isAllDay ? null : '${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
         'is_all_day': _isAllDay,
         'is_day_off': !_isWorking,
+        'online_booking': _onlineBooking,
       });
       if (mounted) {
         Navigator.pop(context);
@@ -425,6 +427,11 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
           const Text('Рабочий день'),
           const Spacer(),
           Switch(value: _isWorking, onChanged: (v) => setState(() => _isWorking = v), activeThumbColor: const Color(0xFFDD1847)),
+        ]),
+        Row(children: [
+          const Text('Онлайн-запись'),
+          const Spacer(),
+          Switch(value: _onlineBooking, onChanged: (v) => setState(() => _onlineBooking = v), activeThumbColor: const Color(0xFFDD1847)),
         ]),
         if (_isWorking) ...[
           const SizedBox(height: 16),

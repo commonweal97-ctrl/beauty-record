@@ -1429,6 +1429,36 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
     );
   }
 
+  Future<void> _saveSchedule(Map<int, String> schedule) async {
+    // Преобразуем Map<int, String> ('09:00–18:00') в API-формат { start, end } | null
+    final Map<String, dynamic> schedulePayload = {};
+    for (int i = 0; i < 7; i++) {
+      final timeRange = schedule[i];
+      if (timeRange != null && timeRange.contains('–')) {
+        final parts = timeRange.split('–');
+        schedulePayload[i.toString()] = {
+          'start': '${parts[0].trim()}:00',
+          'end': '${parts[1].trim()}:00',
+        };
+      } else {
+        schedulePayload[i.toString()] = null;
+      }
+    }
+
+    final result = await ApiService.post('/api/project-profile/schedule/save', {
+      'project_id': widget.projectId,
+      'schedule': schedulePayload,
+    });
+
+    if (!mounted) return;
+    if (result['success'] == true) {
+      showToast(context, 'График сохранён');
+      await _load(); // перезагрузить проект (schedule_json обновился)
+    } else {
+      showToast(context, result['message'] ?? 'Ошибка сохранения', isError: true);
+    }
+  }
+
   void _showSchedulePicker() {
     Set<int> selectedDays = {};
 
@@ -1598,10 +1628,10 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         _markChanged();
-                        setState(() {});
-                        Navigator.pop(ctx);
+                        await _saveSchedule(_schedule);
+                        if (ctx.mounted) Navigator.pop(ctx);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFDD1847),

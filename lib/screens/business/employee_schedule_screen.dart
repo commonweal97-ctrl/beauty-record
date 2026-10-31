@@ -28,6 +28,8 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
   final ScrollController _scrollController = ScrollController();
 
   DateTime _currentMonth = DateTime.now();
+  DateTime _oldestMonth = DateTime(DateTime.now().year, DateTime.now().month - 6);
+  DateTime _newestMonth = DateTime(DateTime.now().year, DateTime.now().month + 6);
   bool _showMonthPicker = false;
   bool _initialScrollDone = false;
 
@@ -61,10 +63,24 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
   }
 
   void _loadMoreMonths(int direction) {
-    final newMonth = DateTime(_currentMonth.year, _currentMonth.month + direction);
-    if (!_loadedMonths.containsKey(_monthKey(newMonth))) {
-      _loadMonthsAround(newMonth);
+    if (direction < 0) {
+      // Вверх — добавляем предыдущий месяц
+      _oldestMonth = DateTime(_oldestMonth.year, _oldestMonth.month - 1);
+      final newMonth = _oldestMonth;
+      if (!_loadedMonths.containsKey(_monthKey(newMonth))) {
+        _loadedMonths[_monthKey(newMonth)] = false;
+        _fetchSchedule(newMonth.year, newMonth.month);
+      }
+    } else if (direction > 0) {
+      // Вниз — добавляем следующий месяц
+      _newestMonth = DateTime(_newestMonth.year, _newestMonth.month + 1);
+      final newMonth = _newestMonth;
+      if (!_loadedMonths.containsKey(_monthKey(newMonth))) {
+        _loadedMonths[_monthKey(newMonth)] = false;
+        _fetchSchedule(newMonth.year, newMonth.month);
+      }
     }
+    setState(() {});
   }
 
   void _loadMonthsAround(DateTime center) {
@@ -158,6 +174,10 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
     });
   }
 
+  int _monthsBetween(DateTime from, DateTime to) {
+    return (to.year - from.year) * 12 + (to.month - from.month);
+  }
+
   double _getMonthHeight() {
     final daysInMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
     final firstDay = (DateTime(_currentMonth.year, _currentMonth.month, 1).weekday - 1) % 7;
@@ -174,7 +194,8 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
   void _scrollToCurrentMonth() {
     if (!_scrollController.hasClients || _initialScrollDone) return;
     
-    final currentMonthIndex = 6;
+    // Индекс _currentMonth в динамическом списке
+    final currentMonthIndex = _monthsBetween(_oldestMonth, _currentMonth);
     final monthHeight = _getMonthHeight();
     final targetOffset = currentMonthIndex * monthHeight;
     
@@ -184,9 +205,11 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
 
   List<Widget> _buildMonthWidgets() {
     final widgets = <Widget>[];
-    for (int i = -6; i <= 6; i++) {
-      final m = DateTime(_currentMonth.year, _currentMonth.month + i);
+    var m = DateTime(_oldestMonth.year, _oldestMonth.month);
+    final end = DateTime(_newestMonth.year, _newestMonth.month);
+    while (!m.isAfter(end)) {
       widgets.add(_buildMonth(m.year, m.month));
+      m = DateTime(m.year, m.month + 1);
     }
     return widgets;
   }

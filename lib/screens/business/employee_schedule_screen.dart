@@ -251,7 +251,13 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  schedule['is_day_off'] == true ? 'Вых.' : '${(schedule['start_time'] ?? '09:00').toString().substring(0, 5)}–${(schedule['end_time'] ?? '18:00').toString().substring(0, 5)}',
+                                  schedule['is_day_off'] == true
+                                    ? 'Вых.'
+                                    : (schedule['is_working'] == true
+                                        && schedule['start_time'] != null
+                                        && schedule['end_time'] != null)
+                                      ? '${schedule['start_time'].toString().substring(0, 5)}–${schedule['end_time'].toString().substring(0, 5)}'
+                                      : '—',
                                   style: TextStyle(fontSize: 9, color: schedule['is_day_off'] == true ? const Color(0xFFC62828) : const Color(0xFF666666)),
                                   textAlign: TextAlign.center,
                                 ),

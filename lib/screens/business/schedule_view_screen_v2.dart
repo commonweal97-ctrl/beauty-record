@@ -562,7 +562,9 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
     final month = int.tryParse(dateParts[1]);
     final day = int.tryParse(dateParts[2]);
     if (year == null || month == null || day == null) return false;
+    // Ищем месяц, соответствующий дате из ключа
     for (final m in _months) {
+      if (m.year != year || m.month != month) continue;
       final emp = m.employees.firstWhere(
         (e) => e['id'] == empId,
         orElse: () => <String, dynamic>{},
@@ -601,6 +603,8 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
         employeeId: empId,
         date: dateStr,
         startTime: '09:00',
+        scheduleStart: '09:00',
+        scheduleEnd: '18:00',
       ),
     ).then((result) {
       if (result == true && mounted) {

@@ -22,6 +22,14 @@ class ClientsScreen extends StatefulWidget {
 class _ClientsScreenState extends State<ClientsScreen> {
   List<Map<String, dynamic>> _clients = [];
   List<Map<String, dynamic>> _groups = [];
+
+  // Pagination (симметрично web ClientsPage.js)
+  final ScrollController _scrollController = ScrollController();
+  int _page = 1;
+  static const int _limit = 30;
+  int _total = 0;
+  bool _hasMore = true;
+  bool _loadingMore = false;
   String? _activeGroup;
   String _search = '';
   bool _loading = true;
@@ -40,6 +48,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _load();
   }
 
@@ -47,7 +56,18 @@ class _ClientsScreenState extends State<ClientsScreen> {
   void dispose() {
     _searchTimer?.cancel();
     _searchCtrl.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_loadingMore || !_hasMore || _loading) return;
+    final pos = _scrollController.position;
+    if (pos.maxScrollExtent - pos.pixels < 300) {
+      _loadMore();
+    }
   }
 
   void _onSearchChanged(String value) {
@@ -60,24 +80,58 @@ class _ClientsScreenState extends State<ClientsScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _page = 1;
+      _hasMore = true;
+    });
     try {
-      final params = <String, String>{'project_id': widget.projectId.toString()};
-      if (_search.isNotEmpty) params['search'] = _search;
-      if (_activeGroup != null) params['group'] = _activeGroup!;
-      final uri = '/api/client/list?${Uri(queryParameters: params).query}';
-      final result = await ApiService.get(uri);
-      if (result['success'] == true && mounted) {
-        setState(() {
-          _clients = List<Map<String, dynamic>>.from(result['data'] ?? []);
-          _groups = List<Map<String, dynamic>>.from(result['groups'] ?? []);
-          _loading = false;
-        });
-      } else if (mounted) {
-        setState(() => _loading = false);
-      }
-    } catch (e) {
+      await _fetchPage(1, replace: true);
+    } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _fetchPage(int page, {required bool replace}) async {
+    final params = <String, String>{
+      'project_id': widget.projectId.toString(),
+      'page': page.toString(),
+      'limit': _limit.toString(),
+    };
+    if (_search.isNotEmpty) params['search'] = _search;
+    if (_activeGroup != null) params['group'] = _activeGroup!;
+
+    final uri = '/api/client/list?${Uri(queryParameters: params).query}';
+    final result = await ApiService.get(uri);
+    if (result['success'] != true || !mounted) return;
+
+    final rows = List<Map<String, dynamic>>.from(result['data'] ?? []);
+    final total = (result['total'] as num?)?.toInt() ?? 0;
+
+    setState(() {
+      if (replace) {
+        _clients = rows;
+        _groups = List<Map<String, dynamic>>.from(result['groups'] ?? []);
+        _total = total;
+      } else {
+        final seen = _clients.map((c) => c['id']).toSet();
+        final fresh = rows.where((c) => !seen.contains(c['id'])).toList();
+        _clients = [..._clients, ...fresh];
+      }
+      _page = page;
+      _hasMore = _clients.length < _total;
+    });
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || _loading) return;
+    setState(() => _loadingMore = true);
+    try {
+      await _fetchPage(_page + 1, replace: false);
+    } catch (_) {
+      // тихо — не сбиваем скролл
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
     }
   }
 
@@ -118,38 +172,84 @@ class _ClientsScreenState extends State<ClientsScreen> {
             ],
           ),
         ),
-        // Скроллируемый контент (включая группы)
+        // Скроллируемый контент (CustomScrollView = lazy, для infinite scroll)
         Expanded(
           child: RefreshIndicator(
             color: const Color(0xFFDD1847),
             onRefresh: () async { await _load(); },
             child: _loading
               ? _buildLoader()
-              : _clients.isEmpty && _groups.isEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [SizedBox(height: 400, child: _buildEmptyState())],
-                    )
-                  : SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Группы (в скролле, не липкие)
-                          if (_groups.isNotEmpty) ...[
-                            _buildGroupsWrap(),
-                            const SizedBox(height: 20),
-                          ],
-                          // Список клиентов
-                          ..._clients.asMap().entries.map((e) => Padding(
-                            padding: EdgeInsets.only(bottom: e.key < _clients.length - 1 ? 12 : 0),
-                            child: _buildClientCard(e.value),
-                          )),
-                          const SizedBox(height: 24),
-                        ],
+              : CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    // Группы (скроллятся, не липкие)
+                    if (_groups.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+                          child: _buildGroupsWrap(),
+                        ),
                       ),
-                    ),
+
+                    // Пустое состояние
+                    if (_clients.isEmpty && _groups.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _buildEmptyState(),
+                      )
+                    // Список клиентов (lazy)
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        sliver: SliverList.builder(
+                          itemCount: _clients.length,
+                          itemBuilder: (context, i) {
+                            final isLast = i == _clients.length - 1;
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+                              child: _buildClientCard(_clients[i]),
+                            );
+                          },
+                        ),
+                      ),
+
+                    // Footer: спиннер / «Все клиенты загружены»
+                    if (_loadingMore)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24, height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                color: Color(0xFFDD1847),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (!_hasMore && _clients.isNotEmpty)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(24, 24, 24, 32),
+                          child: Center(
+                            child: Text(
+                              'Все клиенты загружены',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF8A8A8E),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  ],
+                ),
           ),
         ),
       ],

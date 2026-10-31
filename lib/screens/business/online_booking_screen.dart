@@ -29,10 +29,12 @@ class _OnlineBookingScreenState extends State<OnlineBookingScreen> {
   String? _moderationComment;
   bool _loadingStatus = true;
 
-  bool _hasProfile = false;
-  bool _hasServices = false;
-  bool _hasSchedule = false;
-  bool _hasEmployeesWithServices = false;
+  bool _hasProfile = false;        // deprecated — источник правды: сервер
+  bool _hasServices = false;       // deprecated
+  bool _hasSchedule = false;       // deprecated
+  bool _hasEmployeesWithServices = false; // deprecated
+  Map<String, dynamic> _checks = {'profile': false, 'services': false, 'schedule': false};
+  bool _isReady = false;
   bool _onlineEnabled = false;
   String? _bookingUrl;
 
@@ -59,12 +61,13 @@ class _OnlineBookingScreenState extends State<OnlineBookingScreen> {
         ApiService.get('/api/project-profile/moderation-status?project_id=${widget.projectId}'),
         ApiService.get('/api/service/list?project_id=${widget.projectId}'),
         ApiService.get('/api/employee/list?project_id=${widget.projectId}'),
+        ApiService.get('/api/project-profile/moderation-readiness?project_id=${widget.projectId}'),
       ]);
 
       final project = results[0]['success'] == true ? results[0]['data'] : {};
 final modStatus = results[1]['success'] == true ? results[1]['data'] : {};
-final services = results[2]['success'] == true ? List<Map<String, dynamic>>.from(results[2]['data'] ?? []) : [];
 final employees = results[3]['success'] == true ? List<Map<String, dynamic>>.from(results[3]['data'] ?? []) : [];
+final readiness = results[4]['success'] == true ? Map<String, dynamic>.from(results[4]['data'] ?? {}) : {};
 
 AppLogger.debug('=== PROJECT DATA ===');
 AppLogger.debug('schedule_json: ${project['schedule_json']}');
@@ -76,10 +79,19 @@ AppLogger.debug('employees with services: ${employees.where((e) => e['provides_s
 AppLogger.debug('hasEmployeesWithServices: ${employees.any((e) => e['provides_services'] == true)}');
 AppLogger.debug('_canActivate: $_canActivate');
             setState(() {
-        _hasProfile = (project['profile_photo']?.toString().isNotEmpty ?? false) && (project['address_raw']?.toString().isNotEmpty ?? false);
-        _hasServices = services.isNotEmpty;
-        _hasSchedule = (project['schedule_json']?.toString().isNotEmpty ?? false);
-        _hasEmployeesWithServices = employees.any((e) => e['provides_services'] == true);
+        // Источник правды — сервер (readiness.checks)
+        final checks = (readiness['checks'] is Map) ? Map<String, dynamic>.from(readiness['checks'] as Map) : {};
+        _checks = {
+          'profile': checks['profile'] == true,
+          'services': checks['services'] == true,
+          'schedule': checks['schedule'] == true,
+        };
+        _isReady = readiness['ready'] == true;
+        // legacy — для совместимости (используется в _conditionItem)
+        _hasProfile = _checks['profile'] == true;
+        _hasServices = _checks['services'] == true;
+        _hasSchedule = _checks['schedule'] == true;
+        _hasEmployeesWithServices = _checks['schedule'] == true;
         _onlineEnabled = project['online_booking_enabled'] == true;
         _bookingUrl = _onlineEnabled ? 'https://запись.бьютироща.рф/book/${widget.projectId}' : null;
 
@@ -145,7 +157,7 @@ AppLogger.debug('_moderationStatus: $_moderationStatus');
     } catch (_) {}
   }
 
-  bool get _canActivate => _hasProfile && _hasServices && (_hasSchedule || _hasEmployeesWithServices);
+  bool get _canActivate => _isReady;
   bool get _isActive => _onlineEnabled && _moderationStatus == 'approved';
 
   @override

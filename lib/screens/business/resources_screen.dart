@@ -194,7 +194,7 @@ class _ResourceEditSheetState extends State<_ResourceEditSheet> {
         'name': _nameCtrl.text.trim(), 'is_active': _isActive ? 1 : 0, 'service_ids': _serviceIds.toList(),
       });
       if (result['success'] == true && mounted) { Navigator.pop(context); widget.onSaved(); }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _delete() async {

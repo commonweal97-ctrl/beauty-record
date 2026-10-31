@@ -8,6 +8,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/api_service.dart';
 import '../../models/support_ticket.dart';
 import '../../models/support_message.dart';
+import '../../widgets/app_toast.dart';
+import '../../widgets/toast.dart';
 
 class ClientSupportChatScreen extends StatefulWidget {
   final SupportTicket ticket;
@@ -100,7 +102,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
           _scrollToBottom();
         }
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   void _scrollToBottom() {
@@ -175,13 +177,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
       }
     });
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Ошибка отправки'),
-        backgroundColor: const Color(0xFFDD1847),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    AppToast.show(context, 'Ошибка отправки', type: AppToastType.error);
   }
 
   Future<void> _attachFile() async {
@@ -252,13 +248,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
       
       if (await file.length() > 5 * 1024 * 1024) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Файл слишком большой'),
-              backgroundColor: Color(0xFFDD1847),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppToast.show(context, 'Файл слишком большой', type: AppToastType.warning);
         }
         return;
       }
@@ -280,13 +270,7 @@ class _ClientSupportChatScreenState extends State<ClientSupportChatScreen> {
 
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ошибка загрузки'),
-            backgroundColor: Color(0xFFDD1847),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.show(context, 'Ошибка загрузки', type: AppToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);

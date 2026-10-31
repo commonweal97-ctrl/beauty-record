@@ -58,7 +58,7 @@ class _NetworksScreenState extends State<NetworksScreen> {
     try {
       await ApiService.deleteNetwork(id);
       _load();
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Widget _logoPlaceholder({double size = 56}) {
@@ -249,7 +249,7 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
       }
       
       final links = n['social_links'];
-      if (links is String) { try { _fillSocials(List<Map<String, dynamic>>.from(jsonDecode(links))); } catch (_) {} }
+      if (links is String) { try { _fillSocials(List<Map<String, dynamic>>.from(jsonDecode(links))); } catch (_) { /* silent: jsonDecode(links) */ } }
       else if (links is List) { _fillSocials(List<Map<String, dynamic>>.from(links)); }
     }
     _loadProjects();
@@ -267,7 +267,7 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
     try {
       final result = await ApiService.get('/api/network/available-projects');
       if (result['success'] == true) _availableProjects = List<Map<String, dynamic>>.from(result['data'] ?? []);
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     if (mounted) setState(() => _loadingProjects = false);
   }
 
@@ -303,7 +303,7 @@ class _CreateNetworkSheetState extends State<CreateNetworkSheet> {
       };
       final result = await ApiService.saveNetwork(body);
       if (result['success'] == true && mounted) Navigator.pop(context, true);
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     if (mounted) setState(() => _loading = false);
   }
 

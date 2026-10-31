@@ -78,7 +78,7 @@ class _EditClientSheetState extends State<EditClientSheet> {
           } else if (raw is List) {
             socialLinks = List<Map<String, String>>.from(raw);
           }
-        } catch (_) {}
+        } catch (_) { /* silent: jsonDecode(social) */ }
 
         setState(() {
           _firstNameCtrl.text = parts.isNotEmpty ? parts[0] : '';

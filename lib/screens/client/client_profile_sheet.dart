@@ -180,7 +180,7 @@ class _ClientProfileSheetState extends State<ClientProfileSheet> {
       } else if (raw is List) {
         socialLinks = List<Map<String, dynamic>>.from(raw);
       }
-    } catch (_) {}
+    } catch (_) { /* silent: jsonDecode(social) */ }
 
     String? telegramUrl;
     String? vkUrl;

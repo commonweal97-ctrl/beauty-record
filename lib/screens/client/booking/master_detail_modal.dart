@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/cached_image.dart';
+import '../../../widgets/toast.dart';
 
 class MasterDetailModal extends StatefulWidget {
   final Map<String, dynamic> master;
@@ -80,7 +81,7 @@ class _MasterDetailModalState extends State<MasterDetailModal> {
           }
         }
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     
     setState(() => _loadingReviews = false);
   }

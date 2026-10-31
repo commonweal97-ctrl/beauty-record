@@ -251,7 +251,7 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
           } else if (phoneRaw is List) {
             phoneList = phoneRaw;
           }
-        } catch (_) {}
+        } catch (_) { /* silent: jsonDecode(phones) — битый JSON = пустое значение */ }
         
         final phonesJson = d['phones'] as List? ?? [];
         if (phonesJson.isNotEmpty) phoneList = phonesJson;
@@ -316,7 +316,7 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
             final decoded = jsonDecode(raw);
             if (decoded is List) socialLinks = List<Map<String, String>>.from(decoded);
           }
-        } catch (_) {}
+        } catch (_) { /* silent: jsonDecode(social) */ }
 
         // График
         Map<int, String> schedule = {};
@@ -336,7 +336,7 @@ class _BusinessProjectProfileScreenState extends State<BusinessProjectProfileScr
               }
             });
           }
-        } catch (_) {}
+        } catch (_) { /* silent: jsonDecode(schedule) */ }
 AppLogger.debug('📸 Profile photo from server: ${d['profile_photo']}');
 AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d['interior_photos'].runtimeType})');
         setState(() {
@@ -359,7 +359,7 @@ AppLogger.debug('📸 Interior photos from server: ${d['interior_photos']} (${d[
             } else if (raw is List) {
               _interiorPhotos = List<Map<String, dynamic>>.from(raw);
             }
-          } catch (_) {}
+          } catch (_) { /* silent: jsonDecode(interior) */ }
           _loading = false;
         });
       }

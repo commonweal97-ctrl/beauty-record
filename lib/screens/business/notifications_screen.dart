@@ -1733,7 +1733,7 @@ class _ChannelsTabState extends State<_ChannelsTab> {
         }
         _manualEnabled = _channels.values.any((v) => v);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _saveTelegram({bool? enabled, Map<String, bool>? types}) async {
@@ -2499,7 +2499,7 @@ class _ManualAccessScreenState extends State<_ManualAccessScreen> {
               _notificationRights[emp['id']] =
                   detail['data']['can_send_notifications'] != false;
             }
-          } catch (_) {}
+          } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
         }
         setState(() {
           _employees = emps;
@@ -2697,7 +2697,7 @@ class _TypesTabState extends State<_TypesTab> {
         if (r['success'] == true && mounted) {
           setState(() => _typeData[t] = r['data']);
         }
-      } catch (_) {}
+      } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     }
   }
 

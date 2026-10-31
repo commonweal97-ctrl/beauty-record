@@ -10,6 +10,7 @@ import '../auth/pin_setup_screen.dart';
 import '../auth/register_screen.dart';
 import 'call_verification_screen.dart';
 import 'login_screen.dart';
+import '../../widgets/toast.dart';
 
 class OtpScreen extends StatefulWidget {
   final int userId;
@@ -68,7 +69,7 @@ class _OtpScreenState extends State<OtpScreen> {
           setState(() => _phone = userData['data']['user_phone'] ?? '');
         }
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   @override
@@ -193,11 +194,11 @@ class _OtpScreenState extends State<OtpScreen> {
           subscribe: true,
           termsAccepted: true,
         );
-      } catch (_) {}
+      } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     } else {
       try {
         await ApiService.sendOtp(widget.userId, widget.email, 'email');
-      } catch (_) {}
+      } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     }
     
     _startTimer();

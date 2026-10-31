@@ -62,7 +62,7 @@ class _RepeatBookingScreenState extends State<RepeatBookingScreen> {
         _booking!['service_ids'] ?? '',
       );
       if (mounted) setState(() => _availableDates = dates);
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   void _loadSlots() async {

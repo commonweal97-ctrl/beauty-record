@@ -354,7 +354,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (mounted) Navigator.pop(context);
             break;
           }
-        } catch (_) {}
+        } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
       }
       polling = false;
     }

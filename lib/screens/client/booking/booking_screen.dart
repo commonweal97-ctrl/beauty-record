@@ -152,7 +152,7 @@ class _BookingScreenState extends State<BookingScreen> {
       if (design is String) {
         try {
           _onlineDesign = Map<String, dynamic>.from(jsonDecode(design));
-        } catch (_) {}
+        } catch (_) { /* silent: jsonDecode(design) */ }
       } else if (design is Map) {
         _onlineDesign = Map<String, dynamic>.from(design);
       }
@@ -188,7 +188,7 @@ class _BookingScreenState extends State<BookingScreen> {
               return '';
             }).where((s) => s.isNotEmpty).toList();
           }
-        } catch (_) {}
+        } catch (_) { /* silent: jsonDecode(images) */ }
       }
     }
     
@@ -204,7 +204,7 @@ class _BookingScreenState extends State<BookingScreen> {
           if (decoded is List) {
             _phones = decoded.map((p) => _formatPhone(p.toString())).toList();
           }
-        } catch (_) {}
+        } catch (_) { /* silent: jsonDecode(phones) */ }
       }
     }
     if (_phones.isEmpty && project['phone'] != null && project['phone'].toString().isNotEmpty) {
@@ -221,7 +221,7 @@ class _BookingScreenState extends State<BookingScreen> {
           if (decoded is List) {
             _socialLinks = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
           }
-        } catch (_) {}
+        } catch (_) { /* silent: jsonDecode(social) */ }
       }
     }
     

@@ -261,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     
     // Если сессии нет — проверяем сохраненные данные
     final saved = await AuthService.getSavedLogin();
@@ -419,7 +419,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (_) {
       try {
         await launchUrl(Uri.parse('https://vk.ru/im?sel=-211300534'), mode: LaunchMode.platformDefault);
-      } catch (_) {}
+      } catch (_) { /* silent: launchUrl(vk) fallback */ }
     }
   }
 

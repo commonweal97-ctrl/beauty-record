@@ -62,7 +62,7 @@ class _PushSettingsScreenState extends State<PushSettingsScreen> {
       if (mounted) {
         showToast(context, 'Сохранено');
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   @override

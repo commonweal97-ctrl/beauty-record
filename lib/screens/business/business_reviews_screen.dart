@@ -93,7 +93,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
       if (result['success'] == true) {
         _clients = List<Map<String, dynamic>>.from(result['data'] ?? []);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadEmployees() async {
@@ -102,7 +102,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
       if (result['success'] == true) {
         _employees = List<Map<String, dynamic>>.from(result['data'] ?? []);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   @override
@@ -332,7 +332,7 @@ class _BusinessReviewsScreenState extends State<BusinessReviewsScreen> {
       } else if (rawImages is List) {
         images = List<String>.from(rawImages.map((s) => s.toString()));
       }
-    } catch (_) {}
+    } catch (_) { /* silent: jsonDecode(images) */ }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

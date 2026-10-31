@@ -17,6 +17,7 @@ import 'booking_view_sheet.dart';
 import '../../../services/notification_check_service.dart';
 import 'chat_screen.dart';
 import '../../core/app_logger.dart';
+import '../../widgets/toast.dart';
 
 
 
@@ -171,7 +172,7 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
               : [];
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadInitialDates() async {
@@ -232,7 +233,7 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
           _allEmployees = List.from(_employees);
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadRecords() async {
@@ -283,7 +284,7 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
           _allOff = allOff;
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadOccupiedTime() async {
@@ -295,7 +296,7 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
         setState(() =>
             _occupiedTime = List<Map<String, dynamic>>.from(result['data'] ?? []));
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   /// Чистая функция: API-запрос без setState. Возвращает список дат месяца.
@@ -636,7 +637,7 @@ class _JournalScreenState extends State<JournalScreen> with SingleTickerProvider
       if (result['success'] == true && mounted) {
         setState(() => _unansweredReviews = result['count'] ?? 0);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
     @override

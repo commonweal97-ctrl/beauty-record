@@ -497,7 +497,7 @@ Future<void> _openBookingDetail(int bookingId) async {
       if (parts.length == 3) {
         return '${parts[2]}.${parts[1]}.${parts[0]}';
       }
-    } catch (_) {}
+    } catch (_) { /* silent: split date */ }
     return dateStr;
   }
 

@@ -7,7 +7,10 @@ import '../../../widgets/common/avatar_initials.dart';
 import 'fixed_time_settings_sheet.dart';
 import 'booking_rules_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../core/app_colors.dart';
 import '../../core/app_logger.dart';
+import '../../widgets/app_toast.dart';
+import '../../widgets/toast.dart';
 
 class OnlineBookingScreen extends StatefulWidget {
   final int projectId;
@@ -122,7 +125,7 @@ AppLogger.debug('_moderationStatus: $_moderationStatus');
           _marketingConsent = s['marketing_consent'] == 1;
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _saveSetting(String key, dynamic value) async {
@@ -131,30 +134,137 @@ AppLogger.debug('_moderationStatus: $_moderationStatus');
         'project_id': widget.projectId,
         key: value,
       });
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _submitToModeration() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Отправить на модерацию?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Отправить')),
-        ],
-      ),
-    );
+    final confirm = await _showModerationConfirm();
     if (confirm != true) return;
     try {
       final r = await ApiService.post('/api/project-profile/submit-moderation', {'project_id': widget.projectId});
       if (r['success'] == true && mounted) {
         setState(() => _moderationStatus = 'pending');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Проект отправлен на модерацию!'), backgroundColor: Colors.green),
-        );
+        AppToast.show(context, 'Проект отправлен на модерацию!', type: AppToastType.success);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
+  }
+
+  Future<bool?> _showModerationConfirm() {
+    final colors = context.colors;
+    return showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (ctx) => Dialog(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Иконка в кружке
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: colors.brandLight,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.verified_outlined,
+                  size: 32,
+                  color: colors.brand,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Заголовок
+              Text(
+                'Отправить на модерацию?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Описание
+              Text(
+                'Проект будет отправлен на проверку. Обычно занимает от 15 минут до 12 часов.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Кнопка «Отправить» — брендовая, gradient
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [colors.brand, colors.brandDark],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colors.brand.withValues(alpha: 0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => Navigator.pop(ctx, true),
+                      child: const Center(
+                        child: Text(
+                          'Отправить',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Кнопка «Отмена» — текстовая
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: colors.textSecondary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text(
+                    'Отмена',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   bool get _canActivate => _isReady;
@@ -288,9 +398,7 @@ child: _moderationStatus == 'pending'
                           GestureDetector(
                             onTap: () {
                               Clipboard.setData(ClipboardData(text: _bookingUrl!));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Скопировано!'), duration: Duration(seconds: 1)),
-                              );
+                              AppToast.show(context, 'Скопировано!', type: AppToastType.success, duration: const Duration(seconds: 1));
                             },
                             child: Container(
                               width: 42,
@@ -1021,9 +1129,9 @@ class _MinBookingTimeSheetState extends State<_MinBookingTimeSheet> {
       if (mounted) {
         setState(() => _editingEmployee = null);
         _load();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Настройка сохранена'), backgroundColor: Colors.green));
+        AppToast.show(context, 'Настройка сохранена', type: AppToastType.success);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 }
 
@@ -1289,9 +1397,9 @@ class _ConsentSettingsSheetState extends State<_ConsentSettingsSheet> {
       });
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Настройки сохранены'), backgroundColor: Colors.green));
+        AppToast.show(context, 'Настройки сохранены', type: AppToastType.success);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   @override
@@ -1528,9 +1636,9 @@ class _OnlineDesignSheetState extends State<_OnlineDesignSheet> {
       });
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Дизайн сохранён'), backgroundColor: Colors.green));
+        AppToast.show(context, 'Дизайн сохранён', type: AppToastType.success);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   @override

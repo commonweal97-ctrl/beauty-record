@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
+import '../../widgets/toast.dart';
 
 class RateBookingScreen extends StatefulWidget {
   final int bookingId;
@@ -91,7 +92,7 @@ class _RateBookingScreenState extends State<RateBookingScreen> {
           ),
         ).then((_) { if (mounted) Navigator.pop(context); });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     setState(() => _submitting = false);
   }
 

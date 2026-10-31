@@ -7,6 +7,7 @@ import '../../../widgets/skeletons.dart';
 import '../../../widgets/common/avatar_initials.dart';
 import '../../../utils/phone_display.dart';
 import '../client/support_screen.dart';
+import '../../widgets/toast.dart';
 
 class ChatScreen extends StatefulWidget {
   final int projectId;
@@ -106,7 +107,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
           }
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   void _openChat(Map<String, dynamic> chat) {
@@ -136,7 +137,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         'message': message,
       });
       _loadMessages();
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   void _openSupportChat() {
@@ -204,7 +205,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
           _openChat(newChat);
         }
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   @override

@@ -76,7 +76,7 @@ class NotificationCheckService {
           return true;
         }
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('API error: $e'); }
 
     _isChecking = false;
     return false;

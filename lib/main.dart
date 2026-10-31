@@ -14,6 +14,7 @@ import 'screens/auth/biometric_setup_screen.dart';
 import 'services/push_notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/app_logger.dart';
+import 'widgets/app_toast.dart';
 import 'core/app_colors.dart';
 import 'core/app_typography.dart';
 import 'core/crashlytics_service.dart';
@@ -140,10 +141,12 @@ class BeautyRecordApp extends StatelessWidget {
       // элементу — клавиатура закрывается. Работает на ВСЕХ экранах,
       // включая будущие, без правок в отдельных виджетах.
       builder: (context, child) {
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          child: child ?? const SizedBox.shrink(),
+        return AppToastHost(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
       initialRoute: '/',

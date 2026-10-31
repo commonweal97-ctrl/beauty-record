@@ -630,7 +630,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
           _filteredServices = List.from(_allServices);
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadPhotos() async {
@@ -639,7 +639,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       if (result['success'] == true && mounted) {
         setState(() => _photos = List<Map<String, dynamic>>.from(result['data'] ?? []));
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadOnlineSettings() async {
@@ -667,7 +667,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
         }
       }
       if (_optimalTimeEnabled) _loadOptimalIntervals();
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadAccessStatus() async {
@@ -686,7 +686,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
           });
         }
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadScheduleStatus() async {
@@ -711,7 +711,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
           }
         }
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadOptimalIntervals() async {
@@ -721,7 +721,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
         setState(() {
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   String _getFullPhone() => _phoneKey.currentState?.fullPhone ?? '';
@@ -977,7 +977,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
             const SizedBox(height: 24),
             _buildOnlineToggle('Фиксированное время', _fixedTimeEnabled ? 'Включено' : 'Не настроено', _fixedTimeEnabled, (v) async {
               setModalState(() => _fixedTimeEnabled = v);
-              try { await ApiService.post('/api/employee/save-fixed-time', {'employee_id': widget.employee!['id'], 'project_id': widget.projectId, 'enabled': v}); } catch (_) {}
+              try { await ApiService.post('/api/employee/save-fixed-time', {'employee_id': widget.employee!['id'], 'project_id': widget.projectId, 'enabled': v}); } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
             }, showSettings: true, onSettingsTap: () { Navigator.pop(ctx); _openFixedTimeSettings(); }),
           ])),
           Container(padding: const EdgeInsets.all(20), decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFF0F0F0)))), child: SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
@@ -1035,7 +1035,7 @@ class _EmployeeFormSheetState extends State<_EmployeeFormSheet> {
       setState(() {});
       Navigator.pop(context);
       showToast(context, 'Настройки сохранены');
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   void _openAccessSettings() {

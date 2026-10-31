@@ -303,7 +303,7 @@ class _AccessLoaderState extends State<_AccessLoader> {
     try {
       final r = await ApiService.get('/api/access/get?id=${widget.accessId}&project_id=${widget.projectId}');
       if (r['success'] == true && mounted) setState(() => _data = r['data']);
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   @override

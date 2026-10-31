@@ -6,9 +6,78 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_logger.dart';
 
+/// Единое исключение для ошибок HTTP-API.
+/// message — из тела ответа (`data.message`), если сервер его прислал;
+/// иначе — из статуса. Используется в `catch (ApiException e)` во всех экранах.
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+  final dynamic body;
+  final String path;
+
+  ApiException({
+    required this.statusCode,
+    required this.message,
+    required this.path,
+    this.body,
+  });
+
+  bool get isAuth => statusCode == 401;
+  bool get isForbidden => statusCode == 403;
+  bool get isCsrf => statusCode == 419;
+  bool get isServer => statusCode >= 500;
+
+  @override
+  String toString() => 'ApiException($statusCode, $path): $message';
+}
+
 class ApiService {
   static const String baseUrl = 'https://xn--80ane1al0e.xn--80abvyjk6cts.xn--p1ai';
   static String? _cookies;
+
+  /// Бросает ApiException при statusCode >= 400.
+  /// message — из JSON-тела (`data.message` / `message`), иначе по статусу.
+  static void _ensureOk(http.Response response, String path) {
+    if (response.statusCode >= 200 && response.statusCode < 400) return;
+
+    String msg = '';
+    if (response.body.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          if (decoded['message'] is String && (decoded['message'] as String).isNotEmpty) {
+            msg = decoded['message'] as String;
+          } else if (decoded['data'] is Map && decoded['data']['message'] is String) {
+            msg = decoded['data']['message'] as String;
+          }
+        }
+      } catch (_) {
+        // тело не JSON (например, HTML 500) — молчим, подставим по статусу
+      }
+    }
+
+    if (msg.isEmpty) {
+      switch (response.statusCode) {
+        case 401: msg = 'Сессия истекла — войдите заново'; break;
+        case 403: msg = 'Нет доступа'; break;
+        case 404: msg = 'Не найдено'; break;
+        case 419: msg = 'CSRF-токен устарел — обновите страницу'; break;
+        case 422: msg = 'Некорректные данные'; break;
+        case 429: msg = 'Слишком много запросов — подождите'; break;
+        default:
+          msg = response.statusCode >= 500
+              ? 'Ошибка сервера (код ${response.statusCode})'
+              : 'Ошибка (код ${response.statusCode})';
+      }
+    }
+
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: msg,
+      path: path,
+      body: response.body,
+    );
+  }
 
   static Future<void> _loadCookies() async {
     final prefs = await SharedPreferences.getInstance();
@@ -138,15 +207,21 @@ class ApiService {
     final uri = Uri.parse('$baseUrl$path');
     final response = await http.post(uri, headers: _headers, body: jsonEncode(body));
     _saveCookies(response);
-    
+    _ensureOk(response, path);
+
     if (response.body.isEmpty) {
-      return {'success': false, 'data': []};
+      return {'success': false, 'data': [], '_statusCode': response.statusCode};
     }
-    
+
     try {
-      return jsonDecode(response.body);
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        decoded['_statusCode'] = response.statusCode;
+        return decoded;
+      }
+      return {'success': false, 'data': [], '_statusCode': response.statusCode};
     } catch (e) {
-      return {'success': false, 'data': []};
+      return {'success': false, 'data': [], '_statusCode': response.statusCode};
     }
   }
 
@@ -156,20 +231,21 @@ class ApiService {
     final uri = Uri.parse('$baseUrl$path');
     final response = await http.get(uri, headers: _headers);
     _saveCookies(response);
-    
+    _ensureOk(response, path);
+
     if (response.body.isEmpty) {
-      return {'success': false, 'data': []};
+      return {'success': false, 'data': [], '_statusCode': response.statusCode};
     }
-    
+
     try {
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) {
+        decoded['_statusCode'] = response.statusCode;
         return decoded;
-      } else {
-        return {'success': false, 'data': []};
       }
+      return {'success': false, 'data': [], '_statusCode': response.statusCode};
     } catch (e) {
-      return {'success': false, 'data': []};
+      return {'success': false, 'data': [], '_statusCode': response.statusCode};
     }
   }
 

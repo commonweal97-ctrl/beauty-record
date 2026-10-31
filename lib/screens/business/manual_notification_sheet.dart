@@ -42,7 +42,7 @@ class ManualNotificationSheet extends StatefulWidget {
           return true;
         }
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (context.mounted) showToast(context, e.message, isError: true); }
     return false;
   }
 
@@ -188,7 +188,7 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
           'id': item['id'],
           'channel': business ? 'whatsapp_business' : 'whatsapp',
         });
-      } catch (_) {}
+      } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     }
     _showConfirmScreen();
   }
@@ -232,7 +232,7 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
         'status': 'postponed',
         'minutes': minutes,
       });
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     if (mounted) {
       showToast(context, 'Отложено на $minutes мин');
     }
@@ -249,7 +249,7 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
         'id': item['id'],
         'status': 'skipped',
       });
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     await _removeCurrentSlide();
     if (_allItems.isNotEmpty && mounted) _showMainScreen();
   }
@@ -262,7 +262,7 @@ class _ManualNotificationSheetState extends State<ManualNotificationSheet> {
         'id': item['id'],
         'status': 'sent',
       });
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     await _removeCurrentSlide();
     if (_allItems.isNotEmpty && mounted) _showMainScreen();
   }

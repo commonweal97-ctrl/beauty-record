@@ -261,7 +261,7 @@ class _CallVerificationScreenState extends State<CallVerificationScreen> {
     final uri = Uri.parse('tel:+79803043674');
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {}
+    } catch (_) { /* silent: launchUrl(tel:) не критичен */ }
   }
 
   @override

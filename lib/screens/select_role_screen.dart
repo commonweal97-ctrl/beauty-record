@@ -78,7 +78,7 @@ class _SelectRoleScreenState extends State<SelectRoleScreen> with SingleTickerPr
       // 1. Очищаем серверную сессию
       try {
         await ApiService.logout();
-      } catch (_) {}
+      } catch (_) { /* silent: logout при смене роли */ }
       
       // 2. Очищаем локальные куки
       await ApiService.clearSession();

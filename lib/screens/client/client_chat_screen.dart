@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import 'support_screen.dart';
+import '../../widgets/toast.dart';
 
 class ClientChatScreen extends StatefulWidget {
   const ClientChatScreen({super.key});
@@ -56,7 +57,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
       if (result['success'] == true && mounted) {
         setState(() => _currentUserId = result['data']['id'] ?? 0);
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadAllChats() async {
@@ -76,7 +77,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
           _orgChats = List<Map<String, dynamic>>.from(result['data'] ?? []);
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
 
@@ -142,7 +143,7 @@ class _ClientChatScreenState extends State<ClientChatScreen> {
         'message': message,
       });
       _loadMessages();
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   @override

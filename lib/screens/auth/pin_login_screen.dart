@@ -204,11 +204,11 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
   Future<void> _logout() async {
     try {
       await ApiService.logout();
-    } catch (_) {}
+    } catch (_) { /* silent: logout — чистим локально в любом случае */ }
 
     try {
       await ApiService.clearSession();
-    } catch (_) {}
+    } catch (_) { /* silent: clearSession — чистим локально */ }
 
     if (!mounted) return;
     await context.read<UserProvider>().logout();

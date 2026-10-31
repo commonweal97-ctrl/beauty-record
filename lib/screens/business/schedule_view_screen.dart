@@ -73,7 +73,7 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
             }
           }
         }
-      } catch (_) {}
+      } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
 
       final futures = emps.map((e) async {
         final schedResult = await ApiService.get(

@@ -1140,7 +1140,7 @@ for (final entry in _employeePrices.entries) {
         if (r['success'] == true) {
           _allEmployees = List<Map<String, dynamic>>.from(r['data'] ?? []);
         }
-      } catch (_) {}
+      } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     }
     if (!mounted) return;
 

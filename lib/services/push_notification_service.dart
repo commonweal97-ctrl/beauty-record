@@ -193,7 +193,7 @@ class PushNotificationService {
       if (type == 'manual_notifications') {
         onNotificationTap?.call(projectId, count);
       }
-    } catch (_) {}
+    } catch (_) { /* silent: FCM handler */ }
   }
 
   Future<void> _showLocalNotification({

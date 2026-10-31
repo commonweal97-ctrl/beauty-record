@@ -11,6 +11,7 @@ import '../../../providers/user_provider.dart';
 import 'client_chat_screen.dart';
 import '../../../services/push_notification_service.dart';
 import '../../../services/auth_service.dart';
+import '../../widgets/toast.dart';
 
 class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({super.key});
@@ -70,7 +71,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       }
       
       if (mounted) setState(() => _unreadChats = total);
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _switchToBusiness() async {

@@ -292,7 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       final uri = Uri.parse('https://запись.бьютироща.рф/privacy');
                       try {
                         await launchUrl(uri, mode: LaunchMode.externalApplication);
-                      } catch (_) {}
+                      } catch (_) { /* silent: launchUrl(privacy) не критичен */ }
                     },
                   ),
                 ],

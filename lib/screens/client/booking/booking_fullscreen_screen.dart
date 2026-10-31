@@ -8,6 +8,7 @@
 //   - Никаких Navigator.push между шагами.
 //   - При возврате назад — очистка данных последующих шагов (как bfsGoBack).
 
+import '../../../widgets/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../services/api_service.dart';
@@ -21,6 +22,7 @@ import 'steps/booking_confirm_step.dart';
 import 'steps/booking_success_step.dart';
 import 'datetime/datetime_step.dart';
 import '../../../core/app_logger.dart';
+import '../../../widgets/toast.dart';
 
 class BookingFullscreenScreen extends StatefulWidget {
   final int projectId;
@@ -229,7 +231,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
           _clientData = Map<String, dynamic>.from(result['data']);
         });
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   Future<void> _loadData() async {
@@ -314,9 +316,7 @@ class _BookingFullscreenScreenState extends State<BookingFullscreenScreen> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: widget.primaryColor),
-    );
+    AppToast.show(context, message, type: AppToastType.success);
   }
 
   // ========== ГЛАВНЫЙ BUILD ==========

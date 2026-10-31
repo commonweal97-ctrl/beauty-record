@@ -3,6 +3,7 @@ import '../../../services/api_service.dart';
 import '../../../utils/phone_display.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
+import '../../widgets/toast.dart';
 
 class ListViewScreen extends StatefulWidget {
   final int projectId;
@@ -97,7 +98,7 @@ class _ListViewScreenState extends State<ListViewScreen> {
         setState(() => _allEmployees =
             List<Map<String, dynamic>>.from(result['data'] ?? []));
       }
-    } catch (_) {}
+    } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
   }
 
   String _formatDate(String? d) {

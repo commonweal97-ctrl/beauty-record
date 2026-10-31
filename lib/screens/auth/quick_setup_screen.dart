@@ -1,9 +1,11 @@
+import '../../widgets/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../widgets/skeletons.dart';
+import '../../widgets/toast.dart';
 
 class QuickSetupScreen extends StatefulWidget {
   final int userId;
@@ -57,7 +59,7 @@ class _QuickSetupScreenState extends State<QuickSetupScreen> {
       try {
         final result = await ApiService.deletePin();
         if (result['success'] == true) setState(() => _hasPin = false);
-      } catch (_) {}
+      } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     } else {
       // Установить PIN
       final result = await Navigator.push(
@@ -86,9 +88,7 @@ class _QuickSetupScreenState extends State<QuickSetupScreen> {
 
         if (!canCheck || available.isEmpty) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Биометрия недоступна на этом устройстве')),
-            );
+            AppToast.show(context, 'Биометрия недоступна на этом устройстве', type: AppToastType.info);
           }
           return;
         }
@@ -101,7 +101,7 @@ class _QuickSetupScreenState extends State<QuickSetupScreen> {
           await prefs.setInt('biometric_user_id', widget.userId);
           if (mounted) setState(() => _hasBiometric = true);
         }
-      } catch (_) {}
+      } on ApiException catch (e) { if (mounted) showToast(context, e.message, isError: true); }
     }
   }
 

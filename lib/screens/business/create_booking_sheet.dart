@@ -15,6 +15,8 @@ class CreateBookingSheet extends StatefulWidget {
   final String? employeeAvatar;
   final List<Map<String, dynamic>> existingRecords;
   final List<Map<String, dynamic>> occupiedSlots;
+  final String scheduleStart;
+  final String scheduleEnd;
   
   const CreateBookingSheet({
     super.key,
@@ -26,6 +28,8 @@ class CreateBookingSheet extends StatefulWidget {
     this.employeeAvatar,
     this.existingRecords = const [],
     this.occupiedSlots = const [],
+    this.scheduleStart = '09:00',
+    this.scheduleEnd = '18:00',
   });
 
   @override
@@ -37,6 +41,73 @@ class _CreateBookingSheetState extends State<CreateBookingSheet> {
   String _mode = 'booking';
   String _selectedTime = '09:00';
   final Set<int> _selectedServices = {};
+  
+  List<Map<String, dynamic>> _timeSlots = [];
+  bool _loadingTimeSlots = false;
+  String? _expandedHour;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTime = widget.startTime;
+    _loadTimeSlots();
+    _loadServices();
+    _loadEmployeePrices();
+  }
+
+  Future<void> _loadTimeSlots() async {
+    setState(() => _loadingTimeSlots = true);
+    try {
+      final serviceIds = _selectedServices.isEmpty ? '' : _selectedServices.join(',');
+      final url = '/api/booking/time-slots-data?project_id=${widget.projectId}&date=${widget.date}&employee_ids=${widget.employeeId}&include_blocked=1${serviceIds.isNotEmpty ? '&service_ids=$serviceIds' : ''}';
+      final res = await ApiService.get(url);
+      if (res['success'] == true) {
+        final raw = res['data'];
+        List<Map<String, dynamic>> slots = [];
+        if (raw is Map) {
+          final ts = raw['time_slots'];
+          if (ts is Map) {
+            // ts = {date: {empId: [slots]}}
+            final forDate = ts[widget.date];
+            if (forDate is Map) {
+              final empIdKey = widget.employeeId.toString();
+              final empList = forDate[empIdKey] ?? forDate[widget.employeeId];
+              if (empList is List) {
+                for (final s in empList) {
+                  if (s is String) {
+                    slots.add({'time': s, 'available': true});
+                  } else if (s is Map) {
+                    slots.add(Map<String, dynamic>.from(s));
+                  }
+                }
+              }
+            }
+          } else if (ts is List) {
+            for (final s in ts) {
+              if (s is String) {
+                slots.add({'time': s, 'available': true});
+              } else if (s is Map) {
+                slots.add(Map<String, dynamic>.from(s));
+              }
+            }
+          }
+        } else if (raw is List) {
+          for (final s in raw) {
+            if (s is String) {
+              slots.add({'time': s, 'available': true});
+            } else if (s is Map) {
+              slots.add(Map<String, dynamic>.from(s));
+            }
+          }
+        }
+        setState(() => _timeSlots = slots);
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      if (mounted) setState(() => _loadingTimeSlots = false);
+    }
+  }
   int? _selectedClient;
   List<Map<String, dynamic>> _services = [];
   List<Map<String, dynamic>> _clients = [];
@@ -59,12 +130,6 @@ class _CreateBookingSheetState extends State<CreateBookingSheet> {
   bool _loadingPrices = false;
 
   @override
-  void initState() {
-    super.initState();
-    _selectedTime = widget.startTime;
-    _loadServices();
-    _loadEmployeePrices();
-  }
 
   @override
   void dispose() {
@@ -74,29 +139,9 @@ class _CreateBookingSheetState extends State<CreateBookingSheet> {
     super.dispose();
   }
 
-  int _timeToMin(String time) {
-    final parts = time.split(':');
-    return (int.tryParse(parts[0]) ?? 0) * 60 + (int.tryParse(parts[1]) ?? 0);
-  }
 
-  bool _isTimeSlotAvailable(String time, {int duration = 5}) {
-    final timeMin = _timeToMin(time);
-    final timeEnd = timeMin + duration;
 
-    for (final record in widget.existingRecords) {
-      final recordStart = _timeToMin((record['start_time'] as String).substring(0, 5));
-      final recordEnd = _timeToMin((record['end_time'] as String).substring(0, 5));
-      if (timeMin < recordEnd && timeEnd > recordStart) return false;
-    }
 
-    for (final slot in widget.occupiedSlots) {
-      final slotStart = _timeToMin((slot['start_time'] as String).substring(0, 5));
-      final slotEnd = _timeToMin((slot['end_time'] as String).substring(0, 5));
-      if (timeMin < slotEnd && timeEnd > slotStart) return false;
-    }
-
-    return true;
-  }
 
   void _loadServices() async {
     setState(() => _loadingServices = true);
@@ -504,40 +549,119 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildTimeSlots(int selectedHour) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: List.generate(12, (i) {
-        final min = i * 5;
-        final time = '${selectedHour.toString().padLeft(2, '0')}:${min.toString().padLeft(2, '0')}';
-        final available = _isTimeSlotAvailable(time);
-        final selected = time == _selectedTime;
+    if (_loadingTimeSlots) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator(color: Color(0xFFDD1847))),
+      );
+    }
 
-        return GestureDetector(
-          onTap: available ? () => setState(() => _selectedTime = time) : null,
+    final startParts = widget.scheduleStart.split(':');
+    final endParts = widget.scheduleEnd.split(':');
+    final startH = int.tryParse(startParts[0]) ?? 9;
+    final endH = int.tryParse(endParts[0]) ?? 18;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int h = startH; h <= endH; h++) _buildHourRow(h),
+      ],
+    );
+  }
+
+  Widget _buildHourRow(int hour) {
+    final hourStr = hour.toString().padLeft(2, '0');
+    final isExpanded = _expandedHour == hourStr;
+    final isHourSelected = _selectedTime.startsWith('$hourStr:');
+
+    // Слоты этого часа
+    final hourSlots = _timeSlots.where((s) {
+      final t = (s['time'] ?? s['start_time'] ?? '').toString();
+      return t.startsWith('$hourStr:');
+    }).toList();
+
+    // Если слотов нет (нет API) — генерируем дефолт 00, 15, 30, 45
+    final List<Map<String, dynamic>> displaySlots = hourSlots.isNotEmpty
+        ? hourSlots
+        : [0, 15, 30, 45].map((m) => {
+            'time': '$hourStr:${m.toString().padLeft(2, '0')}',
+            'available': true,
+          }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => setState(() => _expandedHour = isExpanded ? null : hourStr),
           child: Container(
-            width: (MediaQuery.of(context).size.width - 40 - 18) / 4,
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
-              color: selected
-                  ? const Color(0xFFDD1847)
-                  : (available ? const Color(0xFFF8F8F8) : const Color(0xFFF5F5F5)),
-              borderRadius: BorderRadius.circular(10),
-              border: selected ? Border.all(color: const Color(0xFFDD1847)) : null,
+              color: isHourSelected ? const Color(0xFFFDF2F5) : const Color(0xFFF8F8F8),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isHourSelected ? const Color(0xFFDD1847) : Colors.transparent),
             ),
-            child: Text(
-              time,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: selected ? Colors.white : (available ? const Color(0xFF666666) : const Color(0xFFCCCCCC)),
-                decoration: !available ? TextDecoration.lineThrough : null,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  '$hourStr:00',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isHourSelected ? const Color(0xFFDD1847) : const Color(0xFF1A1A1A),
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: const Color(0xFF999999),
+                ),
+              ],
             ),
           ),
-        );
-      }),
+        ),
+        if (isExpanded)
+          Padding(
+            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: displaySlots.map((slot) {
+                final time = (slot['time'] ?? slot['start_time'] ?? '').toString().substring(0, 5);
+                final available = slot['available'] == true || slot['is_available'] == true || !slot.containsKey('available');
+                final selected = time == _selectedTime;
+
+                return GestureDetector(
+                  onTap: available ? () {
+                    setState(() {
+                      _selectedTime = time;
+                      _expandedHour = null;
+                    });
+                  } : null,
+                  child: Container(
+                    width: 68,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: selected ? const Color(0xFFDD1847) : (available ? Colors.white : const Color(0xFFF5F5F5)),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: selected ? const Color(0xFFDD1847) : const Color(0xFFE5E5EA)),
+                    ),
+                    child: Text(
+                      time,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: selected ? Colors.white : (available ? const Color(0xFF1A1A1A) : const Color(0xFFC7C7CC)),
+                        decoration: !available ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+      ],
     );
   }
 

@@ -6,6 +6,8 @@ import '../../../utils/name_utils.dart';
 import '../../../widgets/common/avatar_initials.dart';
 import '../../../widgets/toast.dart';
 import '../../widgets/common/time_picker_sheet.dart';
+import 'package:intl/intl.dart';
+import 'create_booking_sheet.dart';
 
 class ScheduleViewScreen extends StatefulWidget {
   final int projectId;
@@ -170,6 +172,53 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
         },
       ),
     );
+  }
+
+  bool get _canCreateBookingFromSelection {
+    if (_selectedCells.length != 1) return false;
+    final key = _selectedCells.first;
+    final parts = key.split('_');
+    if (parts.length < 2) return false;
+    final empId = int.tryParse(parts[0]);
+    final dateIndex = int.tryParse(parts[1]);
+    if (empId == null || dateIndex == null || dateIndex >= _dates.length) return false;
+    final emp = _employees.firstWhere(
+      (e) => e['id'] == empId,
+      orElse: () => <String, dynamic>{},
+    );
+    if (emp.isEmpty) return false;
+    final range = _timeRange(emp, _dates[dateIndex].day);
+    return range.isNotEmpty && range != 'Выходной';
+  }
+
+  void _createBookingFromSelection() {
+    if (_selectedCells.length != 1) return;
+    final key = _selectedCells.first;
+    final parts = key.split('_');
+    if (parts.length < 2) return;
+    final empId = int.tryParse(parts[0]);
+    final dateIndex = int.tryParse(parts[1]);
+    if (empId == null || dateIndex == null || dateIndex >= _dates.length) return;
+    final dateStr = DateFormat('yyyy-MM-dd').format(_dates[dateIndex]);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => CreateBookingSheet(
+        projectId: widget.projectId,
+        employeeId: empId,
+        date: dateStr,
+        startTime: '09:00',
+      ),
+    ).then((result) {
+      if (result == true) {
+        _selectedCells.clear();
+        _load();
+      }
+    });
   }
 
   void _openScheduleSettings() {
@@ -486,42 +535,95 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
               ),
       ),
       if (_selectedCells.isNotEmpty)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4))],
-          ),
-          child: SafeArea(
-            top: false,
-            child: Row(children: [
-              Expanded(
-                child: Text('Выбрано: ${_selectedCells.length}', style: const TextStyle(color: Color(0xFF666666), fontSize: 13)),
-              ),
-              TextButton(
-                onPressed: _clearSelection,
-                style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12)),
-                child: const Text('Сбросить', style: TextStyle(fontSize: 13)),
-              ),
-              TextButton(
-                onPressed: _clearSelection,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  foregroundColor: Colors.red,
+        Material(
+          color: Colors.transparent,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 24,
+                  offset: Offset(0, -4),
                 ),
-                child: const Text('Очистить', style: TextStyle(fontSize: 13)),
-              ),
-              ElevatedButton(
-                onPressed: _openScheduleSettings,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFDD1847),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+            // Верхняя карточка: «Выбрано: N» + CTA «+ Создать запись» (только если 1 ячейка + есть график)
+            AnimatedSize(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: double.infinity,
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Row(
+                  children: [
+                    Text(
+                      'Выбрано: ${_selectedCells.length}',
+                      style: const TextStyle(
+                        color: Color(0xFF8A8A8E),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_canCreateBookingFromSelection)
+                      _ApplePrimaryButton(
+                        label: 'Создать запись',
+                        icon: Icons.add_rounded,
+                        onTap: _createBookingFromSelection,
+                      ),
+                  ],
                 ),
-                child: const Text('Настроить', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               ),
-            ]),
+            ),
+            // Вторая строка: 3 chip с текстом (Сбросить / Очистить / Настроить)
+            Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _AppleSecondaryChip(
+                      icon: Icons.close_rounded,
+                      label: 'Сбросить',
+                      onTap: _clearSelection,
+                      tone: _AppleSecondaryTone.gray,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _AppleSecondaryChip(
+                      icon: Icons.delete_outline_rounded,
+                      label: 'Очистить',
+                      onTap: _clearSelection,
+                      tone: _AppleSecondaryTone.danger,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _AppleSecondaryChip(
+                      icon: Icons.tune_rounded,
+                      label: 'Настроить',
+                      onTap: _openScheduleSettings,
+                      tone: _AppleSecondaryTone.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+              ),
+            ),
           ),
         ),
     ]);
@@ -529,6 +631,142 @@ class _ScheduleViewScreenState extends State<ScheduleViewScreen> {
 }
 
 // ==================== МОДАЛКА НАСТРОЙКИ ГРАФИКА ====================
+// ==================== APPLE BUTTONS (для панели выделения) ====================
+class _ApplePrimaryButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ApplePrimaryButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFDD1847), Color(0xFFC1163D)],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFDD1847).withValues(alpha: 0.28),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 15),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _AppleSecondaryTone { gray, danger, primary }
+
+class _AppleSecondaryChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final _AppleSecondaryTone tone;
+
+  const _AppleSecondaryChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.tone = _AppleSecondaryTone.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    late final Color fg;
+    late final Color bg;
+    if (tone == _AppleSecondaryTone.gray) {
+      fg = const Color(0xFF6E6E73);
+      bg = const Color(0xFFF2F2F7);
+    } else if (tone == _AppleSecondaryTone.danger) {
+      fg = const Color(0xFFFF3B30);
+      bg = const Color(0x14FF3B30);
+    } else {
+      fg = const Color(0xFF007AFF);
+      bg = const Color(0x14007AFF);
+    }
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: fg),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                    letterSpacing: -0.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ScheduleSettingsSheet extends StatefulWidget {
   final int projectId;
   final VoidCallback onSaved;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'analytics_screen.dart';
-import 'schedule_view_screen.dart';
+import 'schedule_view_screen_v2.dart';
 import 'clients_screen.dart';
 import 'business_reviews_screen.dart';
 import 'business_project_profile_screen.dart';
@@ -34,7 +34,7 @@ class JournalSubScreen extends StatelessWidget {
     }
     
     if (page == 'schedule') {
-      return ScheduleViewScreen(projectId: projectId);
+      return ScheduleViewScreenV2(projectId: projectId);
     }
 
     if (page == 'clients') {

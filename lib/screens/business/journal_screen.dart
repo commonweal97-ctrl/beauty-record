@@ -13,6 +13,7 @@ import '../../../utils/name_utils.dart';
 import '../../../utils/phone_display.dart';
 import 'list_view_screen.dart';
 import 'create_booking_sheet.dart';
+import 'day_settings_sheet.dart';
 import 'booking_view_sheet.dart';
 import '../../../services/notification_check_service.dart';
 import 'chat_screen.dart';
@@ -683,6 +684,23 @@ void initState() {
     super.dispose();
   }
 
+  Future<void> _openDaySettings() async {
+    final dateIso = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DaySettingsSheet(
+        projectId: widget.projectId,
+        date: dateIso,
+        onSaved: () async {
+          await _loadRecords();
+          if (mounted) setState(() {});
+        },
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -806,6 +824,21 @@ void initState() {
                       _tabBtn('Месяц', 'month'),
                       _tabBtn('Список', 'list'),
                     ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: _openDaySettings,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.access_time_rounded, size: 26, color: Color(0xFF1A1A1A)),
                   ),
                 ),
               ),

@@ -151,6 +151,7 @@ class _EmployeeScheduleScreenState extends State<EmployeeScheduleScreen> {
         employeeId: widget.employeeId,
         projectId: widget.projectId,
         selectedDays: _selectedDays.toSet(),
+        scheduleData: _scheduleData,
         onSaved: () {
           _selectedDays.clear();
           _loadedMonths.clear();
@@ -382,9 +383,16 @@ class _DayConfigSheet extends StatefulWidget {
   final int employeeId;
   final int projectId;
   final Set<String> selectedDays;
+  final Map<String, Map<String, dynamic>> scheduleData;
   final VoidCallback onSaved;
 
-  const _DayConfigSheet({required this.employeeId, required this.projectId, required this.selectedDays, required this.onSaved});
+  const _DayConfigSheet({
+    required this.employeeId,
+    required this.projectId,
+    required this.selectedDays,
+    required this.scheduleData,
+    required this.onSaved,
+  });
 
   @override
   State<_DayConfigSheet> createState() => _DayConfigSheetState();
@@ -398,6 +406,32 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
   TimeOfDay _endTime = const TimeOfDay(hour: 18, minute: 0);
   bool _saving = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Лог: что в scheduleData при открытии
+    if (widget.selectedDays.isNotEmpty) {
+      final firstKey = widget.selectedDays.first;
+      final parts = firstKey.split('-');
+      if (parts.length == 3) {
+        final y = int.parse(parts[0]);
+        final m = int.parse(parts[1]);
+        final d = parts[2].padLeft(2, '0');
+        final mk = '${y}-${m.toString().padLeft(2, '0')}';
+        final dayData = widget.scheduleData[mk]?[d];
+        if (dayData != null) {
+          final ob = dayData['online_booking'];
+          final iw = dayData['is_working'];
+          final ia = dayData['is_all_day'];
+          if (ob != null) _onlineBooking = (ob == true || ob == 1);
+          if (iw != null) _isWorking = (iw == true || iw == 1);
+          if (ia != null) _isAllDay = (ia == true);
+        }
+      }
+    } else {
+    }
+  }
+
   Future<void> _save() async {
     setState(() => _saving = true);
     final days = widget.selectedDays.map((key) {
@@ -405,8 +439,9 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
       return {'year': int.parse(parts[0]), 'month': int.parse(parts[1]), 'day': int.parse(parts[2])};
     }).toList();
 
+
     try {
-      await ApiService.post('/api/employee/schedule/save', {
+      final res = await ApiService.post('/api/employee/schedule/save', {
         'employee_id': widget.employeeId,
         'project_id': widget.projectId,
         'days': days,
@@ -421,8 +456,8 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
         widget.onSaved();
         showToast(context, 'График сохранён');
       }
-    } catch (_) {
-      if (mounted) showToast(context, 'Ошибка сохранения', isError: true);
+    } catch (e, st) {
+      if (mounted) showToast(context, 'Ошибка сохранения: $e', isError: true);
     }
     if (mounted) setState(() => _saving = false);
   }

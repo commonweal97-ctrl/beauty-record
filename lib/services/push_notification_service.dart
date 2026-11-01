@@ -23,6 +23,9 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
     requestAlertPermission: true,
     requestBadgePermission: true,
     requestSoundPermission: true,
+    defaultPresentAlert: true,
+    defaultPresentBadge: true,
+    defaultPresentSound: true,
   );
 
   await localNotifications.initialize(
@@ -88,6 +91,9 @@ class PushNotificationService {
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
+      defaultPresentAlert: true,
+      defaultPresentBadge: true,
+      defaultPresentSound: true,
     );
 
     await _localNotifications.initialize(

@@ -582,10 +582,12 @@ _conditionItem(
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Container(
+        builder: (ctx, setModalState) => ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -611,7 +613,7 @@ _conditionItem(
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
                   children: [
                     _settingsDropdown(
                       'Заблокированные клиенты',

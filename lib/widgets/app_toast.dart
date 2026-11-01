@@ -62,53 +62,32 @@ class _ToastQueue {
   }
 }
 
-/// Перехватывает Overlay и рисует очередь тостов.
-class AppToastHost extends StatefulWidget {
+/// Рисует очередь тостов поверх child через Stack (без Overlay — работает везде).
+class AppToastHost extends StatelessWidget {
   final Widget child;
   const AppToastHost({super.key, required this.child});
 
   @override
-  State<AppToastHost> createState() => _AppToastHostState();
-}
-
-class _AppToastHostState extends State<AppToastHost> {
-  OverlayEntry? _entry;
-
-  @override
-  void initState() {
-    super.initState();
-    _ToastQueue.instance.current.addListener(_onCurrentChanged);
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<_ToastMessage?>(
+      valueListenable: _ToastQueue.instance.current,
+      builder: (context, msg, _) {
+        return Stack(
+          children: [
+            child,
+            if (msg != null)
+              // _ToastWidget сам возвращает Positioned(top:70, left:16, right:16).
+              // Не оборачиваем ещё одним Positioned — иначе двойная ParentData.
+              _ToastWidget(
+                key: ValueKey(msg.hashCode),
+                msg: msg,
+                onDismiss: _ToastQueue.instance.dismiss,
+              ),
+          ],
+        );
+      },
+    );
   }
-
-  @override
-  void dispose() {
-    _ToastQueue.instance.current.removeListener(_onCurrentChanged);
-    _entry?.remove();
-    super.dispose();
-  }
-
-  void _onCurrentChanged() {
-    final msg = _ToastQueue.instance.current.value;
-    if (msg == null) {
-      _entry?.remove();
-      _entry = null;
-      return;
-    }
-    if (_entry == null) {
-      _entry = OverlayEntry(builder: (ctx) => _ToastWidget(
-        key: ValueKey(msg.hashCode),
-        msg: msg,
-        onDismiss: _ToastQueue.instance.dismiss,
-      ));
-      Overlay.of(context, rootOverlay: true).insert(_entry!);
-    } else {
-      // Обновляем содержимое без пересоздания
-      _entry!.markNeedsBuild();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
 
 class _ToastWidget extends StatefulWidget {
@@ -160,11 +139,11 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
     final mediaQuery = MediaQuery.of(context);
 
     return Positioned(
-      top: mediaQuery.padding.top + 8,
+      bottom: mediaQuery.padding.bottom + 190,
       left: 16,
       right: 16,
       child: SlideTransition(
-        position: _slide.drive(Tween(begin: Offset(0, -1), end: Offset.zero)),
+        position: _slide.drive(Tween(begin: Offset(0, 1), end: Offset.zero)),
         child: FadeTransition(
           opacity: _fade,
           child: Material(

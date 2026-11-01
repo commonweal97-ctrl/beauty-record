@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../../services/api_service.dart';
 import '../../../widgets/skeletons.dart';
 import '../../../widgets/cached_image.dart';
@@ -25,6 +27,29 @@ class _MonthData {
   });
 
   String get key => '$year-${month.toString().padLeft(2, '0')}';
+
+  Map<String, dynamic> toJson() => {
+        'year': year,
+        'month': month,
+        'dates': dates.map((d) => d.toIso8601String()).toList(),
+        'employees': employees,
+        'bookingDays': bookingDays.map((k, v) => MapEntry(k.toString(), v.toList())),
+      };
+
+  static _MonthData fromJson(dynamic j) {
+    final m = j as Map<String, dynamic>;
+    return _MonthData(
+      year: m['year'] as int,
+      month: m['month'] as int,
+      dates: (m['dates'] as List).map((s) => DateTime.parse(s as String)).toList(),
+      employees: (m['employees'] as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      bookingDays: (m['bookingDays'] as Map<String, dynamic>).map(
+        (k, v) => MapEntry(int.parse(k), (v as List).map((x) => x as int).toSet()),
+      ),
+    );
+  }
 }
 
 // ==================== ЭКРАН ====================
@@ -43,6 +68,7 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
   bool _loading = true;
   bool _appendLock = false;
   bool _initialScrollSkip = true;
+  bool _initialScrollDone = false;
   final Set<String> _selectedCells = {};
   final ScrollController _horizontalScrollController = ScrollController();
   final ScrollController _verticalScrollController = ScrollController();
@@ -68,20 +94,70 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
 
   // ===== Первичная загрузка =====
   Future<void> _loadInitialMonth() async {
-    final data = await _fetchMonth(_currentMonth.year, _currentMonth.month);
-    if (mounted && data != null) {
-      setState(() {
-        _months = [data];
-        _loading = false;
-      });
+    final cur = _currentMonth;
+    final prev = DateTime(cur.year, cur.month - 1, 1);
+    final next = DateTime(cur.year, cur.month + 1, 1);
+    final results = await Future.wait([
+      _fetchMonth(prev.year, prev.month),
+      _fetchMonth(cur.year, cur.month),
+      _fetchMonth(next.year, next.month),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _months = results.whereType<_MonthData>().toList();
+      _loading = false;
+    });
+    if (!_initialScrollDone) {
+      _initialScrollDone = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToToday());
     }
   }
 
+  void _scrollToToday() {
+    if (!_horizontalScrollController.hasClients) return;
+    if (_months.isEmpty) return;
+    final today = DateTime.now();
+    final idx = _months.indexWhere((m) => m.year == today.year && m.month == today.month);
+    if (idx < 0) return;
+    const double fixedColWidth = 100.0;
+    const double cellWidth = 85.0;
+    double offset = 0;
+    for (int i = 0; i < idx; i++) {
+      final m = _months[i];
+      offset += (i == 0 ? fixedColWidth : 0) + m.dates.length * cellWidth;
+    }
+    offset += (idx == 0 ? fixedColWidth : 0) + (today.day - 1) * cellWidth;
+    final max = _horizontalScrollController.position.maxScrollExtent;
+    _horizontalScrollController.jumpTo(offset.clamp(0.0, max));
+  }
+
   // ===== Fetch одного месяца =====
+  Future<void> _saveMonthCache(String key, String tsKey, _MonthData data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, jsonEncode(data.toJson()));
+      await prefs.setInt(tsKey, DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {}
+  }
+
   Future<_MonthData?> _fetchMonth(int year, int month) async {
     final projectId = widget.projectId;
     final monthStr = month.toString().padLeft(2, '0');
     final lastDay = DateTime(year, month + 1, 0).day;
+    // Кеш (TTL 5 мин)
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'sched_v2_${projectId}_${year}_$monthStr';
+    final cacheTsKey = '${cacheKey}__ts';
+    final cached = prefs.getString(cacheKey);
+    final cachedTs = prefs.getInt(cacheTsKey);
+    if (cached != null && cachedTs != null) {
+      final age = DateTime.now().millisecondsSinceEpoch - cachedTs;
+      if (age < 5 * 60 * 1000) {
+        try {
+          return _MonthData.fromJson(jsonDecode(cached));
+        } catch (_) {}
+      }
+    }
     final endDate = '$year-$monthStr-${lastDay.toString().padLeft(2, '0')}';
     try {
       // 1) Сотрудники
@@ -159,15 +235,16 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
 
       final dim = DateTime(year, month + 1, 0).day;
       final dates = List.generate(dim, (i) => DateTime(year, month, i + 1));
-      return _MonthData(
+      final result = _MonthData(
         year: year,
         month: month,
         dates: dates,
         employees: fetchedEmployees,
         bookingDays: bookingDays,
       );
+      await _saveMonthCache(cacheKey, cacheTsKey, result);
+      return result;
     } catch (e) {
-      debugPrint('[SCHED-v2] _fetchMonth ERROR: $e');
       if (mounted) setState(() => _loading = false);
       return null;
     }
@@ -179,8 +256,8 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
     if (_initialScrollSkip) return;
     if (_appendLock || _loading) return;
     final pos = _horizontalScrollController.position;
-    final nearRight = pos.pixels >= (pos.maxScrollExtent - 10);
-    final nearLeft = pos.pixels <= 10;
+    final nearRight = pos.pixels >= (pos.maxScrollExtent - 150);
+    final nearLeft = pos.pixels <= 150;
     if (nearRight) {
       appendNextMonth();
     } else if (nearLeft && _months.length > 1) {
@@ -217,7 +294,10 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
         setState(() => _months.insert(0, data));
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_horizontalScrollController.hasClients) return;
-          final delta = data.dates.length * 85.0;
+          // Ширина нового (первого) месяца: fixed-колонка + все даты
+          const double fixedColWidth = 100.0;
+          const double cellWidth = 85.0;
+          final delta = fixedColWidth + data.dates.length * cellWidth;
           _horizontalScrollController.jumpTo(prevScrollLeft + delta);
         });
       }
@@ -635,8 +715,204 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
     );
   }
 
-  void _openScheduleSettings() {
-    if (_selectedCells.isNotEmpty) {
+  /// Перезагружает ОДИН месяц с сервера без кеша, обновляет _months[idx].
+  Future<void> _refreshMonthFromServer(int year, int month) async {
+    final projectId = widget.projectId;
+    final monthStr = month.toString().padLeft(2, '0');
+    final lastDay = DateTime(year, month + 1, 0).day;
+    final endDate = '$year-$monthStr-${lastDay.toString().padLeft(2, '0')}';
+
+    try {
+      final empResult = await ApiService.get('/api/employee/list?project_id=$projectId');
+      List<Map<String, dynamic>> emps = [];
+      if (empResult['success'] == true) {
+        emps = List<Map<String, dynamic>>.from(empResult['data'] ?? []);
+      }
+
+      final bookingDays = <int, Set<int>>{};
+      try {
+        final bookingResult = await ApiService.get(
+            '/api/booking/list?project_id=$projectId&date=$year-$monthStr-01&end_date=$endDate');
+        if (bookingResult['success'] == true) {
+          for (final b in (bookingResult['data'] as List? ?? [])) {
+            if (b is! Map) continue;
+            if (b['status'] == 'cancelled') continue;
+            final empId = b['employee_id'];
+            final dateStr = b['date']?.toString() ?? '';
+            final parts = dateStr.split('-');
+            if (empId != null && parts.length == 3) {
+              final day = int.tryParse(parts[2]) ?? 0;
+              if (day > 0) {
+                bookingDays.putIfAbsent(empId as int, () => <int>{}).add(day);
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      final futures = emps.map((e) async {
+        final empId = e['id'] as int;
+        try {
+          final res = await ApiService.get(
+              '/api/employee/schedule/get?employee_id=$empId&project_id=$projectId&year=$year&month=$month');
+          final data = (res['data'] as Map?) ?? {};
+          final normalized = <String, dynamic>{};
+          data.forEach((k, v) {
+            final day = int.tryParse(k.toString());
+            if (day != null) {
+              normalized['$year-$monthStr-${day.toString().padLeft(2, '0')}'] = v;
+            }
+          });
+          return {
+            'id': empId,
+            'firstName': e['first_name'] ?? (e['name']?.split(' ').first ?? ''),
+            'lastName': e['last_name'] ?? (e['name']?.split(' ').length == 2 ? e['name'].split(' ')[1] : ''),
+            'avatar': e['avatar'],
+            'workStart': e['work_start'] ?? '09:00',
+            'workEnd': e['work_end'] ?? '18:00',
+            'schedule_data': normalized,
+          };
+        } catch (_) {
+          return {
+            'id': empId,
+            'firstName': e['first_name'] ?? '',
+            'lastName': e['last_name'] ?? '',
+            'avatar': null,
+            'workStart': '09:00',
+            'workEnd': '18:00',
+            'schedule_data': null,
+          };
+        }
+      }).toList();
+      final fetched = await Future.wait(futures);
+
+      final newMonth = _MonthData(
+        year: year,
+        month: month,
+        dates: List.generate(lastDay, (i) => DateTime(year, month, i + 1)),
+        employees: fetched,
+        bookingDays: bookingDays,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        final idx = _months.indexWhere((m) => m.year == year && m.month == month);
+        if (idx >= 0) {
+          _months[idx] = newMonth;
+        } else {
+          _months.add(newMonth);
+        }
+      });
+    } catch (e) {
+    }
+  }
+
+  /// Запрашивает online_booking напрямую для даты через listForDate.
+  /// Возвращает { online_booking: bool, is_working: bool, ... } или null.
+  Future<Map<String, dynamic>?> _fetchDateOnlineBooking(String dateStr, int empId) async {
+    try {
+      final res = await ApiService.get(
+          '/api/employee/schedule/list-for-date?project_id=${widget.projectId}&date=$dateStr');
+      if (res['success'] != true) return null;
+      final list = (res['data'] as List? ?? []);
+      for (final e in list) {
+        if (e is Map && e['id'] == empId) {
+          final ex = e['exception'] ?? e['schedule'] ?? e;
+          return Map<String, dynamic>.from(ex as Map);
+        }
+      }
+    } catch (e) {
+    }
+    return null;
+  }
+
+  Future<void> _resetMonthCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final projectPrefix = 'sched_v2_${widget.projectId}_';
+      final keysToRemove = prefs.getKeys().where((k) => k.startsWith(projectPrefix)).toList();
+      for (final k in keysToRemove) {
+        await prefs.remove(k);
+      }
+    } catch (_) {}
+  }
+
+  Map<String, Map<String, dynamic>> _buildScheduleDataMap() {
+    final result = <String, Map<String, dynamic>>{};
+    for (final m in _months) {
+      for (final emp in m.employees) {
+        final sd = emp['schedule_data'];
+        if (sd is Map<String, dynamic>) {
+          sd.forEach((k, v) {
+            if (v is Map<String, dynamic>) {
+              // k — может быть 'YYYY-MM-DD' или 'DD'. Нормализуем в 'YYYY-MM-DD'
+              String fullKey;
+              if (k.contains('-') && k.length >= 8) {
+                fullKey = k;
+              } else {
+                final day = int.tryParse(k);
+                if (day == null) return;
+                fullKey = '${m.year}-${m.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+              }
+              // Берём первое значение (для одного сотрудника), т.к. тумблер общий
+              if (!result.containsKey(fullKey)) {
+                result[fullKey] = Map<String, dynamic>.from(v);
+              }
+            }
+          });
+        }
+      }
+    }
+    return result;
+  }
+
+  Future<void> _openScheduleSettings() async {
+    if (_selectedCells.isEmpty) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _ScheduleSettingsSheet(
+          projectId: widget.projectId,
+          onSaved: () async {
+            await _resetMonthCache();
+            await _loadInitialMonth();
+          },
+        ),
+      );
+      return;
+    }
+
+    // Загружаем свежие данные для месяца + online_booking для даты
+    final firstCell = _selectedCells.first;
+    final parts = firstCell.split('_');
+    String? dateStr;
+    int? empId;
+    if (parts.length == 2) {
+      empId = int.tryParse(parts[0]);
+      final ds = parts[1];
+      if (ds.contains('-') && ds.length >= 8) {
+        dateStr = ds;
+      } else {
+        final idx = int.tryParse(ds) ?? -1;
+        if (idx >= 0 && idx < _months.expand((m) => m.dates).length) {
+          final dt = _months.expand((m) => m.dates).elementAt(idx);
+          dateStr = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+        }
+      }
+    }
+
+    if (!mounted) return;
+
+    // Один запрос: online_booking для даты (listForDate).
+    Map<String, dynamic>? initialDateData;
+    if (dateStr != null && empId != null) {
+      initialDateData = await _fetchDateOnlineBooking(dateStr, empId);
+    }
+
+    if (!mounted) return;
+
+    {
       final allDates = _months.expand((m) => m.dates).toList();
       showModalBottomSheet(
         context: context,
@@ -644,23 +920,16 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
         backgroundColor: Colors.transparent,
         builder: (_) => _ScheduleSettingsSheet(
           projectId: widget.projectId,
-          onSaved: () {
+          onSaved: () async {
             _selectedCells.clear();
-            _loadInitialMonth();
+            await _resetMonthCache();
+            await _loadInitialMonth();
           },
           initialMode: 'time_config',
           selectedCells: _selectedCells.toSet(),
           dates: allDates,
-        ),
-      );
-    } else {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => _ScheduleSettingsSheet(
-          projectId: widget.projectId,
-          onSaved: () => _loadInitialMonth(),
+          scheduleData: _buildScheduleDataMap(),
+          initialDateData: initialDateData,
         ),
       );
     }
@@ -891,6 +1160,8 @@ class _ScheduleSettingsSheet extends StatefulWidget {
   final String? initialMode;
   final Set<String>? selectedCells;
   final List<DateTime>? dates;
+  final Map<String, Map<String, dynamic>>? scheduleData;
+  final Map<String, dynamic>? initialDateData;   // ← прямое online_booking для этой даты
   
   const _ScheduleSettingsSheet({
     required this.projectId, 
@@ -898,6 +1169,8 @@ class _ScheduleSettingsSheet extends StatefulWidget {
     this.initialMode,
     this.selectedCells,
     this.dates,
+    this.scheduleData,
+    this.initialDateData,
   });
 
   @override
@@ -933,7 +1206,11 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
     super.initState();
     _periodStart = DateTime.now();
     _periodStart = DateTime(_periodStart!.year, _periodStart!.month, _periodStart!.day);
-    _loadEmployees();
+    // На шаге time_config (time_config) список сотрудников не нужен —
+    // не делаем лишний employee/list запрос.
+    if (widget.initialMode != 'time_config') {
+      _loadEmployees();
+    }
     
     if (widget.initialMode == 'time_config') {
       _step = 5;
@@ -941,6 +1218,25 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
         for (final key in widget.selectedCells!) {
           final empId = int.tryParse(key.split('_')[0]) ?? 0;
           if (empId > 0) _selectedEmployees.add(empId);
+        }
+      }
+      // Приоритет 1: initialDateData — прямое online_booking (из listForDate)
+      if (widget.initialDateData != null) {
+        final dd = widget.initialDateData!;
+        if (dd['online_booking'] != null) {
+          _onlineBooking = (dd['online_booking'] == true || dd['online_booking'] == 1);
+        }
+      }
+      // Приоритет 2: scheduleData
+      else if (widget.scheduleData != null && widget.selectedCells != null && widget.selectedCells!.isNotEmpty) {
+        final firstKey = widget.selectedCells!.first;
+        final parts = firstKey.split('_');
+        if (parts.length == 2) {
+          final dateStr = parts[1];
+          final dayData = widget.scheduleData![dateStr];
+          if (dayData != null && dayData['online_booking'] != null) {
+            _onlineBooking = (dayData['online_booking'] == true || dayData['online_booking'] == 1);
+          }
         }
       }
     }
@@ -997,6 +1293,14 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
         current = current.add(const Duration(days: 1));
       }
 
+      if (days.isEmpty) {
+        if (mounted) {
+          setState(() => _loading = false);
+          showToast(context, 'Выберите хотя бы один день', isError: true);
+        }
+        return;
+      }
+
       final breakData = _breaks.map((b) => {
         'start': b['start'],
         'end': b['end'],
@@ -1029,10 +1333,10 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
           showToast(context, 'Ошибка сохранения', isError: true);
         }
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        showToast(context, 'Ошибка соединения', isError: true);
+        showToast(context, 'Ошибка: $e', isError: true);
       }
     }
   }
@@ -1069,6 +1373,14 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
         }
         dayIndex = (dayIndex + 1) % cycleLength;
         current = current.add(const Duration(days: 1));
+      }
+
+      if (days.isEmpty) {
+        if (mounted) {
+          setState(() => _loading = false);
+          showToast(context, 'Проверьте цикл (рабочих дней = 0?)', isError: true);
+        }
+        return;
       }
 
       final breakData = _breaks.map((b) => {
@@ -1128,30 +1440,42 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
             }).toList();
 
       final Map<int, List<Map<String, dynamic>>> daysByEmployee = {};
-      
-      if (widget.selectedCells != null && widget.dates != null) {
+
+      if (widget.selectedCells != null) {
         for (final cellKey in widget.selectedCells!) {
           final parts = cellKey.split('_');
           if (parts.length == 2) {
             final empId = int.tryParse(parts[0]) ?? 0;
-            final dayIndex = int.tryParse(parts[1]) ?? -1;
-            
-            if (empId > 0 && dayIndex >= 0 && dayIndex < widget.dates!.length) {
-              final date = widget.dates![dayIndex];
-              daysByEmployee.putIfAbsent(empId, () => []);
-              daysByEmployee[empId]!.add({
-                'year': date.year,
-                'month': date.month,
-                'day': date.day,
-              });
+            final dateStr = parts[1];   // '2026-11-01'
+            if (empId <= 0 || dateStr.isEmpty) continue;
+
+            // selectedCells = '<empId>_<YYYY-MM-DD>' (или '<empId>_<dayIdx>' — поддержка обоих)
+            DateTime? date;
+            if (dateStr.contains('-') && dateStr.length >= 8) {
+              date = DateTime.tryParse(dateStr);
+            } else {
+              final idx = int.tryParse(dateStr) ?? -1;
+              if (idx >= 0 && widget.dates != null && idx < widget.dates!.length) {
+                date = widget.dates![idx];
+              }
             }
+            if (date == null) continue;
+
+            daysByEmployee.putIfAbsent(empId, () => []);
+            daysByEmployee[empId]!.add({
+              'year': date.year,
+              'month': date.month,
+              'day': date.day,
+            });
           }
         }
       }
 
       final futures = _selectedEmployees.map((empId) async {
         final days = daysByEmployee[empId] ?? [];
-        
+        if (days.isEmpty) {
+          return {'success': true}; // нет выбранных ячеек для сотрудника — пропускаем
+        }
         final body = <String, dynamic>{
           'employee_id': empId,
           'project_id': widget.projectId,
@@ -1248,22 +1572,21 @@ class _ScheduleSettingsSheetState extends State<_ScheduleSettingsSheet> {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () {
-              if (_step == 5) {
-                Navigator.pop(context);
-              } else if (_step > 1) {
+          // Левый элемент: только «назад» на промежуточных шагах (2–4).
+          // На шагах 1 и 5 левый крестик не нужен — справа уже есть «закрыть».
+          if (_step > 1 && _step < 5)
+            GestureDetector(
+              onTap: () {
                 setState(() => _step--);
                 if (_step == 2) _scheduleType = '';
-              } else {
-                Navigator.pop(context);
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: Icon(_step == 1 || _step == 5 ? Icons.close : Icons.arrow_back, size: 24, color: const Color(0xFF666666)),
-            ),
-          ),
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: const Icon(Icons.arrow_back, size: 24, color: Color(0xFF666666)),
+              ),
+            )
+          else
+            const SizedBox(width: 40),
           Expanded(child: Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
           GestureDetector(
             onTap: () => Navigator.pop(context),

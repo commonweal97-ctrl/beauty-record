@@ -1,5 +1,6 @@
 // lib/services/api_service.dart
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -229,7 +230,17 @@ class ApiService {
     if (_cookies == null) await _loadCookies();
     
     final uri = Uri.parse('$baseUrl$path');
-    final response = await http.get(uri, headers: _headers);
+    http.Response response;
+    try {
+      response = await http.get(uri, headers: _headers);
+    } catch (e, st) {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Сетевая ошибка: $e',
+        path: path,
+        body: '',
+      );
+    }
     _saveCookies(response);
     _ensureOk(response, path);
 

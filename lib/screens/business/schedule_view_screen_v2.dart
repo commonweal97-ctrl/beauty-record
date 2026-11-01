@@ -137,7 +137,9 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(key, jsonEncode(data.toJson()));
       await prefs.setInt(tsKey, DateTime.now().millisecondsSinceEpoch);
-    } catch (_) {}
+    } catch (_) {
+      // ignore: empty_catches
+    }
   }
 
   Future<_MonthData?> _fetchMonth(int year, int month) async {
@@ -155,7 +157,9 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
       if (age < 5 * 60 * 1000) {
         try {
           return _MonthData.fromJson(jsonDecode(cached));
-        } catch (_) {}
+        } catch (_) {
+      // ignore: empty_catches
+    }
       }
     }
     final endDate = '$year-$monthStr-${lastDay.toString().padLeft(2, '0')}';
@@ -716,97 +720,6 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
   }
 
   /// Перезагружает ОДИН месяц с сервера без кеша, обновляет _months[idx].
-  Future<void> _refreshMonthFromServer(int year, int month) async {
-    final projectId = widget.projectId;
-    final monthStr = month.toString().padLeft(2, '0');
-    final lastDay = DateTime(year, month + 1, 0).day;
-    final endDate = '$year-$monthStr-${lastDay.toString().padLeft(2, '0')}';
-
-    try {
-      final empResult = await ApiService.get('/api/employee/list?project_id=$projectId');
-      List<Map<String, dynamic>> emps = [];
-      if (empResult['success'] == true) {
-        emps = List<Map<String, dynamic>>.from(empResult['data'] ?? []);
-      }
-
-      final bookingDays = <int, Set<int>>{};
-      try {
-        final bookingResult = await ApiService.get(
-            '/api/booking/list?project_id=$projectId&date=$year-$monthStr-01&end_date=$endDate');
-        if (bookingResult['success'] == true) {
-          for (final b in (bookingResult['data'] as List? ?? [])) {
-            if (b is! Map) continue;
-            if (b['status'] == 'cancelled') continue;
-            final empId = b['employee_id'];
-            final dateStr = b['date']?.toString() ?? '';
-            final parts = dateStr.split('-');
-            if (empId != null && parts.length == 3) {
-              final day = int.tryParse(parts[2]) ?? 0;
-              if (day > 0) {
-                bookingDays.putIfAbsent(empId as int, () => <int>{}).add(day);
-              }
-            }
-          }
-        }
-      } catch (_) {}
-
-      final futures = emps.map((e) async {
-        final empId = e['id'] as int;
-        try {
-          final res = await ApiService.get(
-              '/api/employee/schedule/get?employee_id=$empId&project_id=$projectId&year=$year&month=$month');
-          final data = (res['data'] as Map?) ?? {};
-          final normalized = <String, dynamic>{};
-          data.forEach((k, v) {
-            final day = int.tryParse(k.toString());
-            if (day != null) {
-              normalized['$year-$monthStr-${day.toString().padLeft(2, '0')}'] = v;
-            }
-          });
-          return {
-            'id': empId,
-            'firstName': e['first_name'] ?? (e['name']?.split(' ').first ?? ''),
-            'lastName': e['last_name'] ?? (e['name']?.split(' ').length == 2 ? e['name'].split(' ')[1] : ''),
-            'avatar': e['avatar'],
-            'workStart': e['work_start'] ?? '09:00',
-            'workEnd': e['work_end'] ?? '18:00',
-            'schedule_data': normalized,
-          };
-        } catch (_) {
-          return {
-            'id': empId,
-            'firstName': e['first_name'] ?? '',
-            'lastName': e['last_name'] ?? '',
-            'avatar': null,
-            'workStart': '09:00',
-            'workEnd': '18:00',
-            'schedule_data': null,
-          };
-        }
-      }).toList();
-      final fetched = await Future.wait(futures);
-
-      final newMonth = _MonthData(
-        year: year,
-        month: month,
-        dates: List.generate(lastDay, (i) => DateTime(year, month, i + 1)),
-        employees: fetched,
-        bookingDays: bookingDays,
-      );
-
-      if (!mounted) return;
-      setState(() {
-        final idx = _months.indexWhere((m) => m.year == year && m.month == month);
-        if (idx >= 0) {
-          _months[idx] = newMonth;
-        } else {
-          _months.add(newMonth);
-        }
-      });
-    } catch (e) {
-    }
-  }
-
   /// Запрашивает online_booking напрямую для даты через listForDate.
   /// Возвращает { online_booking: bool, is_working: bool, ... } или null.
   Future<Map<String, dynamic>?> _fetchDateOnlineBooking(String dateStr, int empId) async {
@@ -821,7 +734,8 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
           return Map<String, dynamic>.from(ex as Map);
         }
       }
-    } catch (e) {
+    } catch (_) {
+      // ignore: empty_catches
     }
     return null;
   }
@@ -834,7 +748,9 @@ class _ScheduleViewScreenV2State extends State<ScheduleViewScreenV2> {
       for (final k in keysToRemove) {
         await prefs.remove(k);
       }
-    } catch (_) {}
+    } catch (_) {
+      // ignore: empty_catches
+    }
   }
 
   Map<String, Map<String, dynamic>> _buildScheduleDataMap() {

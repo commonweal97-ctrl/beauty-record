@@ -124,7 +124,7 @@ class _DaySettingsSheetState extends State<DaySettingsSheet> {
       if (!mounted) return;
       setState(() => _saving = false);
       AppToast.show(context, '${e.statusCode}: ${e.message}', type: AppToastType.error);
-    } catch (e, st) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
       AppToast.show(context, 'Не удалось сохранить', type: AppToastType.error);

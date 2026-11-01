@@ -1,6 +1,5 @@
 // lib/services/api_service.dart
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -233,7 +232,7 @@ class ApiService {
     http.Response response;
     try {
       response = await http.get(uri, headers: _headers);
-    } catch (e, st) {
+    } catch (e) {
       throw ApiException(
         statusCode: 0,
         message: 'Сетевая ошибка: $e',

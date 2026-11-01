@@ -417,7 +417,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
         final y = int.parse(parts[0]);
         final m = int.parse(parts[1]);
         final d = parts[2].padLeft(2, '0');
-        final mk = '${y}-${m.toString().padLeft(2, '0')}';
+        final mk = '$y-${m.toString().padLeft(2, '0')}';
         final dayData = widget.scheduleData[mk]?[d];
         if (dayData != null) {
           final ob = dayData['online_booking'];
@@ -441,7 +441,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
 
 
     try {
-      final res = await ApiService.post('/api/employee/schedule/save', {
+      await ApiService.post('/api/employee/schedule/save', {
         'employee_id': widget.employeeId,
         'project_id': widget.projectId,
         'days': days,
@@ -456,7 +456,7 @@ class _DayConfigSheetState extends State<_DayConfigSheet> {
         widget.onSaved();
         showToast(context, 'График сохранён');
       }
-    } catch (e, st) {
+    } catch (e) {
       if (mounted) showToast(context, 'Ошибка сохранения: $e', isError: true);
     }
     if (mounted) setState(() => _saving = false);
